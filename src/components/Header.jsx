@@ -304,6 +304,16 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               {t('nav.home')}
             </button>
           </li>
+          <li className="relative py-1">
+            <button 
+              onClick={() => onViewChange('stores')}
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+                currentView === 'stores' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
+              }`}
+            >
+              {t('nav.stores')}
+            </button>
+          </li>
           <li 
             onClick={() => {
               onViewChange('home');
@@ -335,16 +345,6 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               }`}
             >
               {t('nav.story')}
-            </button>
-          </li>
-          <li className="relative py-1">
-            <button 
-              onClick={() => onViewChange('stores')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
-                currentView === 'stores' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
-              }`}
-            >
-              {t('nav.stores')}
             </button>
           </li>
           <li className="relative py-1">
@@ -411,6 +411,19 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                 <button
                   type="button"
                   onClick={() => {
+                    onViewChange('stores');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                    currentView === 'stores' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
+                  }`}
+                >
+                  {t('nav.stores')}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     onViewChange('home');
                     setIsMobileMenuOpen(false);
                     // Add quick scroll target to homepage categories
@@ -448,19 +461,6 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   }`}
                 >
                   {t('nav.story')}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    onViewChange('stores');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
-                    currentView === 'stores' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
-                  }`}
-                >
-                  {t('nav.stores')}
                 </button>
 
                 <button
