@@ -4,6 +4,7 @@ export const translations = {
       home: "Home",
       categories: "Categories",
       all_products: "All Products",
+      stores: "Stores",
       story: "Our Story",
       contact: "Contact",
       search_store: "Search Store",
@@ -215,6 +216,15 @@ export const translations = {
       empty: "Your wishlist is empty. Explore products to save your favorites!",
       back_shop: "Back to Shop"
     },
+    stores_page: {
+      title: "Stores Directory",
+      visit_store: "Visit Store",
+      products_count: "{count} Products",
+      back_stores: "Back to All Stores",
+      no_stores: "No stores registered yet.",
+      no_products: "This store has no products yet.",
+      welcome: "Welcome to {name}"
+    },
     toasts: {
       login_required_cart: "Please log in to access your cart or checkout page!",
       login_required_add: "Please log in to add items to your cart!",
@@ -248,6 +258,7 @@ export const translations = {
       home: "الرئيسية",
       categories: "الأقسام",
       all_products: "كل المنتجات",
+      stores: "المتاجر",
       story: "قصتنا",
       contact: "اتصل بنا",
       search_store: "البحث في المتجر",
@@ -459,6 +470,15 @@ export const translations = {
       empty: "قائمة رغباتك فارغة حالياً. تصفح المنتجات لحفظ جواربك المفضلة!",
       back_shop: "العودة للمتجر"
     },
+    stores_page: {
+      title: "دليل المتاجر",
+      visit_store: "زيارة المتجر",
+      products_count: "{count} منتج",
+      back_stores: "العودة لجميع المتاجر",
+      no_stores: "لا توجد متاجر مسجلة بعد.",
+      no_products: "لا توجد منتجات في هذا المتجر بعد.",
+      welcome: "مرحباً بكم في {name}"
+    },
     toasts: {
       login_required_cart: "يرجى تسجيل الدخول للوصول إلى السلة أو صفحة الشراء!",
       login_required_add: "يرجى تسجيل الدخول لإضافة المنتجات إلى السلة!",
@@ -492,6 +512,7 @@ export const translations = {
       home: "سەرەکی",
       categories: "پۆلەکان",
       all_products: "هەموو بەرهەمەکان",
+      stores: "فرۆشگاکان",
       story: "چیرۆکی ئێمە",
       contact: "پەیوەندی",
       search_store: "گەڕان لە فرۆشگا",
@@ -702,6 +723,15 @@ export const translations = {
       title: "لیستی دڵخوازەکانم",
       empty: "لیستی دڵخوازەکانت بەتاڵە. بەرهەمەکان بگەڕێ بۆ پاشەکەوتکردنی دڵخوازەکانت!",
       back_shop: "گەڕانەوە بۆ فرۆشگا"
+    },
+    stores_page: {
+      title: "لیستی فرۆشگاکان",
+      visit_store: "سەردانی فرۆشگا",
+      products_count: "{count} بەرهەم",
+      back_stores: "گەڕانەوە بۆ هەموو فرۆشگاکان",
+      no_stores: "هێشتا هیچ فرۆشگایەک تۆمار نەکراوە.",
+      no_products: "ئەم فرۆشگایە هێشتا هیچ بەرهەمێکی نییە.",
+      welcome: "بەخێربێن بۆ {name}"
     },
     toasts: {
       login_required_cart: "تکایە بچۆ ژوورەوە بۆ گەیشتن بە سەبەتە یان لاپەڕەی پارەدان!",

@@ -238,4 +238,38 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+// 5. Get All Vendors Route (Multivendor Directory)
+router.get('/vendors', async (req, res) => {
+  try {
+    const [vendors] = await db.query(`
+      SELECT u.id, u.first_name, u.last_name, u.store_name, u.email, u.phone, u.created_at, COUNT(p.id) AS product_count 
+      FROM users u 
+      LEFT JOIN products p ON p.vendor_id = u.id 
+      WHERE u.role = 'vendor' AND u.store_name IS NOT NULL
+      GROUP BY u.id
+      ORDER BY u.store_name ASC
+    `);
+
+    return res.json({
+      success: true,
+      vendors: vendors.map(v => ({
+        id: v.id,
+        firstName: v.first_name,
+        lastName: v.last_name,
+        storeName: v.store_name,
+        email: v.email,
+        phone: v.phone,
+        createdAt: v.created_at,
+        productCount: v.product_count
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching vendors.'
+    });
+  }
+});
+
 module.exports = router;

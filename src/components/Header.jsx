@@ -339,6 +339,16 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           </li>
           <li className="relative py-1">
             <button 
+              onClick={() => onViewChange('stores')}
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+                currentView === 'stores' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
+              }`}
+            >
+              {t('nav.stores')}
+            </button>
+          </li>
+          <li className="relative py-1">
+            <button 
               onClick={() => onViewChange('contact')}
               className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
                 currentView === 'contact' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
@@ -438,6 +448,19 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   }`}
                 >
                   {t('nav.story')}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onViewChange('stores');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                    currentView === 'stores' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
+                  }`}
+                >
+                  {t('nav.stores')}
                 </button>
 
                 <button
