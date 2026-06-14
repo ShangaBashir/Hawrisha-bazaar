@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const productRoutes = require('./routes/products');
 const settingsRoutes = require('./routes/settings');
+const authRoutes = require('./routes/auth');
 const initializeDatabase = require('./config/initDb');
 require('dotenv').config();
 
@@ -22,6 +23,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/auth', authRoutes);
+
 
 // General healthcheck endpoint
 app.get('/api/health', (req, res) => {

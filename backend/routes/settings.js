@@ -129,4 +129,188 @@ router.delete('/colors/:id', async (req, res) => {
   }
 });
 
+// --- 4. STYLES CRUD ---
+router.get('/styles', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM styles ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/styles', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Style name is required' });
+  }
+  try {
+    const [result] = await db.query('INSERT INTO styles (name) VALUES (?)', [name.trim()]);
+    res.status(201).json({ id: result.insertId, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Style already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/styles/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM styles WHERE id = ?', [id]);
+    res.json({ message: 'Style deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// --- 5. MATERIALS CRUD ---
+router.get('/materials', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM materials ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/materials', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Material name is required' });
+  }
+  try {
+    const [result] = await db.query('INSERT INTO materials (name) VALUES (?)', [name.trim()]);
+    res.status(201).json({ id: result.insertId, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Material already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/materials/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM materials WHERE id = ?', [id]);
+    res.json({ message: 'Material deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// --- 6. SEASONS CRUD ---
+router.get('/seasons', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM seasons ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/seasons', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Season name is required' });
+  }
+  try {
+    const [result] = await db.query('INSERT INTO seasons (name) VALUES (?)', [name.trim()]);
+    res.status(201).json({ id: result.insertId, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Season already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/seasons/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM seasons WHERE id = ?', [id]);
+    res.json({ message: 'Season deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// --- 7. SIZES CRUD ---
+router.get('/sizes', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM sizes ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/sizes', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Size name is required' });
+  }
+  try {
+    const [result] = await db.query('INSERT INTO sizes (name) VALUES (?)', [name.trim()]);
+    res.status(201).json({ id: result.insertId, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Size already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/sizes/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM sizes WHERE id = ?', [id]);
+    res.json({ message: 'Size deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// --- 8. PROMOTIONS CRUD ---
+router.get('/promotions', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM promotions ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/promotions', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Promotion name is required' });
+  }
+  try {
+    const [result] = await db.query('INSERT INTO promotions (name) VALUES (?)', [name.trim()]);
+    res.status(201).json({ id: result.insertId, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Promotion already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/promotions/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM promotions WHERE id = ?', [id]);
+    res.json({ message: 'Promotion deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

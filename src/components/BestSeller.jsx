@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const fallbackBestSellers = [
   {
@@ -28,7 +29,18 @@ const fallbackBestSellers = [
   }
 ];
 
+const parseJsonArray = (val) => {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [val];
+  } catch {
+    return [val];
+  }
+};
+
 export default function BestSeller({ onViewAll, onAddToCart }) {
+  const { t, language } = useLanguage();
   const [bestSellersList, setBestSellersList] = useState([]);
 
   useEffect(() => {
@@ -40,7 +52,10 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
       })
       .then(data => {
         if (active) {
-          const filtered = data.filter(p => p.badge?.toLowerCase() === 'bestseller');
+          const filtered = data.filter(p => {
+            const badges = parseJsonArray(p.badge).map(b => b.toLowerCase());
+            return badges.includes('bestseller');
+          });
           if (filtered.length > 0) {
             setBestSellersList(filtered.slice(0, 4));
           } else {
@@ -82,7 +97,7 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
         className="flex items-center justify-center mb-10"
       >
         <div className="h-px bg-gray-200 flex-grow max-w-[300px]"></div>
-        <h2 className="text-xl md:text-2xl font-bold text-[#1a365d] mx-6 uppercase tracking-wider">Best Seller</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-[#1a365d] mx-6 uppercase tracking-wider">{t('bestseller.title')}</h2>
         <div className="h-px bg-gray-200 flex-grow max-w-[300px]"></div>
       </motion.div>
 
@@ -101,11 +116,19 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
               if (typeof numericPrice === 'string') {
                 numericPrice = parseFloat(numericPrice.replace(/[^0-9.]/g, '')) || 0;
               }
-              onAddToCart({ ...product, price: numericPrice });
+              const finalPrice = product.discount > 0 
+                ? Math.round(numericPrice * (1 - product.discount / 100))
+                : numericPrice;
+              onAddToCart({ ...product, price: finalPrice });
             }}
             className="group cursor-pointer flex flex-col"
           >
             <div className="w-full aspect-square bg-gray-100 mb-4 overflow-hidden relative rounded-md shadow-sm">
+              {product.discount > 0 && (
+                <div className="absolute top-3 start-3 z-10 text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-full shadow-xs">
+                  {product.discount}% {language === 'ar' ? 'خصم' : language === 'ku' ? 'داشکاندن' : 'OFF'}
+                </div>
+              )}
                <img 
                  src={getProductImage(product.image || product.image_url)} 
                  alt={product.name} 
@@ -113,7 +136,20 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
                />
             </div>
             <h3 className="text-[15px] text-brand-charcoal">{product.name}</h3>
-            <p className="text-[15px] text-gray-500 mt-0.5">{getProductPrice(product.price)}</p>
+            <p className="text-[15px] mt-0.5">
+              {product.discount > 0 ? (
+                <span className="flex items-center space-x-1.5 rtl:space-x-reverse text-xs">
+                  <span className="line-through text-gray-400">
+                    {getProductPrice(product.price)}
+                  </span>
+                  <span className="text-brand-charcoal font-bold">
+                    {getProductPrice(Math.round(product.price * (1 - product.discount / 100)))}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-gray-500">{getProductPrice(product.price)}</span>
+              )}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -124,7 +160,7 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
         whileInView={{ opacity: 1 }}
         viewport={{ once: false }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="flex items-center justify-center space-x-2.5 mt-10"
+        className="flex items-center justify-center space-x-2.5 rtl:space-x-reverse mt-10"
       >
         <div className="w-2.5 h-2.5 rounded-full bg-[#C08081]"></div>
         {[...Array(6)].map((_, i) => (
@@ -142,9 +178,9 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
       >
         <button 
           onClick={onViewAll}
-          className="px-10 py-2 border border-[#C08081] text-[#C08081] text-sm font-medium rounded-full hover:bg-[#36454F] hover:border-[#36454F] hover:text-white transition-all duration-300 cursor-pointer"
+          className="px-10 py-2 border border-[#C08081] text-[#C08081] text-sm font-medium rounded-full hover:bg-[#36454F] hover:border-[#36454F] hover:text-white transition-all duration-300 cursor-pointer bg-transparent"
         >
-          View all
+          {language === 'ar' ? 'عرض الكل' : language === 'ku' ? 'پیشاندانی هەمووی' : 'View all'}
         </button>
       </motion.div>
     </section>

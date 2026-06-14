@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext.jsx';
 import BestSeller from './components/BestSeller';
 import Header from './components/Header';
 import HeroCarousel from './components/HeroCarousel';
@@ -9,8 +10,15 @@ import Footer from './components/Footer';
 import AllProducts from './components/AllProducts';
 import AdminDashboard from './components/AdminDashboard';
 import Wishlist from './components/Wishlist';
+import Checkout from './components/Checkout';
+import Contact from './components/Contact';
+import Story from './components/Story';
+import Cart from './components/Cart';
+import LoginModal from './components/LoginModal';
+import Account from './components/Account';
 
 function App() {
+  const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState(() => {
     // Check if the route is /admin
     if (window.location.pathname === '/admin') {
@@ -23,13 +31,82 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedProductForDetail, setSelectedProductForDetail] = useState(null);
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  
+  // Auth states
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 2500);
+  };
 
   // Automatically scroll to the top of the screen when switching pages
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
 
+  // Prevent body scroll when logout confirmation is open
+  useEffect(() => {
+    if (showLogoutConfirm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showLogoutConfirm]);
+
+  const [viewHistory, setViewHistory] = useState(['home']);
+
+  const handleViewChange = (view) => {
+    if ((view === 'cart' || view === 'checkout') && !isLoggedIn) {
+      setIsLoginModalOpen(true);
+      showToast(t('toasts.login_required_cart'));
+      return;
+    }
+    setCurrentView(view);
+    if (view !== 'all_products') {
+      setSelectedProductForDetail(null);
+    }
+    if (view === 'home') {
+      setViewHistory(['home']);
+    } else {
+      setViewHistory(prev => {
+        const lastView = prev[prev.length - 1];
+        if (lastView === view) return prev;
+        return [...prev, view];
+      });
+    }
+  };
+
+  const handleBack = () => {
+    if (viewHistory.length <= 1) {
+      setCurrentView('home');
+      setViewHistory(['home']);
+      return;
+    }
+    const newHistory = viewHistory.slice(0, -1);
+    const lastView = newHistory[newHistory.length - 1] || 'home';
+    setCurrentView(lastView);
+    setViewHistory(newHistory);
+  };
+
+  const previousView = viewHistory[viewHistory.length - 2] || 'home';
+
   const handleAddToCart = (product, quantity = 1) => {
+    if (!isLoggedIn) {
+      setIsLoginModalOpen(true);
+      showToast(t('toasts.login_required_add'));
+      return;
+    }
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -75,12 +152,27 @@ function App() {
       {!isAdminView && (
         <Header 
           currentView={currentView} 
-          onViewChange={setCurrentView} 
+          onViewChange={handleViewChange} 
           cartCount={cartCount} 
           wishlistCount={wishlistCount}
-          onCartClick={() => setIsCartOpen(true)}
+          isLoggedIn={isLoggedIn}
+          currentUser={currentUser}
+          onLoginClick={() => setIsLoginModalOpen(true)}
+          onLogoutClick={() => setShowLogoutConfirm(true)}
+          onCartClick={() => {
+            if (isLoggedIn) {
+              setIsCartOpen(true);
+            } else {
+              setIsLoginModalOpen(true);
+              showToast(t('toasts.login_required_cart'));
+            }
+          }}
           onWishlistClick={() => {
-            setCurrentView('wishlist');
+            handleViewChange('wishlist');
+          }}
+          onSearch={(term) => {
+            setGlobalSearchTerm(term);
+            handleViewChange('all_products');
           }}
         />
       )}
@@ -91,14 +183,14 @@ function App() {
             <BestSeller 
               onViewAll={() => {
                 setSelectedCategory('All');
-                setCurrentView('all_products');
+                handleViewChange('all_products');
               }} 
               onAddToCart={handleAddToCart}
             />
             <ProductGrid 
               onCategorySelect={(catName) => {
                 setSelectedCategory(catName);
-                setCurrentView('all_products');
+                handleViewChange('all_products');
               }} 
             />
           </>
@@ -106,37 +198,88 @@ function App() {
         
         {currentView === 'all_products' && (
           <AllProducts 
+            cart={cart}
             onAddToCart={handleAddToCart}
-            onBackToHome={() => {
-              setSelectedCategory('All');
-              setCurrentView('home');
-            }}
+            onRemoveFromCart={handleRemoveFromCart}
+            onBackToHome={handleBack}
             initialCategory={selectedCategory}
             likedProducts={wishlist}
             onToggleWishlist={handleToggleWishlist}
+            initialViewingProduct={selectedProductForDetail}
+            initialSearchTerm={globalSearchTerm}
+            previousView={previousView}
+            isLoggedIn={isLoggedIn}
+            onLoginRequired={() => setIsLoginModalOpen(true)}
           />
         )}
 
         {currentView === 'wishlist' && (
           <Wishlist 
+            cart={cart}
             wishlist={wishlist}
             onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
             onToggleWishlist={handleToggleWishlist}
             onExplore={() => {
               setSelectedCategory('All');
-              setCurrentView('all_products');
+              handleViewChange('all_products');
             }}
-            onBackToHome={() => {
-              setCurrentView('home');
+            onBackToHome={handleBack}
+            onProductClick={(product) => {
+              setSelectedProductForDetail(product);
+              handleViewChange('all_products');
             }}
+            previousView={previousView}
+            isLoggedIn={isLoggedIn}
+            onLoginRequired={() => setIsLoginModalOpen(true)}
           />
         )}
 
         {currentView === 'admin' && (
           <AdminDashboard />
         )}
+
+        {currentView === 'checkout' && (
+          <Checkout 
+            cart={cart}
+            onClearCart={() => setCart([])}
+            onBackToHome={handleBack}
+            previousView={previousView}
+          />
+        )}
+
+        {currentView === 'contact' && (
+          <Contact />
+        )}
+
+        {currentView === 'story' && (
+          <Story onViewChange={handleViewChange} />
+        )}
+
+        {currentView === 'account' && (
+          <Account 
+            email={currentUserEmail}
+            onBackToHome={() => handleViewChange('home')}
+            onLogoutClick={() => setShowLogoutConfirm(true)}
+          />
+        )}
+
+        {currentView === 'cart' && (
+          <Cart 
+            cart={cart}
+            onUpdateQuantity={(id, delta) => handleUpdateCartQuantity(id, delta)}
+            onRemoveItem={(id) => handleRemoveFromCart(id)}
+            onExplore={() => {
+              setSelectedCategory('All');
+              handleViewChange('all_products');
+            }}
+            onCheckout={() => handleViewChange('checkout')}
+            onBack={handleBack}
+            previousView={previousView}
+          />
+        )}
       </main>
-      {!isAdminView && <Footer />}
+      {!isAdminView && <Footer onViewChange={handleViewChange} />}
 
       {/* Cart Drawer */}
       <AnimatePresence>
@@ -162,7 +305,7 @@ function App() {
               <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
                   <ShoppingBag size={20} className="text-[#36454F]" />
-                  <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">Shopping Bag</h3>
+                  <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">Your Cart</h3>
                   <span className="bg-[#B2AC88]/10 text-[#B2AC88] text-xs font-bold px-2 py-0.5 rounded-full">
                     {cartCount}
                   </span>
@@ -183,7 +326,7 @@ function App() {
                       <ShoppingBag className="text-gray-300" size={24} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#36454F] uppercase tracking-wider">Your bag is empty</h4>
+                      <h4 className="text-sm font-bold text-[#36454F] uppercase tracking-wider">Your cart is empty</h4>
                       <p className="text-xs text-gray-400 mt-1 max-w-[200px] mx-auto leading-relaxed">
                         Add some of our premium character socks to get started!
                       </p>
@@ -191,7 +334,7 @@ function App() {
                     <button
                       onClick={() => {
                         setIsCartOpen(false);
-                        setCurrentView('all_products');
+                        handleViewChange('all_products');
                       }}
                       className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#36454F] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
                     >
@@ -256,33 +399,7 @@ function App() {
               {/* Footer Checkout Summary */}
               {cart.length > 0 && (
                 <div className="p-6 border-t border-gray-100 space-y-4 bg-gray-50/50">
-                  {/* Shipping goal */}
-                  {(() => {
-                    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                    const freeShippingLimit = 45000;
-                    const needed = freeShippingLimit - subtotal;
-                    
-                    return (
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          {needed > 0 ? (
-                            <span>Add <span className="text-[#36454F]">{needed.toLocaleString()} IQD</span> for Free Shipping</span>
-                          ) : (
-                            <span className="text-green-600 font-bold">You qualify for FREE shipping!</span>
-                          )}
-                          <span>Goal: {freeShippingLimit.toLocaleString()} IQD</span>
-                        </div>
-                        <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-[#B2AC88] transition-all duration-500" 
-                            style={{ width: `${Math.min(100, (subtotal / freeShippingLimit) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })()}
 
-                  <div className="h-px bg-gray-150 w-full" />
 
                   {/* Summary Rows */}
                   <div className="space-y-2">
@@ -293,7 +410,7 @@ function App() {
                       </span>
                     </div>
                     <div className="flex justify-between text-xs font-semibold text-gray-500">
-                      <span>Shipping</span>
+                      <span>Delivery</span>
                       {(() => {
                         const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
                         return subtotal >= 45000 ? (
@@ -316,12 +433,120 @@ function App() {
                   </div>
 
                   {/* Action CTA */}
-                  <button className="w-full py-3.5 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-md transition-colors cursor-pointer select-none text-center">
-                    Proceed to Checkout
-                  </button>
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <button 
+                      onClick={() => {
+                        setIsCartOpen(false);
+                        handleViewChange('cart');
+                      }}
+                      className="py-3.5 bg-white border border-[#E9ECEF] hover:bg-gray-200 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-full shadow-sm transition-all cursor-pointer select-none text-center hover:scale-102 active:scale-98 font-bold"
+                    >
+                      View Cart
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsCartOpen(false);
+                        handleViewChange('checkout');
+                      }}
+                      className="py-3.5 bg-[#36454F] hover:bg-[#C08081] text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-md transition-all cursor-pointer select-none text-center hover:scale-102 active:scale-98"
+                    >
+                      Checkout
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Alert */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 350, damping: 22 }}
+            className="fixed bottom-8 right-8 z-[200] bg-[#36454F] text-white px-6 py-3.5 rounded-xl shadow-xl flex items-center space-x-3 border border-white/10 select-none font-sans"
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-[#B2AC88] animate-ping" />
+            <span className="font-semibold text-sm tracking-wide">{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <LoginModal 
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={(username, email) => {
+          setIsLoggedIn(true);
+          setCurrentUser(username);
+          setCurrentUserEmail(email);
+          showToast(t('toasts.login_success', { user: username }));
+        }}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="fixed inset-0 bg-black z-[250] cursor-pointer"
+            />
+            {/* Modal Dialog */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[260] pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: "spring", duration: 0.3 }}
+                className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-100 shadow-2xl pointer-events-auto text-center font-sans text-brand-charcoal"
+                dir={language === 'ar' || language === 'ku' ? 'rtl' : 'ltr'}
+              >
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center border border-red-100 mx-auto mb-5">
+                  <LogOut className="text-red-500" size={24} />
+                </div>
+                
+                <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">
+                  {t('logout_confirm.title')}
+                </h3>
+                <p className="text-xs text-gray-400 mt-2 max-w-xs mx-auto leading-relaxed font-semibold">
+                  {t('logout_confirm.desc')}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3.5 mt-8">
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="py-3 bg-white border border-[#E9ECEF] hover:bg-gray-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-2xl transition-all cursor-pointer text-center select-none active:scale-98 font-bold"
+                  >
+                    {t('logout_confirm.no')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsLoggedIn(false);
+                      setCurrentUser(null);
+                      setCurrentUserEmail(null);
+                      setCart([]);
+                      setShowLogoutConfirm(false);
+                      if (currentView === 'account' || currentView === 'checkout') {
+                        setCurrentView('home');
+                        setViewHistory(['home']);
+                      }
+                      showToast(t('toasts.logout_success'));
+                    }}
+                    className="py-3 bg-red-500 hover:bg-red-650 text-white text-xs font-bold uppercase tracking-wider rounded-2xl transition-all cursor-pointer text-center select-none active:scale-98 font-bold shadow-sm"
+                  >
+                    {t('logout_confirm.yes')}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

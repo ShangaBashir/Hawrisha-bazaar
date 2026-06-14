@@ -1,30 +1,32 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const slides = [
-  {
-    id: 1,
-    title: "Fun Characters",
-    subtitle: "Show off your personality with every step",
-    image: "/carousel/slide1.jpg",
-  },
-  {
-    id: 2,
-    title: "Cute Companions",
-    subtitle: "Adorable animal socks to brighten your day",
-    image: "/carousel/slide2.webp",
-  },
-  {
-    id: 3,
-    title: "Tropical Vibes",
-    subtitle: "Stand out with our colorful flamingo collection",
-    image: "/carousel/slide3.jpg",
-  }
-];
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function HeroCarousel() {
+  const { t, language } = useLanguage();
   const [current, setCurrent] = useState(0);
+
+  const slides = [
+    {
+      id: 1,
+      title: t('hero.slide1_title'),
+      subtitle: t('hero.slide1_subtitle'),
+      image: "/carousel/slide1.jpg",
+    },
+    {
+      id: 2,
+      title: t('hero.slide2_title'),
+      subtitle: t('hero.slide2_subtitle'),
+      image: "/carousel/slide2.webp",
+    },
+    {
+      id: 3,
+      title: t('hero.slide3_title'),
+      subtitle: t('hero.slide3_subtitle'),
+      image: "/carousel/slide3.jpg",
+    }
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -104,7 +106,7 @@ export default function HeroCarousel() {
                whileTap={{ scale: 0.95 }}
                className="px-8 py-3 bg-white text-brand-charcoal font-semibold rounded-full hover:bg-brand-beige transition-colors shadow-lg cursor-pointer font-sans"
              >
-               Shop Now
+               {t('hero.shop_now')}
              </motion.button>
            </div>
         </motion.div>
@@ -115,17 +117,17 @@ export default function HeroCarousel() {
         onClick={prevSlide}
         whileHover={{ scale: 1.15, backgroundColor: "rgba(255, 255, 255, 0.45)" }}
         whileTap={{ scale: 0.9 }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 rounded-full text-white cursor-pointer z-20 transition-all duration-300"
+        className="absolute start-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 rounded-full text-white cursor-pointer z-20 transition-all duration-300"
       >
-        <ChevronLeft size={32} />
+        <ChevronLeft size={32} className="rtl:rotate-180" />
       </motion.button>
       <motion.button 
         onClick={nextSlide}
         whileHover={{ scale: 1.15, backgroundColor: "rgba(255, 255, 255, 0.45)" }}
         whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 rounded-full text-white cursor-pointer z-20 transition-all duration-300"
+        className="absolute end-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 rounded-full text-white cursor-pointer z-20 transition-all duration-300"
       >
-        <ChevronRight size={32} />
+        <ChevronRight size={32} className="rtl:rotate-180" />
       </motion.button>
 
       {/* Dots */}

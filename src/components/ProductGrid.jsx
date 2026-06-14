@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const fallbackCategories = [
   {
@@ -28,7 +29,18 @@ const fallbackCategories = [
   }
 ];
 
+const parseJsonArray = (val) => {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [val];
+  } catch {
+    return [val];
+  }
+};
+
 export default function ProductGrid({ onCategorySelect }) {
+  const { t, language, tCategory } = useLanguage();
   const [categoriesList, setCategoriesList] = useState([]);
 
   useEffect(() => {
@@ -49,7 +61,7 @@ export default function ProductGrid({ onCategorySelect }) {
           const fallbackImages = ['/categories/cat1.jpg', '/categories/cat2.jpg', '/categories/cat3.jpg', '/categories/cat4.jpg'];
           
           const compiled = cats.map((cat, index) => {
-            const categoryProducts = prods.filter(p => p.category === cat.name);
+            const categoryProducts = prods.filter(p => parseJsonArray(p.category).includes(cat.name));
             const count = categoryProducts.length;
             
             let img;
@@ -92,7 +104,7 @@ export default function ProductGrid({ onCategorySelect }) {
         className="flex items-center justify-center mb-10"
       >
         <div className="h-px bg-gray-200 flex-grow max-w-[300px]"></div>
-        <h2 className="text-xl md:text-2xl font-bold text-[#1a365d] mx-6 uppercase tracking-wider">Categories</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-[#1a365d] mx-6 uppercase tracking-wider">{t('nav.categories')}</h2>
         <div className="h-px bg-gray-200 flex-grow max-w-[300px]"></div>
       </motion.div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -109,18 +121,18 @@ export default function ProductGrid({ onCategorySelect }) {
             {/* Category Image */}
             <div className="w-full aspect-[3/4] bg-slate-100 rounded-xl mb-4 relative overflow-hidden transition-transform duration-300 group-hover:scale-[1.02] border border-slate-200/50">
                {category.image ? (
-                 <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                 <img src={category.image} alt={tCategory(category.name)} className="w-full h-full object-cover" />
                ) : (
                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-[#B2AC88]/20 to-[#F5F5DC]/40">
-                    <span className="text-[#36454F]/40 font-bold text-xl tracking-widest uppercase">{category.name}</span>
+                    <span className="text-[#36454F]/40 font-bold text-xl tracking-widest uppercase">{tCategory(category.name)}</span>
                  </div>
                )}
             </div>
             
             {/* Category Details */}
             <div className="space-y-1 text-center">
-              <h3 className="font-bold text-brand-charcoal text-lg uppercase tracking-wide group-hover:text-[#B2AC88] transition-colors">{category.name}</h3>
-              <p className="text-xs text-gray-400 font-medium">{category.productCount} Items Available</p>
+              <h3 className="font-bold text-brand-charcoal text-lg uppercase tracking-wide group-hover:text-[#B2AC88] transition-colors">{tCategory(category.name)}</h3>
+              <p className="text-xs text-gray-400 font-medium">{category.productCount} {language === 'ar' ? 'عناصر متوفرة' : language === 'ku' ? 'بەرهەم بەردەستە' : 'Items Available'}</p>
             </div>
           </motion.div>
         ))}
@@ -132,7 +144,7 @@ export default function ProductGrid({ onCategorySelect }) {
         whileInView={{ opacity: 1 }}
         viewport={{ once: false }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="flex items-center justify-center space-x-2.5 mt-10"
+        className="flex items-center justify-center space-x-2.5 rtl:space-x-reverse mt-10"
       >
         <div className="w-2.5 h-2.5 rounded-full bg-[#C08081]"></div>
         {[...Array(6)].map((_, i) => (
@@ -150,9 +162,9 @@ export default function ProductGrid({ onCategorySelect }) {
       >
         <button 
           onClick={() => onCategorySelect('All')}
-          className="px-10 py-2 border border-[#C08081] text-[#C08081] text-sm font-medium rounded-full hover:bg-[#36454F] hover:border-[#36454F] hover:text-white transition-all duration-300 cursor-pointer"
+          className="px-10 py-2 border border-[#C08081] text-[#C08081] text-sm font-medium rounded-full hover:bg-[#36454F] hover:border-[#36454F] hover:text-white transition-all duration-300 cursor-pointer bg-transparent"
         >
-          View all
+          {language === 'ar' ? 'عرض الكل' : language === 'ku' ? 'پیشاندانی هەمووی' : 'View all'}
         </button>
       </motion.div>
     </section>

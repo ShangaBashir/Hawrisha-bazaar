@@ -18,6 +18,26 @@ async function initializeDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    // Helper to add column if it doesn't exist
+    const addColumnSafely = async (tableName, columnName, definition) => {
+      const [columns] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [tableName, columnName]
+      );
+      if (columns.length === 0) {
+        await db.query(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+        console.log(`Added column ${columnName} to table ${tableName}.`);
+      }
+    };
+
+    await addColumnSafely('products', 'style_length', 'VARCHAR(100) DEFAULT NULL');
+    await addColumnSafely('products', 'stock', 'INT DEFAULT 0');
+    await addColumnSafely('products', 'promotion', 'VARCHAR(100) DEFAULT NULL');
+    await addColumnSafely('products', 'material', 'VARCHAR(100) DEFAULT NULL');
+    await addColumnSafely('products', 'seasonal_type', 'VARCHAR(100) DEFAULT NULL');
+    await addColumnSafely('products', 'size_collection', 'VARCHAR(100) DEFAULT NULL');
+    await addColumnSafely('products', 'discount', 'INT DEFAULT 0');
+
     // 2. Create product_colors table
     await db.query(`
       CREATE TABLE IF NOT EXISTS product_colors (
@@ -54,6 +74,60 @@ async function initializeDatabase() {
         family VARCHAR(50) NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // 6. Create styles table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS styles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 7. Create materials table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS materials (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 8. Create seasons table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS seasons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 9. Create sizes table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sizes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 10. Create promotions table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS promotions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 11. Create users table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
 
     // Seed default categories if empty
     const [categories] = await db.query('SELECT COUNT(*) as count FROM categories');
@@ -95,6 +169,56 @@ async function initializeDatabase() {
         );
       }
       console.log('Seeded default colors.');
+    }
+
+    // Seed default styles if empty
+    const [styles] = await db.query('SELECT COUNT(*) as count FROM styles');
+    if (styles[0].count === 0) {
+      const defaultStyles = ['Crew', 'Ankle', 'No Show', 'Knee High'];
+      for (const st of defaultStyles) {
+        await db.query('INSERT IGNORE INTO styles (name) VALUES (?)', [st]);
+      }
+      console.log('Seeded default styles.');
+    }
+
+    // Seed default materials if empty
+    const [materials] = await db.query('SELECT COUNT(*) as count FROM materials');
+    if (materials[0].count === 0) {
+      const defaultMaterials = ['Cotton', 'Bamboo', 'Wool', 'Polyester'];
+      for (const mat of defaultMaterials) {
+        await db.query('INSERT IGNORE INTO materials (name) VALUES (?)', [mat]);
+      }
+      console.log('Seeded default materials.');
+    }
+
+    // Seed default seasons if empty
+    const [seasons] = await db.query('SELECT COUNT(*) as count FROM seasons');
+    if (seasons[0].count === 0) {
+      const defaultSeasons = ['Winter', 'Summer', 'Spring', 'Autumn', 'All Season'];
+      for (const seas of defaultSeasons) {
+        await db.query('INSERT IGNORE INTO seasons (name) VALUES (?)', [seas]);
+      }
+      console.log('Seeded default seasons.');
+    }
+
+    // Seed default sizes if empty
+    const [sizes] = await db.query('SELECT COUNT(*) as count FROM sizes');
+    if (sizes[0].count === 0) {
+      const defaultSizes = ['One Size', '35-38', '39-42', '43-46'];
+      for (const sz of defaultSizes) {
+        await db.query('INSERT IGNORE INTO sizes (name) VALUES (?)', [sz]);
+      }
+      console.log('Seeded default sizes.');
+    }
+
+    // Seed default promotions if empty
+    const [promotions] = await db.query('SELECT COUNT(*) as count FROM promotions');
+    if (promotions[0].count === 0) {
+      const defaultPromotions = ['Buy 2 Get 1 Free', 'New Season Promo'];
+      for (const promo of defaultPromotions) {
+        await db.query('INSERT IGNORE INTO promotions (name) VALUES (?)', [promo]);
+      }
+      console.log('Seeded default promotions.');
     }
 
     console.log('Database initialization completed successfully.');

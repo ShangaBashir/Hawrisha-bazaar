@@ -45,15 +45,26 @@ router.post('/', upload.single('image'), async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
-    const { name, price, category, colorFamily, badge, desc, colors, colorNames } = req.body;
+    const { 
+      name, price, category, colorFamily, badge, desc, colors, colorNames,
+      styleLength, stock, promotion, material, seasonalType, sizeCollection, discount 
+    } = req.body;
+    
     if (!price || Number(price) < 250) {
       return res.status(400).json({ error: 'Price must be a valid Iraqi Dinar amount (minimum 250 IQD)' });
     }
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const [result] = await connection.query(
-      'INSERT INTO products (name, price, category, color_family, badge, description, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, price, category, colorFamily, badge, desc, imageUrl]
+      `INSERT INTO products (
+        name, price, category, color_family, badge, description, image_url,
+        style_length, stock, promotion, material, seasonal_type, size_collection, discount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name, price, category, colorFamily, badge, desc, imageUrl,
+        styleLength || null, Number(stock) || 0, promotion || null, material || null, 
+        seasonalType || null, sizeCollection || null, Number(discount) || 0
+      ]
     );
 
     const productId = result.insertId;
@@ -85,13 +96,34 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
-    const { name, price, category, colorFamily, badge, desc, colors, colorNames } = req.body;
+    const { 
+      name, price, category, colorFamily, badge, desc, colors, colorNames,
+      styleLength, stock, promotion, material, seasonalType, sizeCollection, discount 
+    } = req.body;
+    
     if (!price || Number(price) < 250) {
       return res.status(400).json({ error: 'Price must be a valid Iraqi Dinar amount (minimum 250 IQD)' });
     }
     
-    let updateQuery = 'UPDATE products SET name = ?, price = ?, category = ?, color_family = ?, badge = ?, description = ?';
-    let queryParams = [name, price, category, colorFamily, badge, desc];
+    let updateQuery = `UPDATE products SET 
+      name = ?, 
+      price = ?, 
+      category = ?, 
+      color_family = ?, 
+      badge = ?, 
+      description = ?, 
+      style_length = ?, 
+      stock = ?, 
+      promotion = ?, 
+      material = ?, 
+      seasonal_type = ?, 
+      size_collection = ?, 
+      discount = ?`;
+    let queryParams = [
+      name, price, category, colorFamily, badge, desc, 
+      styleLength || null, Number(stock) || 0, promotion || null, material || null, 
+      seasonalType || null, sizeCollection || null, Number(discount) || 0
+    ];
 
     if (req.file) {
       const imageUrl = `/uploads/${req.file.filename}`;
