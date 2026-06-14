@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X } from 'lucide-react';
+import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X, Store } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const HawrishaH = ({ size = 28, className = "" }) => (
@@ -16,7 +16,7 @@ const HawrishaH = ({ size = 28, className = "" }) => (
   </svg>
 );
 
-export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, onLoginClick, onLogoutClick }) {
+export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, currentUserStoreName, onLoginClick, onLogoutClick }) {
   const { language, setLanguage, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -224,6 +224,21 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     >
                       {t('account_page.title')}
                     </button>
+                    {currentUserRole === 'vendor' && (
+                      <>
+                        <div className="h-px bg-gray-150 my-1" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserDropdownOpen(false);
+                            onViewChange('vendor_dashboard');
+                          }}
+                          className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
+                        >
+                          {t('vendor_dashboard.title')}
+                        </button>
+                      </>
+                    )}
                     <div className="h-px bg-gray-150 my-1" />
                     <button
                       type="button"
@@ -231,7 +246,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         setIsUserDropdownOpen(false);
                         onLogoutClick();
                       }}
-                      className="w-full text-start text-xs font-semibold text-red-500 hover:text-red-600 transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
+                      className="w-full text-start text-xs font-semibold text-red-500 hover:text-red-650 transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
                     >
                       {t('nav.sign_out')}
                     </button>
@@ -472,6 +487,19 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         <User size={18} />
                         <span className="uppercase tracking-wider">{t('account_page.title')}</span>
                       </button>
+                      {currentUserRole === 'vendor' && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            onViewChange('vendor_dashboard');
+                          }}
+                          className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                        >
+                          <Store size={18} className="text-gray-500" />
+                          <span className="uppercase tracking-wider">{t('vendor_dashboard.title')}</span>
+                        </button>
+                      )}
                       <button 
                         type="button"
                         onClick={() => {

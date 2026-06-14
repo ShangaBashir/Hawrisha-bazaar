@@ -124,9 +124,16 @@ async function initializeDatabase() {
         phone VARCHAR(50) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'customer',
+        store_name VARCHAR(255) DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // Add columns safely to existing database
+    await addColumnSafely('users', 'role', "VARCHAR(50) DEFAULT 'customer'");
+    await addColumnSafely('users', 'store_name', "VARCHAR(255) DEFAULT NULL");
+    await addColumnSafely('products', 'vendor_id', "INT DEFAULT NULL");
 
 
     // Seed default categories if empty

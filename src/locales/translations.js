@@ -186,7 +186,11 @@ export const translations = {
       confirm_title: "Are you sure?",
       confirm_desc: "You have unsaved changes. Are you sure you want to close this form?",
       confirm_yes: "Yes, Close",
-      confirm_no: "Cancel"
+      confirm_no: "Cancel",
+      store_name: "Store Name",
+      role_label: "Register As",
+      role_customer: "Customer",
+      role_vendor: "Vendor"
     },
     logout_confirm: {
       title: "Log Out",
@@ -220,6 +224,23 @@ export const translations = {
       order_placed: "Order placed successfully!",
       added_to_cart: "Added to cart!",
       removed_from_cart: "Removed from cart!"
+    },
+    vendor_dashboard: {
+      title: "Vendor Dashboard",
+      total_products: "Total Products",
+      revenue: "Total Revenue",
+      sales: "Total Sales",
+      my_products: "My Products",
+      add_product: "Add New Product",
+      edit_product: "Edit Product",
+      delete_confirm: "Are you sure you want to delete this product?",
+      store_desc: "Store Description",
+      no_products: "You haven't uploaded any products yet.",
+      add_success: "Product added successfully!",
+      edit_success: "Product updated successfully!",
+      delete_success: "Product deleted successfully!",
+      platform_store: "Hawrisha Socks",
+      sold_by: "Sold by: {vendor}"
     }
   },
   ar: {
@@ -409,7 +430,11 @@ export const translations = {
       confirm_title: "هل أنت متأكد؟",
       confirm_desc: "لديك تغييرات غير محفوظة. هل أنت متأكد من رغبتك في إغلاق هذا النموذج؟",
       confirm_yes: "نعم، إغلاق",
-      confirm_no: "إلغاء"
+      confirm_no: "إلغاء",
+      store_name: "اسم المتجر",
+      role_label: "التسجيل كـ",
+      role_customer: "زبون",
+      role_vendor: "تاجر"
     },
     logout_confirm: {
       title: "تسجيل الخروج",
@@ -443,6 +468,23 @@ export const translations = {
       order_placed: "تم تقديم طلبك بنجاح!",
       added_to_cart: "تمت الإضافة إلى السلة!",
       removed_from_cart: "تم حذف المنتج من السلة!"
+    },
+    vendor_dashboard: {
+      title: "لوحة تحكم التاجر",
+      total_products: "إجمالي المنتجات",
+      revenue: "إجمالي الإيرادات",
+      sales: "إجمالي المبيعات",
+      my_products: "منتجاتي",
+      add_product: "إضافة منتج جديد",
+      edit_product: "تعديل المنتج",
+      delete_confirm: "هل أنت متأكد من حذف هذا المنتج؟",
+      store_desc: "وصف المتجر",
+      no_products: "لم تقم برفع أي منتجات بعد.",
+      add_success: "تمت إضافة المنتج بنجاح!",
+      edit_success: "تم تحديث المنتج بنجاح!",
+      delete_success: "تم حذف المنتج بنجاح!",
+      platform_store: "جوارب هاوريشا",
+      sold_by: "تباع بواسطة: {vendor}"
     }
   },
   ku: {
@@ -632,7 +674,11 @@ export const translations = {
       confirm_title: "تەواو دڵنیایت؟",
       confirm_desc: "گۆڕانکاریی پاشەکەوت نەکراوت هەیە. دڵنیایت دەتەوێت ئەم فۆرمە دابخەیت؟",
       confirm_yes: "بەڵێ، دابخە",
-      confirm_no: "پاشگەزبوونەوە"
+      confirm_no: "پاشگەزبوونەوە",
+      store_name: "ناوی فرۆشگا",
+      role_label: "تۆمارکردن وەک",
+      role_customer: "کڕیار",
+      role_vendor: "فرۆشیار"
     },
     logout_confirm: {
       title: "چوونەدەرەوە",
@@ -666,6 +712,23 @@ export const translations = {
       order_placed: "داواکارییەکە بە سەرکەوتوویی تۆمارکرا!",
       added_to_cart: "زیادکرا بۆ سەبەتە!",
       removed_from_cart: "لە سەبەتە سڕایەوە!"
+    },
+    vendor_dashboard: {
+      title: "پانێڵی فرۆشیار",
+      total_products: "تەواوی بەرهەمەکان",
+      revenue: "کۆی داهات",
+      sales: "کۆی فرۆشراو",
+      my_products: "بەرهەمەکانم",
+      add_product: "زیادکردنی بەرهەمی نوێ",
+      edit_product: "دەستکاری بەرهەم",
+      delete_confirm: "دڵنیایت دەتەوێت ئەم بەرهەمە بسڕیتەوە؟",
+      store_desc: "وەسفی فرۆشگا",
+      no_products: "تۆ هێشتا هیچ بەرهەمێکت زیاد نەکردووە.",
+      add_success: "بەرهەمەکە بە سەرکەوتوویی زیادکرا!",
+      edit_success: "بەرهەمەکە بە سەرکەوتوویی نوێکرایەوە!",
+      delete_success: "بەرهەمەکە بە سەرکەوتوویی سڕایەوە!",
+      platform_store: "گۆرەوی هاوڕێشە",
+      sold_by: "فرۆشراو لەلایەن: {vendor}"
     }
   }
 };

@@ -14,8 +14,9 @@ import Checkout from './components/Checkout';
 import Contact from './components/Contact';
 import Story from './components/Story';
 import Cart from './components/Cart';
-import LoginModal from './components/LoginModal';
 import Account from './components/Account';
+import AuthPage from './components/AuthPage';
+import VendorDashboard from './components/VendorDashboard';
 
 function App() {
   const { t, language } = useLanguage();
@@ -38,8 +39,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [currentUserStoreName, setCurrentUserStoreName] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   const showToast = (message) => {
@@ -68,7 +70,8 @@ function App() {
 
   const handleViewChange = (view) => {
     if ((view === 'cart' || view === 'checkout') && !isLoggedIn) {
-      setIsLoginModalOpen(true);
+      setCurrentView('auth');
+      setViewHistory(prev => [...prev, 'auth']);
       showToast(t('toasts.login_required_cart'));
       return;
     }
@@ -157,13 +160,15 @@ function App() {
           wishlistCount={wishlistCount}
           isLoggedIn={isLoggedIn}
           currentUser={currentUser}
-          onLoginClick={() => setIsLoginModalOpen(true)}
+          currentUserRole={currentUserRole}
+          currentUserStoreName={currentUserStoreName}
+          onLoginClick={() => handleViewChange('auth')}
           onLogoutClick={() => setShowLogoutConfirm(true)}
           onCartClick={() => {
             if (isLoggedIn) {
               setIsCartOpen(true);
             } else {
-              setIsLoginModalOpen(true);
+              handleViewChange('auth');
               showToast(t('toasts.login_required_cart'));
             }
           }}
@@ -209,7 +214,7 @@ function App() {
             initialSearchTerm={globalSearchTerm}
             previousView={previousView}
             isLoggedIn={isLoggedIn}
-            onLoginRequired={() => setIsLoginModalOpen(true)}
+            onLoginRequired={() => handleViewChange('auth')}
           />
         )}
 
@@ -231,7 +236,7 @@ function App() {
             }}
             previousView={previousView}
             isLoggedIn={isLoggedIn}
-            onLoginRequired={() => setIsLoginModalOpen(true)}
+            onLoginRequired={() => handleViewChange('auth')}
           />
         )}
 
@@ -261,6 +266,29 @@ function App() {
             email={currentUserEmail}
             onBackToHome={() => handleViewChange('home')}
             onLogoutClick={() => setShowLogoutConfirm(true)}
+          />
+        )}
+
+        {currentView === 'auth' && (
+          <AuthPage 
+            onLoginSuccess={(username, email, role, storeName) => {
+              setIsLoggedIn(true);
+              setCurrentUser(username);
+              setCurrentUserEmail(email);
+              setCurrentUserRole(role);
+              setCurrentUserStoreName(storeName);
+              showToast(t('toasts.login_success', { user: username }));
+              handleBack();
+            }}
+            onCancel={handleBack}
+          />
+        )}
+
+        {currentView === 'vendor_dashboard' && (
+          <VendorDashboard 
+            email={currentUserEmail}
+            storeName={currentUserStoreName}
+            onBackToHome={() => handleViewChange('home')}
           />
         )}
 
@@ -476,16 +504,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <LoginModal 
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={(username, email) => {
-          setIsLoggedIn(true);
-          setCurrentUser(username);
-          setCurrentUserEmail(email);
-          showToast(t('toasts.login_success', { user: username }));
-        }}
-      />
+      {/* No modal needed */}
 
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
@@ -532,9 +551,11 @@ function App() {
                       setIsLoggedIn(false);
                       setCurrentUser(null);
                       setCurrentUserEmail(null);
+                      setCurrentUserRole(null);
+                      setCurrentUserStoreName(null);
                       setCart([]);
                       setShowLogoutConfirm(false);
-                      if (currentView === 'account' || currentView === 'checkout') {
+                      if (currentView === 'account' || currentView === 'checkout' || currentView === 'vendor_dashboard') {
                         setCurrentView('home');
                         setViewHistory(['home']);
                       }

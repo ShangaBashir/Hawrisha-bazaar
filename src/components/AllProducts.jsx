@@ -1415,6 +1415,11 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                       <span>{product.price.toLocaleString()} IQD</span>
                                     )}
                                   </p>
+                                  <p className="text-[9px] font-bold text-[#B2AC88] tracking-wider uppercase mt-1">
+                                    {product.vendor_name 
+                                      ? t('vendor_dashboard.sold_by', { vendor: product.vendor_name }) 
+                                      : t('vendor_dashboard.platform_store')}
+                                  </p>
                                 </div>
                               </motion.div>
                             );
@@ -1599,6 +1604,11 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                   <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#1a365d] italic leading-tight mb-2">
                     {viewingProduct.name}
                   </h2>
+                  <p className="text-xs font-bold text-[#B2AC88] tracking-wider uppercase mb-4">
+                    {viewingProduct.vendor_name 
+                      ? t('vendor_dashboard.sold_by', { vendor: viewingProduct.vendor_name }) 
+                      : t('vendor_dashboard.platform_store')}
+                  </p>
 
                   {/* Localized Price with Discount Support */}
                   <div className="flex items-center space-x-3 mb-6">

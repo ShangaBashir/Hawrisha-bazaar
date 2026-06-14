@@ -11,7 +11,7 @@ function hashPassword(password) {
 // 1. Register Route
 router.post('/register', async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, password } = req.body;
+    const { firstName, lastName, phone, email, password, role, storeName } = req.body;
 
     // 1. Basic validation
     if (!firstName || !lastName || !phone || !email || !password) {
@@ -46,6 +46,14 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Vendor store validation
+    if (role === 'vendor' && !storeName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store Name is required for vendors.'
+      });
+    }
+
     // 4. Check if user already exists
     const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
@@ -55,18 +63,31 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Check if store name is already taken
+    if (role === 'vendor') {
+      const [existingStore] = await db.query('SELECT id FROM users WHERE store_name = ?', [storeName]);
+      if (existingStore.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this Store Name already exists.'
+        });
+      }
+    }
+
     // 5. Hash password and insert
     const hashedPassword = hashPassword(password);
     await db.query(
-      'INSERT INTO users (first_name, last_name, phone, email, password) VALUES (?, ?, ?, ?, ?)',
-      [firstName, lastName, phone, email, hashedPassword]
+      'INSERT INTO users (first_name, last_name, phone, email, password, role, store_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [firstName, lastName, phone, email, hashedPassword, role || 'customer', role === 'vendor' ? storeName : null]
     );
 
     return res.status(201).json({
       success: true,
       message: 'Account created successfully!',
       firstName: firstName,
-      email: email
+      email: email,
+      role: role || 'customer',
+      storeName: role === 'vendor' ? storeName : null
     });
   } catch (error) {
     console.error('Error during registration:', error);
@@ -94,7 +115,7 @@ router.post('/login', async (req, res) => {
 
     // Fetch user
     const [users] = await db.query(
-      'SELECT first_name, email FROM users WHERE email = ? AND password = ?',
+      'SELECT first_name, email, role, store_name FROM users WHERE email = ? AND password = ?',
       [email, hashedPassword]
     );
 
@@ -110,7 +131,9 @@ router.post('/login', async (req, res) => {
       success: true,
       message: 'Logged in successfully!',
       firstName: user.first_name,
-      email: user.email
+      email: user.email,
+      role: user.role,
+      storeName: user.store_name
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -182,7 +205,7 @@ router.get('/profile', async (req, res) => {
     }
 
     const [users] = await db.query(
-      'SELECT first_name, last_name, phone, email, created_at FROM users WHERE email = ?',
+      'SELECT first_name, last_name, phone, email, role, store_name, created_at FROM users WHERE email = ?',
       [email.toLowerCase()]
     );
 
@@ -201,6 +224,8 @@ router.get('/profile', async (req, res) => {
         lastName: user.last_name,
         phone: user.phone,
         email: user.email,
+        role: user.role,
+        storeName: user.store_name,
         createdAt: user.created_at
       }
     });
