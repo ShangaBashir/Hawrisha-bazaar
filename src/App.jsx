@@ -17,7 +17,6 @@ import Cart from './components/Cart';
 import Account from './components/Account';
 import AuthPage from './components/AuthPage';
 import Stores from './components/Stores';
-import CategoriesPage from './components/CategoriesPage';
 
 function App() {
   const { t, language } = useLanguage();
@@ -180,6 +179,10 @@ function App() {
             setGlobalSearchTerm(term);
             handleViewChange('all_products');
           }}
+          onCategorySelect={(catName) => {
+            setSelectedCategory(catName);
+            handleViewChange('all_products');
+          }}
         />
       )}
       <main className="flex-grow">
@@ -257,21 +260,7 @@ function App() {
           />
         )}
 
-        {currentView === 'categories' && (
-          <CategoriesPage 
-            cart={cart}
-            likedProducts={wishlist}
-            onAddToCart={handleAddToCart}
-            onRemoveFromCart={handleRemoveFromCart}
-            onToggleWishlist={handleToggleWishlist}
-            onProductClick={(product) => {
-              setSelectedProductForDetail(product);
-              handleViewChange('all_products');
-            }}
-            isLoggedIn={isLoggedIn}
-            onLoginRequired={() => handleViewChange('auth')}
-          />
-        )}
+
 
         {currentView === 'admin' && (
           <AdminDashboard />

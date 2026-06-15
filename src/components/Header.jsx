@@ -16,13 +16,16 @@ const HawrishaH = ({ size = 28, className = "" }) => (
   </svg>
 );
 
-export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, currentUserStoreName, onLoginClick, onLogoutClick }) {
-  const { language, setLanguage, t } = useLanguage();
+export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, currentUserStoreName, onLoginClick, onLogoutClick, onCategorySelect }) {
+  const { language, setLanguage, t, tCategory } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+  const [categoriesList, setCategoriesList] = useState([]);
 
   const langDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
@@ -43,6 +46,25 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
       document.removeEventListener('touchstart', handleOutsideClick, true);
     };
   }, [isLangDropdownOpen, isUserDropdownOpen]);
+
+  useEffect(() => {
+    fetch('/api/settings/categories')
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        setCategoriesList(data);
+      })
+      .catch(() => {
+        setCategoriesList([
+          { id: 'animals', name: 'Animals' },
+          { id: 'fruits', name: 'Fruits' },
+          { id: 'patterns', name: 'Patterns' },
+          { id: 'cozy_crew', name: 'Cozy Crew' }
+        ]);
+      });
+  }, []);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -314,15 +336,54 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               {t('nav.stores')}
             </button>
           </li>
-          <li className="relative py-1">
+          <li 
+            className="relative py-1"
+            onMouseEnter={() => setIsCategoriesDropdownOpen(true)}
+            onMouseLeave={() => setIsCategoriesDropdownOpen(false)}
+          >
             <button 
-              onClick={() => onViewChange('categories')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
-                currentView === 'categories' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
-              }`}
+              type="button"
+              className="flex items-center gap-1 hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative text-brand-charcoal font-medium"
             >
-              {t('nav.categories')}
+              <span>{t('nav.categories')}</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoriesDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
+            
+            <AnimatePresence>
+              {isCategoriesDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute start-0 mt-1 w-48 bg-white border border-[#E9ECEF] rounded-2xl shadow-xl py-3 px-4 z-20 font-sans"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCategoriesDropdownOpen(false);
+                      if (onCategorySelect) onCategorySelect('All');
+                    }}
+                    className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
+                  >
+                    {language === 'ar' ? 'جميع الأقسام' : language === 'ku' ? 'هەموو پۆلەکان' : 'All Categories'}
+                  </button>
+                  {categoriesList.map(cat => (
+                    <button
+                      key={cat.id || cat.name}
+                      type="button"
+                      onClick={() => {
+                        setIsCategoriesDropdownOpen(false);
+                        if (onCategorySelect) onCategorySelect(cat.name);
+                      }}
+                      className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
+                    >
+                      {tCategory ? tCategory(cat.name) : cat.name}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </li>
           <li className="relative py-1">
             <button 
@@ -418,18 +479,52 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   {t('nav.stores')}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onViewChange('categories');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
-                    currentView === 'categories' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
-                  }`}
-                >
-                  {t('nav.categories')}
-                </button>
+                {/* Collapsible Categories Section in Mobile */}
+                <div className="w-full">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                    className="w-full flex items-center justify-between py-2 text-base font-bold uppercase tracking-wider text-brand-charcoal cursor-pointer border-0"
+                  >
+                    <span>{t('nav.categories')}</span>
+                    <ChevronDown size={16} className={`transition-transform duration-200 ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isMobileCategoriesOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="ps-4 space-y-2 mt-1 overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            if (onCategorySelect) onCategorySelect('All');
+                          }}
+                          className="w-full text-start py-1.5 text-sm font-semibold text-gray-500 hover:text-[#B2AC88] cursor-pointer border-0"
+                        >
+                          {language === 'ar' ? 'جميع الأقسام' : language === 'ku' ? 'هەموو پۆلەکان' : 'All Categories'}
+                        </button>
+                        {categoriesList.map(cat => (
+                          <button
+                            key={cat.id || cat.name}
+                            type="button"
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              if (onCategorySelect) onCategorySelect(cat.name);
+                            }}
+                            className="w-full text-start py-1.5 text-sm font-semibold text-gray-500 hover:text-[#B2AC88] cursor-pointer border-0"
+                          >
+                            {tCategory ? tCategory(cat.name) : cat.name}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <button
                   type="button"
