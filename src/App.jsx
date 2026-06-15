@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, LogOut } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext.jsx';
 import BestSeller from './components/BestSeller';
 import Header from './components/Header';
