@@ -562,13 +562,13 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 right-0 top-full mt-1 bg-white/95 backdrop-blur-md border border-gray-150 rounded-3xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start"
+                  className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-150 rounded-3xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start"
                 >
                   {/* Column 1: Categories & Badges */}
                   <div className="flex flex-col space-y-6">
                     {/* Categories Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'الفئات' : language === 'ku' ? 'پۆلەکان' : 'Categories'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -600,7 +600,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
 
                     {/* Badges / Labels Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'الملصقات' : language === 'ku' ? 'نیشانەکان' : 'Badges & Labels'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -625,7 +625,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Colors Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -651,7 +651,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
 
                     {/* Styles Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'الموديلات' : language === 'ku' ? 'شێوازەکان' : 'Styles'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -676,7 +676,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Materials Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Materials'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -698,7 +698,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
 
                     {/* Seasons Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'الفصول' : language === 'ku' ? 'وەرزەکان' : 'Seasons'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -723,7 +723,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Sizes Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'المقاسات' : language === 'ku' ? 'قەبارەکان' : 'Sizes'}
                       </h4>
                       <div className="flex flex-col space-y-2">
@@ -745,7 +745,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
 
                     {/* Promotions Group */}
                     <div>
-                      <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest pb-2 mb-3 border-b border-gray-100">
+                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider pb-2 mb-3 border-b border-gray-150">
                         {language === 'ar' ? 'العروض الترويجية' : language === 'ku' ? 'کەمپین و عەرزەکان' : 'Promotions'}
                       </h4>
                       <div className="flex flex-col space-y-2">
