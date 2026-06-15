@@ -243,6 +243,9 @@ export const translations = {
       added_to_cart: "Added to cart!",
       removed_from_cart: "Removed from cart!"
     },
+    admin_dashboard: {
+      title: "Admin Dashboard"
+    },
     vendor_dashboard: {
       title: "Vendor Dashboard",
       total_products: "Total Products",
@@ -503,7 +506,10 @@ export const translations = {
       signup_success: "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.",
       order_placed: "تم تقديم طلبك بنجاح!",
       added_to_cart: "تمت الإضافة إلى السلة!",
-      removed_from_cart: "تم حذف المنتج من السلة!"
+      removed_from_cart: "تمت إزالة المنتج من السلة!"
+    },
+    admin_dashboard: {
+      title: "لوحة التحكم للمسؤول"
     },
     vendor_dashboard: {
       title: "لوحة تحكم التاجر",
@@ -765,7 +771,10 @@ export const translations = {
       signup_success: "حیسابەکە بە سەرکەوتوویی دروستکرا! تکایە بچۆ ژوورەوە.",
       order_placed: "داواکارییەکە بە سەرکەوتوویی تۆمارکرا!",
       added_to_cart: "زیادکرا بۆ سەبەتە!",
-      removed_from_cart: "لە سەبەتە سڕایەوە!"
+      removed_from_cart: "لە سەبەتە لادرا!"
+    },
+    admin_dashboard: {
+      title: "داشبۆردی ئەدمین"
     },
     vendor_dashboard: {
       title: "پانێڵی فرۆشیار",

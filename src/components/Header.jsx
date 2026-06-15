@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X, Store } from 'lucide-react';
+import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X, Store, Settings } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const HawrishaH = ({ size = 28, className = "" }) => (
@@ -236,6 +236,21 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                           className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
                         >
                           {t('vendor_dashboard.title')}
+                        </button>
+                      </>
+                    )}
+                    {currentUserRole === 'admin' && (
+                      <>
+                        <div className="h-px bg-gray-150 my-1" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserDropdownOpen(false);
+                            onViewChange('admin');
+                          }}
+                          className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
+                        >
+                          {t('admin_dashboard.title')}
                         </button>
                       </>
                     )}
@@ -515,6 +530,19 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         >
                           <Store size={18} className="text-gray-500" />
                           <span className="uppercase tracking-wider">{t('vendor_dashboard.title')}</span>
+                        </button>
+                      )}
+                      {currentUserRole === 'admin' && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            onViewChange('admin');
+                          }}
+                          className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                        >
+                          <Settings size={18} className="text-gray-500" />
+                          <span className="uppercase tracking-wider">{t('admin_dashboard.title')}</span>
                         </button>
                       )}
                       <button 
