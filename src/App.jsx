@@ -16,7 +16,6 @@ import Story from './components/Story';
 import Cart from './components/Cart';
 import Account from './components/Account';
 import AuthPage from './components/AuthPage';
-import VendorDashboard from './components/VendorDashboard';
 import Stores from './components/Stores';
 import CategoriesPage from './components/CategoriesPage';
 
@@ -318,13 +317,7 @@ function App() {
           />
         )}
 
-        {currentView === 'vendor_dashboard' && (
-          <VendorDashboard 
-            email={currentUserEmail}
-            storeName={currentUserStoreName}
-            onBackToHome={() => handleViewChange('home')}
-          />
-        )}
+
 
         {currentView === 'cart' && (
           <Cart 
