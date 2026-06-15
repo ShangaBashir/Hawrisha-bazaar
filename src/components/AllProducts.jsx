@@ -446,6 +446,14 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     initialCategory === 'All' ? [] : [initialCategory]
   );
   const [prevInitialCategory, setPrevInitialCategory] = useState(initialCategory);
+  const [prevGlobalFilters, setPrevGlobalFilters] = useState(null);
+  
+  const [showFilters, setShowFilters] = useState(true);
+  const [onlyDiscounted, setOnlyDiscounted] = useState(false);
+  const [maxPriceFilter, setMaxPriceFilter] = useState(15000);
+  const [hasSetDefaultPrice, setHasSetDefaultPrice] = useState(false);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [sortBy, setSortBy] = useState('Featured');
 
   if (initialCategory !== prevInitialCategory) {
     setPrevInitialCategory(initialCategory);
@@ -455,8 +463,6 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       setSelectedCategories([initialCategory]);
     }
   }
-  
-  const [prevGlobalFilters, setPrevGlobalFilters] = useState(null);
 
   if (globalFilters && globalFilters !== prevGlobalFilters) {
     setPrevGlobalFilters(globalFilters);
@@ -476,13 +482,6 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       setActiveCategory('All');
     }
   }
-  
-  const [showFilters, setShowFilters] = useState(true);
-  const [onlyDiscounted, setOnlyDiscounted] = useState(false);
-  const [maxPriceFilter, setMaxPriceFilter] = useState(15000);
-  const [hasSetDefaultPrice, setHasSetDefaultPrice] = useState(false);
-  const [selectedColors, setSelectedColors] = useState([]);
-  const [sortBy, setSortBy] = useState('Featured');
   
   const [collapsedSections, setCollapsedSections] = useState({
     offers: false,
@@ -670,12 +669,12 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         }
         return 0;
       });
-  }, [products, searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted]);
+  }, [products, searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions]);
 
   // Reset page when any filter updates
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted]);
+  }, [searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions]);
 
   // Memoized page count
   const pageCount = useMemo(() => {
