@@ -18,6 +18,7 @@ import Account from './components/Account';
 import AuthPage from './components/AuthPage';
 import VendorDashboard from './components/VendorDashboard';
 import Stores from './components/Stores';
+import CategoriesPage from './components/CategoriesPage';
 
 function App() {
   const { t, language } = useLanguage();
@@ -243,6 +244,22 @@ function App() {
 
         {currentView === 'stores' && (
           <Stores 
+            cart={cart}
+            likedProducts={wishlist}
+            onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
+            onToggleWishlist={handleToggleWishlist}
+            onProductClick={(product) => {
+              setSelectedProductForDetail(product);
+              handleViewChange('all_products');
+            }}
+            isLoggedIn={isLoggedIn}
+            onLoginRequired={() => handleViewChange('auth')}
+          />
+        )}
+
+        {currentView === 'categories' && (
+          <CategoriesPage 
             cart={cart}
             likedProducts={wishlist}
             onAddToCart={handleAddToCart}

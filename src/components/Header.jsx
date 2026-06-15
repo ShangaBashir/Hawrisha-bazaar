@@ -314,18 +314,15 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               {t('nav.stores')}
             </button>
           </li>
-          <li 
-            onClick={() => {
-              onViewChange('home');
-              setTimeout(() => {
-                const el = document.getElementById('categories-section') || document.querySelector('.grid-cols-2');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 200);
-            }}
-            className="flex items-center gap-1 hover:text-[#B2AC88] transition-colors cursor-pointer py-1 pb-1.5 relative text-brand-charcoal"
-          >
-            <span>{t('nav.categories')}</span>
-            <ChevronDown size={14} />
+          <li className="relative py-1">
+            <button 
+              onClick={() => onViewChange('categories')}
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+                currentView === 'categories' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
+              }`}
+            >
+              {t('nav.categories')}
+            </button>
           </li>
           <li className="relative py-1">
             <button 
@@ -424,15 +421,12 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                 <button
                   type="button"
                   onClick={() => {
-                    onViewChange('home');
+                    onViewChange('categories');
                     setIsMobileMenuOpen(false);
-                    // Add quick scroll target to homepage categories
-                    setTimeout(() => {
-                      const el = document.getElementById('categories-section') || document.querySelector('.grid-cols-2');
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 200);
                   }}
-                  className="w-full text-start py-2 text-base font-bold uppercase tracking-wider text-brand-charcoal cursor-pointer border-0"
+                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                    currentView === 'categories' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
+                  }`}
                 >
                   {t('nav.categories')}
                 </button>

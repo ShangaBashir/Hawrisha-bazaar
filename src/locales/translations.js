@@ -225,6 +225,14 @@ export const translations = {
       no_products: "This store has no products yet.",
       welcome: "Welcome to {name}"
     },
+    categories_page: {
+      title: "Categories",
+      subtitle: "Explore our carefully curated sock categories",
+      back_categories: "Back to All Categories",
+      no_products: "No products found in this category.",
+      view_category: "View Category",
+      products_count: "{count} Items"
+    },
     toasts: {
       login_required_cart: "Please log in to access your cart or checkout page!",
       login_required_add: "Please log in to add items to your cart!",
@@ -479,6 +487,14 @@ export const translations = {
       no_products: "لا توجد منتجات في هذا المتجر بعد.",
       welcome: "مرحباً بكم في {name}"
     },
+    categories_page: {
+      title: "الأقسام",
+      subtitle: "اكتشف مجموعتنا المتنوعة من الجوارب حسب القسم",
+      back_categories: "العودة لجميع الأقسام",
+      no_products: "لا توجد منتجات في هذا القسم.",
+      view_category: "عرض القسم",
+      products_count: "{count} عنصر"
+    },
     toasts: {
       login_required_cart: "يرجى تسجيل الدخول للوصول إلى السلة أو صفحة الشراء!",
       login_required_add: "يرجى تسجيل الدخول لإضافة المنتجات إلى السلة!",
@@ -732,6 +748,14 @@ export const translations = {
       no_stores: "هێشتا هیچ فرۆشگایەک تۆمار نەکراوە.",
       no_products: "ئەم فرۆشگایە هێشتا هیچ بەرهەمێکی نییە.",
       welcome: "بەخێربێن بۆ {name}"
+    },
+    categories_page: {
+      title: "پۆلەکان",
+      subtitle: "پۆلێنە جیاوازەکانی گۆرەوییەکانمان بدۆزەرەوە",
+      back_categories: "گەڕانەوە بۆ هەموو پۆلەکان",
+      no_products: "هیچ بەرهەمێک لەم پۆلەدا نەدۆزرایەوە.",
+      view_category: "بینینی پۆل",
+      products_count: "{count} بابەت"
     },
     toasts: {
       login_required_cart: "تکایە بچۆ ژوورەوە بۆ گەیشتن بە سەبەتە یان لاپەڕەی پارەدان!",
