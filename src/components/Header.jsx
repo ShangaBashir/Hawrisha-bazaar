@@ -562,7 +562,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 right-0 top-full mt-0 bg-white rounded-b-3xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start"
+                  className="absolute left-0 right-0 top-full mt-0 bg-white/80 backdrop-blur-md rounded-b-3xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start"
                 >
                   {/* Column 1: Categories & Badges */}
                   <div className="flex flex-col space-y-6">
