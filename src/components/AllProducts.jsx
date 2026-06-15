@@ -1481,13 +1481,13 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                 initial="hidden"
                                 whileInView="visible"
                                 viewport={{ once: false, amount: 0.08 }}
-                                whileHover={{ y: -5, boxShadow: '0 16px 40px rgba(0,0,0,0.10)' }}
+                                whileHover={{ y: -5 }}
                                 exit={{ opacity: 0, y: -16, scale: 0.95, transition: { duration: 0.22 } }}
                                 onClick={() => handleCardClick(product)}
-                                className="group cursor-pointer flex flex-col bg-white border border-gray-100 p-3 rounded-3xl transition-colors duration-300 relative overflow-hidden"
+                                className="group cursor-pointer flex flex-col bg-transparent transition-colors duration-300 relative overflow-hidden"
                               >
                                  {/* Product Corner Badges */}
-                                 <div className="absolute top-5 left-5 z-10 flex flex-col items-start gap-1">
+                                 <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
                                    {product.discount > 0 && (
                                      <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-full shadow-xs">
                                        {product.discount}% OFF
@@ -1506,40 +1506,24 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                    ))}
                                  </div>
 
-                                 {/* Action Buttons always visible top-right */}
-                                 <div className="absolute top-5 right-5 z-10 flex flex-col space-y-2">
+                                 {/* Wishlist Button top-right */}
+                                 <div className="absolute top-3 right-3 z-10">
                                    <button 
                                      onClick={(e) => { 
                                        e.stopPropagation(); 
                                        handleToggleWishlistClick(product, e);
                                      }}
-                                     className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-xs border border-gray-50 transition-all hover:scale-105 cursor-pointer"
+                                     className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer"
                                    >
                                      <Heart 
-                                       size={13} 
+                                       size={14} 
                                        className={likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-500"} 
-                                     />
-                                   </button>
-                                   <button 
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       if (cart.some(item => item.id === product.id)) {
-                                         handleRemoveFromCartClick(product, e);
-                                       } else {
-                                         handleAddToCartClick(product, e);
-                                       }
-                                     }}
-                                     className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-xs border border-gray-50 transition-all hover:scale-105 cursor-pointer"
-                                   >
-                                     <ShoppingBag 
-                                       size={13} 
-                                       className={cart.some(item => item.id === product.id) ? "fill-[#C08081] text-[#C08081]" : "text-gray-400 hover:text-[#C08081]"}
                                      />
                                    </button>
                                  </div>
 
                                 {/* Product Image Box */}
-                                <div className="w-full aspect-[3/4] rounded-2xl mb-4 relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb] border border-gray-100/50">
+                                <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb]">
                                   {(product.image || product.image_url) ? (
                                     <img 
                                       src={product.image || product.image_url} 
@@ -1553,31 +1537,56 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                   )}
                                 </div>
 
-                                {/* Product Details Centered */}
-                                <div className="space-y-1 text-center pb-2">
-                                  <h3 className="font-bold text-[#36454F] text-[15px] group-hover:text-[#B2AC88] transition-colors">
-                                    {product.name}
-                                  </h3>
-                                  <p className="text-xs font-semibold text-gray-400">
-                                    {product.discount > 0 ? (
-                                      <span className="flex items-center justify-center space-x-1.5">
-                                        <span className="line-through text-gray-300">
-                                          {product.price.toLocaleString()} IQD
-                                        </span>
-                                        <span className="text-[#36454F] font-bold">
-                                          {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <span>{product.price.toLocaleString()} IQD</span>
-                                    )}
-                                  </p>
-                                  <p className="text-[9px] font-bold text-[#B2AC88] tracking-wider uppercase mt-1">
-                                    {product.vendor_name 
-                                      ? t('vendor_dashboard.sold_by', { vendor: product.vendor_name }) 
-                                      : t('vendor_dashboard.platform_store')}
-                                  </p>
-                                </div>
+                                 {/* Product Details (Grid layout like Picture 2) */}
+                                 <div className="flex flex-col flex-grow mt-3 px-1">
+                                   <div className="flex items-start justify-between gap-2">
+                                     <h3 className="font-bold text-[#36454F] text-sm group-hover:text-[#B2AC88] transition-colors truncate text-start">
+                                       {product.name}
+                                     </h3>
+                                     <div className="text-sm font-bold text-[#36454F] text-end shrink-0">
+                                       {product.discount > 0 ? (
+                                         <div className="flex flex-col items-end">
+                                           <span className="text-[10px] line-through text-gray-300 font-normal leading-none mb-0.5">
+                                             {product.price.toLocaleString()} IQD
+                                           </span>
+                                           <span className="text-[#36454F] leading-none">
+                                             {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
+                                           </span>
+                                         </div>
+                                       ) : (
+                                         <span>{product.price.toLocaleString()} IQD</span>
+                                       )}
+                                     </div>
+                                   </div>
+                                   <p className="text-[11px] text-gray-400 text-start mt-0.5">
+                                     {product.vendor_name 
+                                       ? t('vendor_dashboard.sold_by', { vendor: product.vendor_name }) 
+                                       : t('vendor_dashboard.platform_store')}
+                                   </p>
+
+                                   {/* Add to Cart Button */}
+                                   <button
+                                     type="button"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       if (cart.some(item => item.id === product.id)) {
+                                         handleRemoveFromCartClick(product, e);
+                                       } else {
+                                         handleAddToCartClick(product, e);
+                                       }
+                                     }}
+                                     className={`w-full mt-3.5 py-2 px-4 rounded-full border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                       cart.some(item => item.id === product.id)
+                                         ? 'bg-[#B2AC88] border-[#B2AC88] text-white hover:bg-[#a09a76]'
+                                         : 'bg-transparent border-gray-200 text-brand-charcoal hover:bg-gray-50 hover:border-gray-300'
+                                     }`}
+                                   >
+                                     <ShoppingBag size={14} className="shrink-0" />
+                                     <span>
+                                       {cart.some(item => item.id === product.id) ? 'Added to Cart' : 'Add to cart'}
+                                     </span>
+                                   </button>
+                                 </div>
                               </motion.div>
                             );
                           })}

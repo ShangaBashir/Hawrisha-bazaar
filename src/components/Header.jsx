@@ -281,7 +281,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md text-brand-charcoal border-b border-brand-sage/10 sticky top-0 z-50 shadow-sm transition-all duration-300">
+    <header className="bg-[#FAF9F5] text-brand-charcoal border-b border-brand-sage/10 sticky top-0 z-50 shadow-sm transition-all duration-300">
       {/* Top Bar */}
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         
