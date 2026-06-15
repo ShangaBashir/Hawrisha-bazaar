@@ -200,7 +200,7 @@ const colorFilters = [
   { name: 'orange', class: 'bg-orange-500' }
 ];
 
-export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHome, initialCategory = 'All', likedProducts = [], onToggleWishlist, initialViewingProduct = null, cart = [], initialSearchTerm = '', previousView = 'home', isLoggedIn, onLoginRequired }) {
+export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHome, initialCategory = 'All', likedProducts = [], onToggleWishlist, initialViewingProduct = null, cart = [], initialSearchTerm = '', previousView = 'home', isLoggedIn, onLoginRequired, globalFilters }) {
   const { t, language } = useLanguage();
   const isRTL = language === 'ar' || language === 'ku';
 
@@ -234,6 +234,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [seasonsList, setSeasonsList] = useState([]);
   const [sizesList, setSizesList] = useState([]);
   const [colorsList, setColorsList] = useState([]);
+  const [badgesList, setBadgesList] = useState([]);
+  const [promotionsList, setPromotionsList] = useState([]);
 
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) {
@@ -258,6 +260,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [selectedSeasons, setSelectedSeasons] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
+  const [selectedBadges, setSelectedBadges] = useState([]);
+  const [selectedPromotions, setSelectedPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingProduct, setViewingProduct] = useState(initialViewingProduct);
   const [prevInitialProduct, setPrevInitialProduct] = useState(initialViewingProduct);
@@ -392,6 +396,29 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         ]);
       });
 
+    // Fetch Promotions
+    fetch('/api/settings/promotions')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setPromotionsList(data); })
+      .catch(() => {
+        if (active) setPromotionsList([
+          { id: 'buy_2_get_1_free', name: 'Buy 2 Get 1 Free' },
+          { id: 'new_season_promo', name: 'New Season Promo' }
+        ]);
+      });
+
+    // Fetch Badges
+    fetch('/api/settings/badges')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setBadgesList(data); })
+      .catch(() => {
+        if (active) setBadgesList([
+          { id: 'new', name: 'New' },
+          { id: 'bestseller', name: 'Bestseller' },
+          { id: 'sale', name: 'Sale' }
+        ]);
+      });
+
     return () => { active = false; };
   }, []);
 
@@ -429,6 +456,27 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     }
   }
   
+  const [prevGlobalFilters, setPrevGlobalFilters] = useState(null);
+
+  if (globalFilters && globalFilters !== prevGlobalFilters) {
+    setPrevGlobalFilters(globalFilters);
+    setSelectedCategories(globalFilters.categories || []);
+    setSelectedColors(globalFilters.colors || []);
+    setSelectedStyles(globalFilters.styles || []);
+    setSelectedMaterials(globalFilters.materials || []);
+    setSelectedSeasons(globalFilters.seasons || []);
+    setSelectedSizes(globalFilters.sizes || []);
+    setSelectedBadges(globalFilters.badges || []);
+    setSelectedPromotions(globalFilters.promotions || []);
+    setOnlyDiscounted(globalFilters.onlyDiscounted || false);
+    
+    if (globalFilters.categories && globalFilters.categories.length > 0) {
+      setActiveCategory(globalFilters.categories[0]);
+    } else {
+      setActiveCategory('All');
+    }
+  }
+  
   const [showFilters, setShowFilters] = useState(true);
   const [onlyDiscounted, setOnlyDiscounted] = useState(false);
   const [maxPriceFilter, setMaxPriceFilter] = useState(15000);
@@ -439,6 +487,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [collapsedSections, setCollapsedSections] = useState({
     offers: false,
     categories: false,
+    badges: false,
+    promotions: false,
     price: false,
     color: false,
     size: false,
@@ -525,6 +575,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setSelectedMaterials([]);
     setSelectedSeasons([]);
     setSelectedSizes([]);
+    setSelectedBadges([]);
+    setSelectedPromotions([]);
   };
 
   // Memoized Filtered & Sorted Products
@@ -590,7 +642,13 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         const matchesSize = selectedSizes.length === 0 || 
           parseJsonArray(product.size_collection).some(sz => selectedSizes.includes(sz));
 
-        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount;
+        const matchesBadge = selectedBadges.length === 0 || 
+          selectedBadges.some(b => parseJsonArray(product.badge).includes(b));
+
+        const matchesPromotion = selectedPromotions.length === 0 || 
+          selectedPromotions.some(promo => parseJsonArray(product.promotion).includes(promo));
+
+        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount && matchesBadge && matchesPromotion;
       })
       .sort((a, b) => {
         if (sortBy === 'Price: Low to High') {
@@ -968,6 +1026,106 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                   <span>Wishlist</span>
                                 </label>
                               )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Badges / Labels Section */}
+                        <div className="border-b border-gray-100 pb-5 mb-5">
+                          <div 
+                            onClick={() => toggleSection('badges')} 
+                            className="flex items-center justify-between cursor-pointer group select-none"
+                          >
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Badges / Labels</h4>
+                            <div className="flex items-center space-x-2">
+                              {selectedBadges.length > 0 && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedBadges([]);
+                                  }}
+                                  className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                              <ChevronDown 
+                                size={13} 
+                                className={`text-gray-400 group-hover:text-[#36454F] transition-transform duration-200 ${
+                                  collapsedSections.badges ? '-rotate-90' : 'rotate-0'
+                                }`} 
+                              />
+                            </div>
+                          </div>
+                          {!collapsedSections.badges && (
+                            <div className="flex flex-col space-y-2 mt-3 max-h-48 overflow-y-auto pr-1">
+                              {badgesList.map((badge) => (
+                                <label key={badge.id} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={selectedBadges.includes(badge.name)}
+                                    onChange={() => {
+                                      if (selectedBadges.includes(badge.name)) {
+                                        setSelectedBadges(selectedBadges.filter(b => b !== badge.name));
+                                      } else {
+                                        setSelectedBadges([...selectedBadges, badge.name]);
+                                      }
+                                    }}
+                                    className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
+                                  />
+                                  <span>{badge.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Promotions Section */}
+                        <div className="border-b border-gray-100 pb-5 mb-5">
+                          <div 
+                            onClick={() => toggleSection('promotions')} 
+                            className="flex items-center justify-between cursor-pointer group select-none"
+                          >
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Promotions</h4>
+                            <div className="flex items-center space-x-2">
+                              {selectedPromotions.length > 0 && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPromotions([]);
+                                  }}
+                                  className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                              <ChevronDown 
+                                size={13} 
+                                className={`text-gray-400 group-hover:text-[#36454F] transition-transform duration-200 ${
+                                  collapsedSections.promotions ? '-rotate-90' : 'rotate-0'
+                                }`} 
+                              />
+                            </div>
+                          </div>
+                          {!collapsedSections.promotions && (
+                            <div className="flex flex-col space-y-2 mt-3 max-h-48 overflow-y-auto pr-1">
+                              {promotionsList.map((promo) => (
+                                <label key={promo.id} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={selectedPromotions.includes(promo.name)}
+                                    onChange={() => {
+                                      if (selectedPromotions.includes(promo.name)) {
+                                        setSelectedPromotions(selectedPromotions.filter(p => p !== promo.name));
+                                      } else {
+                                        setSelectedPromotions([...selectedPromotions, promo.name]);
+                                      }
+                                    }}
+                                    className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
+                                  />
+                                  <span>{promo.name}</span>
+                                </label>
+                              ))}
                             </div>
                           )}
                         </div>

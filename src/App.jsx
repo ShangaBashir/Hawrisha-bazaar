@@ -34,6 +34,17 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState(null);
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [globalFilters, setGlobalFilters] = useState({
+    categories: [],
+    colors: [],
+    styles: [],
+    materials: [],
+    seasons: [],
+    sizes: [],
+    badges: [],
+    promotions: [],
+    onlyDiscounted: false
+  });
   
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -88,6 +99,28 @@ function App() {
         return [...prev, view];
       });
     }
+  };
+
+  const handleFilterSelect = (type, value) => {
+    const newFilters = {
+      categories: [],
+      colors: [],
+      styles: [],
+      materials: [],
+      seasons: [],
+      sizes: [],
+      badges: [],
+      promotions: [],
+      onlyDiscounted: false
+    };
+    if (type === 'categories' && value.includes('All')) {
+      newFilters.categories = [];
+    } else {
+      newFilters[type] = value;
+    }
+    setGlobalFilters(newFilters);
+    setSelectedCategory(type === 'categories' && value.length > 0 ? value[0] : 'All');
+    handleViewChange('all_products');
   };
 
   const handleBack = () => {
@@ -179,10 +212,7 @@ function App() {
             setGlobalSearchTerm(term);
             handleViewChange('all_products');
           }}
-          onCategorySelect={(catName) => {
-            setSelectedCategory(catName);
-            handleViewChange('all_products');
-          }}
+          onFilterSelect={(type, value) => handleFilterSelect(type, value)}
         />
       )}
       <main className="flex-grow">
@@ -219,6 +249,7 @@ function App() {
             previousView={previousView}
             isLoggedIn={isLoggedIn}
             onLoginRequired={() => handleViewChange('auth')}
+            globalFilters={globalFilters}
           />
         )}
 
@@ -571,7 +602,7 @@ function App() {
                       setCurrentUserStoreName(null);
                       setCart([]);
                       setShowLogoutConfirm(false);
-                      if (currentView === 'account' || currentView === 'checkout' || currentView === 'vendor_dashboard') {
+                      if (currentView === 'account' || currentView === 'checkout' || currentView === 'admin') {
                         setCurrentView('home');
                         setViewHistory(['home']);
                       }
