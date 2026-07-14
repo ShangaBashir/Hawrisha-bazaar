@@ -30,12 +30,21 @@ const formatIraqiPhone = (value) => {
 
 export default function AuthPage({ onLoginSuccess, onCancel }) {
   const { t, language } = useLanguage();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isForgotMode, setIsForgotMode] = useState(false);
+  
+  // 'login', 'signup', 'forgot', 'verify', 'reset'
+  const [authStep, setAuthStep] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/forgot-password') return 'forgot';
+    if (path === '/verify-code') return 'verify';
+    if (path === '/reset-password') return 'reset';
+    if (window.location.search.includes('signup=true')) return 'signup';
+    return 'login';
+  });
   
   // Form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('+964');
@@ -43,9 +52,22 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
   const [storeName, setStoreName] = useState('');
   
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  // Handle page refreshes on verify or reset without an email
+  useEffect(() => {
+    if ((authStep === 'verify' || authStep === 'reset') && !email) {
+      setAuthStep('forgot');
+    }
+  }, [authStep, email]);
+
+  // OTP State
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpTimer, setOtpTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
 
   const isRTL = language === 'ar' || language === 'ku';
 
@@ -54,19 +76,48 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Clear fields when switching tabs
+  // Update routing history manually (push state) to support paths /login, /forgot-password, /verify-code, /reset-password
   useEffect(() => {
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
-    setPhone('+964');
-    setRole('customer');
-    setStoreName('');
-    setErrors({});
-    setServerError('');
-    setShowPassword(false);
-  }, [isSignUp, isForgotMode]);
+    const pathMap = {
+      'login': '/login',
+      'signup': '/login?signup=true',
+      'forgot': '/forgot-password',
+      'verify': '/verify-code',
+      'reset': '/reset-password'
+    };
+    window.history.pushState({}, '', pathMap[authStep]);
+  }, [authStep]);
+
+  // Clear fields when switching basic tabs
+  useEffect(() => {
+    if (authStep === 'login' || authStep === 'signup') {
+      setPassword('');
+      setConfirmPassword('');
+      setFirstName('');
+      setLastName('');
+      setPhone('+964');
+      setRole('customer');
+      setStoreName('');
+      setErrors({});
+      setServerError('');
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setOtp(['', '', '', '', '', '']);
+    }
+  }, [authStep]);
+
+  // OTP Timer logic
+  useEffect(() => {
+    let interval;
+    if (authStep === 'verify' && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (otpTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [authStep, otpTimer]);
 
   const handleEmailChange = (val) => {
     setEmail(val);
@@ -104,6 +155,61 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
     setServerError('');
   };
 
+  const handleOtpChange = (index, value) => {
+    setServerError('');
+    if (value.length > 1) {
+      // Handle paste
+      const pasted = value.replace(/\D/g, '').slice(0, 6).split('');
+      const newOtp = [...otp];
+      for (let i = 0; i < pasted.length; i++) {
+        if (index + i < 6) newOtp[index + i] = pasted[i];
+      }
+      setOtp(newOtp);
+      const nextIndex = Math.min(index + pasted.length, 5);
+      const nextInput = document.getElementById(`otp-${nextIndex}`);
+      if (nextInput) nextInput.focus();
+      return;
+    }
+
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus next
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
+  const handleResendCode = () => {
+    setServerError('');
+    setIsLoading(true);
+    fetch('/api/auth/resend-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error resending code');
+        setOtpTimer(60);
+        setCanResend(false);
+        setOtp(['', '', '', '', '', '']);
+      })
+      .catch((err) => setServerError(err.message))
+      .finally(() => setIsLoading(false));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setErrors({});
@@ -111,26 +217,28 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
 
     const newErrors = {};
 
-    if (isForgotMode) {
+    if (authStep === 'forgot') {
       if (!email) {
         newErrors.email = language === 'ar' ? 'البريد الإلكتروني مطلوب.' : language === 'ku' ? 'ئیمەیڵ پێویستە.' : 'Email is required.';
-      } else if (!email.toLowerCase().endsWith('@gmail.com')) {
-        newErrors.email = language === 'ar' ? 'يجب أن ينتهي البريد الإلكتروني بـ @gmail.com' : language === 'ku' ? 'ئیمەیڵ دەبێت بە @gmail.com کۆتایی بێت' : 'Email must end with @gmail.com';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        newErrors.email = language === 'ar' ? 'البريد الإلكتروني غير صالح' : language === 'ku' ? 'ئیمەیڵەکە دروست نییە' : 'Invalid email address';
       }
-
-      const cleanPhone = phone.replace(/\D/g, '');
-      if (!phone || phone === '+964') {
-        newErrors.phone = language === 'ar' ? 'رقم الهاتف مطلوب.' : language === 'ku' ? 'ژمارەی تەلەفۆن پێویستە.' : 'Phone number is required.';
-      } else if (!phone.startsWith('+964') || cleanPhone.length !== 13) {
-        newErrors.phone = language === 'ar' ? 'يجب أن يبدأ رقم الهاتف بـ +964 ويحتوي على 10 أرقام' : language === 'ku' ? 'ژمارەی تەلەفۆن دەبێت بە +964 دەستپێبکات و 10 ژمارە بێت' : 'Phone number must start with +964 and contain exactly 10 digits.';
+    } else if (authStep === 'verify') {
+      const code = otp.join('');
+      if (code.length < 6) {
+        setServerError('Please enter the 6-digit code.');
+        return;
       }
-
+    } else if (authStep === 'reset') {
       if (!password) {
         newErrors.password = language === 'ar' ? 'كلمة المرور الجديدة مطلوبة.' : language === 'ku' ? 'وشەی تێپەڕی نوێ پێویستە.' : 'New password is required.';
       } else if (password.length < 8) {
         newErrors.password = language === 'ar' ? 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.' : language === 'ku' ? 'دەبێت وشەی تێپەڕ لانی کەم 8 پیت بێت.' : 'Password must be at least 8 characters.';
       }
-    } else if (isSignUp) {
+      if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match.';
+      }
+    } else if (authStep === 'signup') {
       if (!firstName.trim()) {
         newErrors.firstName = language === 'ar' ? 'الاسم الأول مطلوب.' : language === 'ku' ? 'ناوی یەکەم پێویستە.' : 'First name is required.';
       }
@@ -147,8 +255,8 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
 
       if (!email) {
         newErrors.email = language === 'ar' ? 'البريد الإلكتروني مطلوب.' : language === 'ku' ? 'ئیمەیڵ پێویستە.' : 'Email is required.';
-      } else if (!email.toLowerCase().endsWith('@gmail.com')) {
-        newErrors.email = language === 'ar' ? 'يجب أن ينتهي البريد الإلكتروني بـ @gmail.com' : language === 'ku' ? 'ئیمەیڵ دەبێت بە @gmail.com کۆتایی بێت' : 'Email must end with @gmail.com';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        newErrors.email = language === 'ar' ? 'البريد الإلكتروني غير صالح' : language === 'ku' ? 'ئیمەیڵەکە دروست نییە' : 'Invalid email address';
       }
 
       if (!password) {
@@ -161,11 +269,9 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
         newErrors.storeName = language === 'ar' ? 'اسم المتجر مطلوب للتجار.' : language === 'ku' ? 'ناوی فرۆشگا پێویستە بۆ فرۆشیاران.' : 'Store Name is required for vendors.';
       }
     } else {
-      // Sign In mode
+      // login
       if (!email) {
         newErrors.email = language === 'ar' ? 'البريد الإلكتروني مطلوب.' : language === 'ku' ? 'ئیمەیڵ پێویستە.' : 'Email is required.';
-      } else if (!email.toLowerCase().endsWith('@gmail.com')) {
-        newErrors.email = language === 'ar' ? 'يجب أن ينتهي البريد الإلكتروني بـ @gmail.com' : language === 'ku' ? 'ئیمەیڵ دەبێت بە @gmail.com کۆتایی بێت' : 'Email must end with @gmail.com';
       }
       if (!password) {
         newErrors.password = language === 'ar' ? 'كلمة المرور مطلوبة.' : language === 'ku' ? 'وشەی تێپەڕ پێویستە.' : 'Password is required.';
@@ -182,19 +288,23 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
     let endpoint = '/api/auth/login';
     let payload = { email, password };
 
-    if (isForgotMode) {
+    if (authStep === 'forgot') {
+      endpoint = '/api/auth/forgot-password';
+      payload = { email };
+    } else if (authStep === 'verify') {
+      endpoint = '/api/auth/verify-code';
+      payload = { email, code: otp.join('') };
+    } else if (authStep === 'reset') {
       endpoint = '/api/auth/reset-password';
-      payload = { email, phone, newPassword: password };
-    } else if (isSignUp) {
+      payload = { email, code: otp.join(''), newPassword: password };
+    } else if (authStep === 'signup') {
       endpoint = '/api/auth/register';
       payload = { firstName, lastName, phone, email, password, role, storeName: role === 'vendor' ? storeName : null };
     }
 
     fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
       .then(async (res) => {
@@ -206,14 +316,24 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
       })
       .then((data) => {
         setIsLoading(false);
-        if (isForgotMode) {
-          setIsForgotMode(false);
-          setIsSignUp(false);
+        if (authStep === 'forgot') {
+          setOtpTimer(60);
+          setCanResend(false);
+          setAuthStep('verify');
+        } else if (authStep === 'verify') {
+          setPassword('');
+          setConfirmPassword('');
+          setAuthStep('reset');
+        } else if (authStep === 'reset') {
+          setAuthStep('login');
           setServerError('');
         } else {
           // Success login or registration
+          const resolvedFirst = data.firstName || firstName || email.split('@')[0];
+          const resolvedLast = data.lastName || lastName || '';
           onLoginSuccess(
-            data.firstName || firstName || email.split('@')[0], 
+            resolvedFirst,
+            resolvedLast,
             data.email || email,
             data.role || role,
             data.storeName || (role === 'vendor' ? storeName : null)
@@ -224,7 +344,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
         setIsLoading(false);
         const errMsg = err.message;
         
-        if (!isSignUp && !isForgotMode) {
+        if (authStep === 'login') {
           if (errMsg.toLowerCase().includes("no account") || errMsg.toLowerCase().includes("invalid email") || errMsg.toLowerCase().includes("not found") || errMsg.toLowerCase().includes("exist")) {
             setErrors({
               email: language === 'ar'
@@ -251,40 +371,61 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
   };
 
   return (
-    <div className="min-h-[85vh] bg-[#F7F6F0] py-16 px-4 flex items-center justify-center font-sans text-brand-charcoal" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="w-full max-w-lg bg-white rounded-[32px] border border-gray-150 shadow-2xl p-8 sm:p-10 relative overflow-hidden">
+    <div className="w-full flex justify-center items-center py-12 md:py-20 px-4 min-h-screen" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-md w-full bg-white rounded-3xl p-8 relative shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
         
-        {/* Back Button */}
+        {/* Back / Close button */}
         <button
-          onClick={onCancel}
-          className="absolute top-6 start-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-[#B2AC88] transition-colors cursor-pointer"
+          onClick={() => {
+            if (authStep === 'verify') {
+              setAuthStep('forgot');
+            } else if (authStep === 'reset') {
+              setAuthStep('verify');
+            } else if (authStep === 'forgot') {
+              setAuthStep('login');
+            } else {
+              onCancel();
+            }
+          }}
+          className={`absolute top-6 ${isRTL ? 'end-6' : 'start-6'} text-gray-400 hover:text-brand-charcoal transition-colors border-0 p-2 cursor-pointer bg-transparent rounded-full hover:bg-gray-50`}
         >
-          <ArrowLeft size={16} className={isRTL ? 'rotate-180' : ''} />
-          {t('wishlist_page.back_shop')}
+          <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />
         </button>
 
-        {/* Logo Icon and Brand Header */}
-        <div className="flex flex-col items-center justify-center mt-6 mb-8 select-none" dir="ltr">
-          <div className="flex items-center gap-[2px] text-[#1a365d] mb-2">
-            <span className="text-xl font-black tracking-[0.06em] uppercase">HAWRISHA</span>
-            <span className="text-xl font-extrabold tracking-[0.35em] uppercase text-[#B2AC88]">SOCKS</span>
-          </div>
-          <p className="text-[10px] tracking-widest text-gray-400 uppercase font-bold">
-            {isForgotMode 
-              ? (language === 'ar' ? 'إعادة تعيين كلمة المرور' : language === 'ku' ? 'دووبارە ڕێکخستنەوەی وشەی تێپەڕ' : 'Reset Password') 
-              : isSignUp 
+        {/* Header */}
+        <div className="text-center mb-8 mt-4">
+          <h2 className="text-2xl font-black text-[#36454F] tracking-tight uppercase">
+            {authStep === 'signup' 
               ? t('login.sign_up') 
+              : authStep === 'forgot'
+              ? 'Forgot Password'
+              : authStep === 'verify'
+              ? 'Verify Code'
+              : authStep === 'reset'
+              ? 'Reset Password'
               : t('login.sign_in')}
-          </p>
+          </h2>
+          {authStep !== 'signup' && authStep !== 'login' && (
+            <p className="text-xs text-gray-450 mt-2 font-medium">
+              {authStep === 'forgot'
+                ? 'Enter your email to receive a secure verification code.'
+                : authStep === 'verify'
+                ? 'We sent a 6-digit code to your email.'
+                : authStep === 'reset'
+                ? 'Enter your new password below.'
+                : null}
+            </p>
+          )}
         </div>
 
-        {/* Tab Headers (Hidden in Forgot Password Mode) */}
-        {!isForgotMode && (
-          <div className="grid grid-cols-2 gap-2 border border-gray-100 rounded-2xl p-1 mb-8 bg-gray-50/50">
+        {/* Tab Switcher (Only in login/signup) */}
+        {(authStep === 'login' || authStep === 'signup') && (
+          <div className="flex p-1.5 bg-gray-50 rounded-[1.25rem] mb-8 border border-gray-100 shadow-inner">
             <button
-              onClick={() => setIsSignUp(false)}
-              className={`py-3 text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
-                !isSignUp 
+              type="button"
+              onClick={() => setAuthStep('login')}
+              className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all border-0 cursor-pointer ${
+                authStep === 'login' 
                   ? 'bg-[#36454F] text-white shadow-md' 
                   : 'text-gray-400 hover:text-brand-charcoal hover:bg-white/50'
               }`}
@@ -292,9 +433,10 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
               {t('login.sign_in')}
             </button>
             <button
-              onClick={() => setIsSignUp(true)}
-              className={`py-3 text-xs font-extrabold tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
-                isSignUp 
+              type="button"
+              onClick={() => setAuthStep('signup')}
+              className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all border-0 cursor-pointer ${
+                authStep === 'signup' 
                   ? 'bg-[#36454F] text-white shadow-md' 
                   : 'text-gray-400 hover:text-brand-charcoal hover:bg-white/50'
               }`}
@@ -313,74 +455,26 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             </div>
           )}
 
-          {isSignUp && !isForgotMode && (
+          {authStep === 'signup' && (
             <>
-              {/* Role Toggle Button */}
-              <div className="space-y-2">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-                  {t('login.role_label')}
-                </label>
-                <div className="grid grid-cols-2 gap-3.5">
-                  <button
-                    type="button"
-                    onClick={() => setRole('customer')}
-                    className={`py-3 px-4 rounded-2xl border text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      role === 'customer'
-                        ? 'border-[#36454F] bg-[#36454F]/5 text-[#36454F]'
-                        : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300'
-                    }`}
-                  >
-                    <User size={14} />
-                    {t('login.role_customer')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('vendor')}
-                    className={`py-3 px-4 rounded-2xl border text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      role === 'vendor'
-                        ? 'border-[#B2AC88] bg-[#B2AC88]/10 text-[#B2AC88]'
-                        : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300'
-                    }`}
-                  >
-                    <Store size={14} />
-                    {t('login.role_vendor')}
-                  </button>
+              {role === 'vendor' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Store Name</label>
+                  <div className="relative">
+                    <Store className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
+                    <input
+                      type="text"
+                      value={storeName}
+                      onChange={(e) => handleStoreNameChange(e.target.value)}
+                      className={`w-full ps-11 pe-4 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
+                        errors.storeName ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
+                      }`}
+                      placeholder="My Awesome Store"
+                    />
+                  </div>
+                  {errors.storeName && <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.storeName}</p>}
                 </div>
-              </div>
-
-              {/* Store Name Input (if Vendor) */}
-              <AnimatePresence>
-                {role === 'vendor' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-1.5 overflow-hidden"
-                  >
-                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-                      {t('login.store_name')}
-                    </label>
-                    <div className="relative">
-                      <Store className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
-                      <input
-                        type="text"
-                        value={storeName}
-                        onChange={(e) => handleStoreNameChange(e.target.value)}
-                        className={`w-full ps-11 pe-4 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
-                          errors.storeName 
-                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                            : 'border-gray-200 focus:border-[#B2AC88] focus:bg-white'
-                        }`}
-                        placeholder={language === 'ar' ? 'مثال: متجر الجوارب الخاص بي' : language === 'ku' ? 'نموونە: فرۆشگای من' : 'e.g. My Socks Shop'}
-                      />
-                    </div>
-                    {errors.storeName && (
-                      <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.storeName}</p>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
+              )}
               {/* First Name & Last Name */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -423,32 +517,35 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             </>
           )}
 
-          {/* Email Address */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-              {t('login.email')}
-            </label>
-            <div className="relative">
-              <Mail className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
-              <input
-                type="text"
-                value={email}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={`w-full ps-11 pe-4 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
-                  errors.email 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                    : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
-                }`}
-                placeholder="username@gmail.com"
-              />
+          {/* Email Address (Login, Signup, Forgot) */}
+          {(authStep === 'login' || authStep === 'signup' || authStep === 'forgot') && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
+                {t('login.email')}
+              </label>
+              <div className="relative">
+                <Mail className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
+                <input
+                  type="text"
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={`w-full ps-11 pe-4 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
+                    errors.email 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                      : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
+                  }`}
+                  placeholder="username@gmail.com"
+                  disabled={authStep === 'verify' || authStep === 'reset'}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.email}</p>
+              )}
             </div>
-            {errors.email && (
-              <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.email}</p>
-            )}
-          </div>
+          )}
 
-          {/* Phone Number (Sign Up or Forgot Password) */}
-          {(isSignUp || isForgotMode) && (
+          {/* Phone Number (Sign Up) */}
+          {authStep === 'signup' && (
             <div className="space-y-1.5">
               <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
                 {t('login.phone')}
@@ -474,60 +571,137 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             </div>
           )}
 
+          {/* OTP Verification Boxes */}
+          {authStep === 'verify' && (
+            <div className="space-y-6">
+              <div className="flex justify-between gap-2" dir="ltr">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    maxLength={6}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-[#36454F] focus:bg-white focus:ring-1 focus:ring-[#36454F] transition-all"
+                  />
+                ))}
+              </div>
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <p className="text-xs text-gray-500 font-medium">
+                  Didn't receive the code?
+                </p>
+                {canResend ? (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-xs font-bold text-[#36454F] hover:text-[#B2AC88] uppercase tracking-wider transition-colors bg-transparent border-none cursor-pointer"
+                  >
+                    Resend Code
+                  </button>
+                ) : (
+                  <p className="text-xs font-bold text-gray-400 tracking-wider">
+                    Resend in <span className="text-[#36454F]">{otpTimer}s</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Password */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                {isForgotMode 
-                  ? (language === 'ar' ? 'كلمة المرور الجديدة' : language === 'ku' ? 'وشەی تێپەڕی نوێ' : 'New Password') 
-                  : t('login.password')}
+          {(authStep === 'login' || authStep === 'signup' || authStep === 'reset') && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
+                {authStep === 'reset' ? 'New Password' : t('login.password')}
               </label>
-              {!isSignUp && !isForgotMode && (
+              <div className="relative">
+                <Lock className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  className={`w-full ps-11 pe-12 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
+                    errors.password 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                      : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
+                  }`}
+                />
                 <button
                   type="button"
-                  onClick={() => setIsForgotMode(true)}
-                  className="text-[10px] font-bold text-gray-400 hover:text-[#B2AC88] transition-colors border-0 p-0 cursor-pointer bg-transparent uppercase tracking-wider"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-charcoal cursor-pointer border-0 bg-transparent"
                 >
-                  {language === 'ar' ? 'هل نسيت كلمة المرور؟' : language === 'ku' ? 'وشەی تێپەڕت بیرچووە؟' : 'Forgot Password?'}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+              </div>
+              {errors.password && (
+                <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.password}</p>
+              )}
+              {authStep === 'login' && (
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAuthStep('forgot')}
+                    className="text-[10px] font-bold text-gray-400 hover:text-[#B2AC88] transition-colors border-0 p-0 cursor-pointer bg-transparent uppercase tracking-wider"
+                  >
+                    {language === 'ar' ? 'هل نسيت كلمة المرور؟' : language === 'ku' ? 'وشەی تێپەڕت بیرچووە؟' : 'Forgot Password?'}
+                  </button>
+                </div>
               )}
             </div>
-            <div className="relative">
-              <Lock className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-                className={`w-full ps-11 pe-12 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
-                  errors.password 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                    : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-charcoal cursor-pointer border-0 bg-transparent"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          )}
+
+          {/* Confirm Password */}
+          {authStep === 'reset' && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' }));
+                  }}
+                  className={`w-full ps-11 pe-12 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
+                    errors.confirmPassword 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                      : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-charcoal cursor-pointer border-0 bg-transparent"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.confirmPassword}</p>
+              )}
             </div>
-            {errors.password && (
-              <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.password}</p>
-            )}
-          </div>
+          )}
 
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || (authStep === 'verify' && otp.join('').length < 6)}
             className="w-full py-4 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-extrabold uppercase tracking-wider rounded-2xl transition-colors shadow-md mt-6 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-70 disabled:pointer-events-none"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : isForgotMode ? (
-              language === 'ar' ? 'تحديث كلمة المرور' : language === 'ku' ? 'نوێکردنەوەی وشەی تێپەڕ' : 'Reset Password'
-            ) : isSignUp ? (
+            ) : authStep === 'forgot' ? (
+              'Send Verification Code'
+            ) : authStep === 'verify' ? (
+              'Verify Code'
+            ) : authStep === 'reset' ? (
+              'Reset Password'
+            ) : authStep === 'signup' ? (
               t('login.btn_signup')
             ) : (
               t('login.btn_login')
@@ -537,24 +711,21 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
 
         {/* Bottom switcher helper */}
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-          {isForgotMode ? (
+          {authStep === 'forgot' || authStep === 'verify' || authStep === 'reset' ? (
             <button
-              onClick={() => {
-                setIsForgotMode(false);
-                setIsSignUp(false);
-              }}
+              onClick={() => setAuthStep('login')}
               className="text-xs font-bold text-gray-400 hover:text-[#B2AC88] transition-colors border-0 bg-transparent cursor-pointer uppercase tracking-wider"
             >
-              {language === 'ar' ? 'العودة لتسجيل الدخول' : language === 'ku' ? 'گەڕانەوە بۆ چوونە ژوورەوە' : 'Back to Login'}
+              Back to Login
             </button>
           ) : (
             <p className="text-xs text-gray-450 font-medium select-none">
-              {isSignUp ? t('login.have_account') : t('login.no_account')}{' '}
+              {authStep === 'signup' ? t('login.have_account') : t('login.no_account')}{' '}
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => setAuthStep(authStep === 'signup' ? 'login' : 'signup')}
                 className="font-extrabold text-[#B2AC88] hover:text-[#36454F] transition-colors border-0 bg-transparent cursor-pointer ml-1 uppercase tracking-wider"
               >
-                {isSignUp ? t('login.sign_in') : t('login.sign_up')}
+                {authStep === 'signup' ? t('login.sign_in') : t('login.sign_up')}
               </button>
             </p>
           )}

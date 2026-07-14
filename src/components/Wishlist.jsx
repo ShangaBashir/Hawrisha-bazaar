@@ -1,6 +1,40 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ShoppingBag, ArrowLeft, X } from 'lucide-react';
+import { Heart, ShoppingBag, ArrowLeft, X, Check, Plus, Minus } from 'lucide-react';
+
+const getLocalized = (val, lang) => {
+  if (!val) return '';
+  const l = lang ? lang.toLowerCase() : 'en';
+  const u = l.toUpperCase();
+  if (typeof val === 'object') {
+    return val[l] || val[u] || val['en'] || val['EN'] || val['ku'] || val['KU'] || val['ar'] || val['AR'] || '';
+  }
+  let currentVal = val;
+  for (let i = 0; i < 3; i++) {
+    try {
+      if (typeof currentVal !== 'string') break;
+      const parsed = JSON.parse(currentVal);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
+      }
+      currentVal = parsed;
+    } catch {
+      break;
+    }
+  }
+  return currentVal;
+};
+
+const getColorStyle = (colorClass) => {
+  if (!colorClass) return {};
+  if (colorClass.startsWith('bg-[#') && colorClass.endsWith(']')) {
+    return { backgroundColor: colorClass.slice(4, -1) };
+  }
+  if (colorClass.startsWith('#')) {
+    return { backgroundColor: colorClass };
+  }
+  return {};
+};
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const productsData = [
@@ -51,6 +85,34 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
 
   const isRTL = language === 'ar' || language === 'ku';
 
+  // "Choose Options" Modal state
+  const [optionsModalProduct, setOptionsModalProduct] = useState(null);
+  const [modalColorIndex, setModalColorIndex] = useState(null);
+  const [modalSelectedSize, setModalSelectedSize] = useState(null);
+  const [modalSelectedStyle, setModalSelectedStyle] = useState(null);
+  const [modalQuantity, setModalQuantity] = useState(1);
+  const [modalValidationError, setModalValidationError] = useState('');
+  const [modalActiveImage, setModalActiveImage] = useState(null);
+
+  useEffect(() => {
+    if (optionsModalProduct) {
+      setModalColorIndex(optionsModalProduct.colors && optionsModalProduct.colors.length > 0 ? 0 : null);
+      setModalSelectedSize(null);
+      setModalSelectedStyle(null);
+      setModalQuantity(1);
+      setModalValidationError('');
+      setModalActiveImage(optionsModalProduct.image || optionsModalProduct.image_url);
+      
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [optionsModalProduct]);
+
   useEffect(() => {
     let active = true;
     fetch('/api/products')
@@ -85,8 +147,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
       if (onLoginRequired) onLoginRequired();
       return;
     }
-    onAddToCart(product);
-    showToast(t('toasts.added_to_cart') || `Added ${product.name} to your cart!`);
+    setOptionsModalProduct(product);
   };
 
   const handleRemoveFromCartClick = (product, e) => {
@@ -142,7 +203,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
           transition={{ type: "spring", damping: 18, stiffness: 120 }}
           className="flex items-center justify-between border-b border-gray-100 pb-5 mb-8"
         >
-          <h1 className="text-4xl font-black text-[#36454F] tracking-tight uppercase leading-none">
+          <h1 className="text-3xl md:text-4xl font-black text-[#36454F] tracking-tight uppercase leading-none">
             {t('wishlist_page.title')}
           </h1>
           <span className="text-xs text-gray-400 font-semibold select-none font-sans">
@@ -184,7 +245,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-14"
           >
             <AnimatePresence mode="popLayout">
               {favoriteProducts.map((product) => {
@@ -203,7 +264,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                     exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
                     whileHover={{ y: -8, scale: 1.02, transition: { type: 'spring', damping: 15, stiffness: 150 } }}
                     onClick={() => onProductClick(product)}
-                    className="group cursor-pointer flex flex-col bg-white border border-gray-100 p-3 rounded-3xl hover:shadow-lg transition-all duration-300 relative overflow-hidden"
+                    className="group cursor-pointer flex flex-col bg-white border border-gray-100 p-2 sm:p-3 rounded-2xl hover:shadow-lg transition-all duration-300 relative overflow-hidden"
                   >
                     <motion.button 
                       onClick={(e) => { 
@@ -212,52 +273,83 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                       }}
                       whileHover={{ scale: 1.15, rotate: 90, backgroundColor: '#FEF2F2', color: '#EF4444' }}
                       whileTap={{ scale: 0.9 }}
-                      className="absolute top-5 end-5 z-10 w-8 h-8 bg-white text-[#C08081] rounded-full flex items-center justify-center shadow-xs border border-gray-50 transition-all cursor-pointer"
+                      className="absolute top-2.5 end-2.5 sm:top-5 sm:end-5 z-10 w-6 h-6 sm:w-8 sm:h-8 bg-white text-[#C08081] rounded-full flex items-center justify-center shadow-xs border border-gray-50 transition-all cursor-pointer"
                     >
-                      <X size={14} />
+                      <X size={12} className="sm:hidden" />
+                      <X size={14} className="hidden sm:block" />
                     </motion.button>
 
-                    <div className="w-full aspect-[3/4] rounded-2xl mb-4 relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb] border border-gray-100/50">
+                    <div className="w-full aspect-[4/5] sm:aspect-square rounded-xl sm:rounded-2xl mb-3 sm:mb-4 relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb] border border-gray-100/50">
+                      {product.stock === 0 && (
+                        <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
+                          <div className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-gray-800 text-white rounded-md shadow-xs">
+                            Out of Stock
+                          </div>
+                        </div>
+                      )}
                       {finalImg ? (
                         <img 
                           src={finalImg} 
                           alt={product.name} 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103" 
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103" 
                         />
                       ) : (
-                        <span className="text-gray-300 font-serif text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
+                        <span className="text-gray-300 font-serif text-[10px] sm:text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
                           {parseJsonArray(product.category).join(', ')}
                         </span>
                       )}
                     </div>
 
                     <div className="space-y-1 text-center pb-2">
-                      <h3 className="font-bold text-[#36454F] text-[15px] group-hover:text-[#B2AC88] transition-colors">
-                        {product.name}
+                      <h3 className="font-bold text-[#36454F] text-[12px] sm:text-[15px] group-hover:text-[#B2AC88] transition-colors line-clamp-2">
+                        {getLocalized(product.name, language)}
                       </h3>
-                      <p className="text-xs font-semibold text-gray-400 font-sans">
-                        {product.price.toLocaleString()} IQD
+                      <div className="text-[11px] sm:text-xs font-semibold text-[#36454F] font-sans flex justify-center">
+                        {product.discount > 0 ? (
+                          <div className="flex items-center justify-center space-x-1.5 flex-wrap">
+                            <span className="line-through text-[10px] text-gray-300">
+                              {product.price.toLocaleString()} IQD
+                            </span>
+                            <span>
+                              {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
+                            </span>
+                            <span className="text-red-500 text-[9px] font-bold">
+                              {product.discount}% OFF
+                            </span>
+                          </div>
+                        ) : (
+                          <span>{product.price.toLocaleString()} IQD</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium mt-0.5">
+                        {getLocalized(product.vendor_name, language) || t('vendor_dashboard.platform_store')}
                       </p>
+                      {(() => {
+                        const promos = parseJsonArray(product.promotion).filter(p => p && p !== 'None' && p !== '');
+                        if (promos.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap justify-center gap-1 mt-1">
+                            {promos.map((promo, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[8px] sm:text-[9px] font-bold text-[#B2AC88] uppercase tracking-wider">
+                                <span className="w-1 h-1 rounded-full bg-[#B2AC88] shrink-0" />
+                                {promo}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (isInCart) {
-                          handleRemoveFromCartClick(product, e);
-                        } else {
-                          handleAddToCartClick(product, e);
-                        }
+                        handleAddToCartClick(product, e);
                       }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
-                      className={`mt-2 py-2.5 px-4 text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center justify-center space-x-1.5 rtl:space-x-reverse select-none cursor-pointer border-0 ${
-                        isInCart
-                          ? 'bg-[#C08081] hover:bg-[#36454F]'
-                          : 'bg-[#36454F] hover:bg-[#C08081]'
-                      }`}
+                      className="mt-2 py-2.5 px-4 text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center justify-center space-x-1.5 rtl:space-x-reverse select-none cursor-pointer border-0 bg-[#36454F] hover:bg-[#C08081]"
                     >
-                      <span>{isInCart ? (language === 'ar' ? 'تمت الإضافة للسلة' : language === 'ku' ? 'زیادکرا بۆ سەبەتە' : 'Added to Cart') : t('product.add_to_cart')}</span>
+                      <span>{t('product.add_to_cart')}</span>
                     </motion.button>
                   </motion.div>
                 );
@@ -266,6 +358,271 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
           </motion.div>
         )}
       </div>
+
+      {/* Choose Options Modal */}
+      <AnimatePresence>
+        {optionsModalProduct && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOptionsModalProduct(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 cursor-pointer"
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-white rounded-3xl max-w-3xl w-full text-start shadow-2xl relative flex flex-col md:flex-row max-h-[90vh] overflow-y-auto md:overflow-hidden overflow-x-hidden font-sans text-brand-charcoal border border-gray-100"
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setOptionsModalProduct(null)}
+                  className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white hover:bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors shadow-sm cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+
+                {/* Left Side: Image Gallery */}
+                <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center bg-gray-50 border-r border-gray-100 shrink-0 rounded-t-3xl md:rounded-t-none md:rounded-l-3xl overflow-hidden">
+                  <div className="w-full aspect-[3/4] bg-white rounded-2xl relative shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden mb-4">
+                    {modalActiveImage ? (
+                      <img 
+                        src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
+                        alt={getLocalized(optionsModalProduct.name, language)} 
+                        className="w-full h-full object-contain" 
+                      />
+                    ) : (
+                      <span className="text-[#36454F]/20 font-serif text-2xl font-bold uppercase rotate-[-20deg]">
+                        {parseJsonArray(optionsModalProduct.category).join(', ')}
+                      </span>
+                    )}
+                  </div>
+
+
+                </div>
+
+                {/* Right Side: Options Form */}
+                <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-visible md:overflow-y-auto rounded-b-3xl md:rounded-b-none md:rounded-r-3xl shrink-0">
+                  <div className="space-y-5">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">Choose Options</span>
+                      <h3 className="text-xl md:text-2xl font-serif font-bold text-[#36454F] leading-tight mb-1">
+                        {getLocalized(optionsModalProduct.name, language)}
+                      </h3>
+                      {/* Price */}
+                      <div className="flex items-center space-x-2.5 mt-2">
+                        {optionsModalProduct.discount > 0 ? (
+                          <>
+                            <span className="text-lg font-bold text-[#36454F]">
+                              {Math.round(optionsModalProduct.price * (1 - optionsModalProduct.discount / 100)).toLocaleString()} IQD
+                            </span>
+                            <span className="text-xs font-semibold line-through text-gray-400">
+                              {optionsModalProduct.price.toLocaleString()} IQD
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-lg font-bold text-[#36454F]">
+                            {optionsModalProduct.price.toLocaleString()} IQD
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-gray-100" />
+
+                    {/* Size & Color Cross-Filtering Selectors */}
+                    {(() => {
+                      const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+                      const hasSizeColors = Object.keys(sizeColorMap).length > 0;
+                      const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                      const availableColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
+                        ? sizeColorMap[modalSelectedSize]
+                        : (optionsModalProduct.colors || []);
+                      const sizesForSelectedColor = modalColorIndex !== null
+                        ? sizeOptions.filter(size => (sizeColorMap[size] || []).includes(optionsModalProduct.colors?.[modalColorIndex]))
+                        : sizeOptions;
+                      return (
+                        <>
+                          {/* Size Selector */}
+                          {sizeOptions.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                                <span className="text-gray-400">Select Size</span>
+                                {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {sizeOptions.map((size) => {
+                                  const selectedColorClass = modalColorIndex !== null ? optionsModalProduct.colors?.[modalColorIndex] : null;
+                                  const isAvailable = !selectedColorClass || sizesForSelectedColor.includes(size);
+                                  return (
+                                    <button
+                                      key={size}
+                                      type="button"
+                                      onClick={() => {
+                                        setModalSelectedSize(size);
+                                        if (selectedColorClass && sizeColorMap[size] && !sizeColorMap[size].includes(selectedColorClass)) {
+                                          setModalColorIndex(null);
+                                        }
+                                      }}
+                                      className={`px-3.5 py-1 rounded-full text-xs font-bold border cursor-pointer transition-all ${
+                                        !isAvailable
+                                          ? 'opacity-30 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400'
+                                          : modalSelectedSize === size
+                                          ? 'bg-[#36454F] text-white border-[#36454F]'
+                                          : 'bg-white text-[#36454F] border-gray-200 hover:border-[#36454F]'
+                                      }`}
+                                      disabled={!isAvailable}
+                                    >
+                                      {size}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {/* Color Selector */}
+                          {availableColorClasses.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                                <span className="text-gray-400">Select Color</span>
+                                {modalColorIndex !== null && (
+                                  <span className="text-[#36454F] font-semibold">
+                                    {optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : `Option ${modalColorIndex + 1}`}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-2.5">
+                                {optionsModalProduct.colors.map((colorClass, idx) => {
+                                  const isAvail = availableColorClasses.includes(colorClass);
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => {
+                                        if (!isAvail) return;
+                                        setModalColorIndex(idx);
+                                        if (!modalSelectedSize && hasSizeColors) {
+                                          const firstSize = sizeOptions.find(s => (sizeColorMap[s] || []).includes(colorClass));
+                                          if (firstSize) setModalSelectedSize(firstSize);
+                                        }
+                                      }}
+                                      style={isAvail ? getColorStyle(colorClass) : {}}
+                                      className={`w-7 h-7 rounded-full border cursor-pointer flex items-center justify-center relative transition-transform ${
+                                        !isAvail
+                                          ? 'opacity-25 cursor-not-allowed bg-gray-200 border-gray-200'
+                                          : `hover:scale-110 active:scale-95 ${colorClass.startsWith('#') ? '' : colorClass} ${
+                                            modalColorIndex === idx
+                                              ? 'ring-2 ring-offset-2 ring-[#B2AC88] border-transparent'
+                                              : 'border-gray-200'
+                                          }`
+                                      }`}
+                                      disabled={!isAvail}
+                                    >
+                                      {modalColorIndex === idx && <Check size={12} className="text-white mix-blend-difference" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* Quantity Picker */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Quantity</label>
+                      <div className="flex items-center space-x-3.5 border border-[#E9ECEF] rounded-xl px-4 py-2 w-32 bg-gray-50/20">
+                        <button
+                          type="button"
+                          onClick={() => setModalQuantity(q => Math.max(1, q - 1))}
+                          className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform cursor-pointer border-0 bg-transparent"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-sm font-bold text-[#36454F] select-none min-w-[20px] text-center">
+                          {modalQuantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setModalQuantity(q => q + 1)}
+                          className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform cursor-pointer border-0 bg-transparent"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions / Add Button */}
+                  <div className="mt-8 pt-4 border-t border-gray-100">
+                    {/* Error display */}
+                    {modalValidationError && (
+                      <p className="text-xs text-red-500 font-bold mb-3 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                        {modalValidationError}
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Validation
+                        const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean);
+                        if (styleOptions.length > 1 && !modalSelectedStyle) {
+                          setModalValidationError('Please select a Style / Length first.');
+                          return;
+                        }
+                        const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                        if (sizeOptions.length > 0 && !modalSelectedSize) {
+                          setModalValidationError('Please select a Size first.');
+                          return;
+                        }
+                        const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+                        const availColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
+                          ? sizeColorMap[modalSelectedSize]
+                          : (optionsModalProduct.colors || []);
+                        if (availColorClasses.length > 0 && modalColorIndex === null) {
+                          setModalValidationError('Please select a Color first.');
+                          return;
+                        }
+
+                        // Add to cart
+                        const finalPrice = optionsModalProduct.discount > 0
+                          ? Math.round(optionsModalProduct.price * (1 - optionsModalProduct.discount / 100))
+                          : optionsModalProduct.price;
+
+                        onAddToCart({ 
+                          ...optionsModalProduct, 
+                          price: finalPrice, 
+                          selectedStyle: modalSelectedStyle, 
+                          selectedSize: modalSelectedSize,
+                          selectedColor: optionsModalProduct.colors && modalColorIndex !== null ? optionsModalProduct.colors[modalColorIndex] : null,
+                          selectedColorName: optionsModalProduct.colorNames && modalColorIndex !== null ? optionsModalProduct.colorNames[modalColorIndex] : null
+                        }, modalQuantity);
+
+                        const colorLabel = optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : 'selected color';
+                        showToast(`Added ${modalQuantity}x ${getLocalized(optionsModalProduct.name, language)} (${colorLabel}) to cart!`);
+                        setOptionsModalProduct(null);
+                      }}
+                      className="w-full py-4 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-[0.98] border-0"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

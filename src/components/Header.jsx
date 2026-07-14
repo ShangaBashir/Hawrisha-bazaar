@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X, Store, Settings } from 'lucide-react';
+import { Search, User, Heart, ShoppingCart, ChevronDown, Menu, X, Settings } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const HawrishaH = ({ size = 28, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width={size}
+    width={size * 19 / 20}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="1 2 19 20"
     fill="currentColor"
     className={className}
   >
@@ -27,12 +27,31 @@ const getColorStyle = (colorClass) => {
   return {};
 };
 
-export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, currentUserStoreName, onLoginClick, onLogoutClick, onFilterSelect }) {
+export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, onLoginClick, onLogoutClick, onFilterSelect }) {
   const { language, setLanguage, t, tCategory } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isSearchOpen && searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        if (headerSearchTerm.trim() !== '') return;
+        setIsSearchOpen(false);
+        setHeaderSearchTerm('');
+        if (onSearch) onSearch('');
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen, headerSearchTerm, onSearch]);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
@@ -61,16 +80,32 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
     setMobileOpenSections(prev => ({ ...prev, [sec]: !prev[sec] }));
   };
 
+  const [openGroups, setOpenGroups] = useState({
+    categories: false,
+    badges: false,
+    colors: false,
+    styles: false,
+    materials: false,
+    seasons: false,
+    sizes: false,
+    promotions: false,
+    gender: false,
+  });
+
+  const toggleGroup = (group) => {
+    setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
+  };
+
   const langDropdownRef = useRef(null);
-  const userDropdownRef = useRef(null);
+  const categoriesDropdownRef = useRef(null);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (isLangDropdownOpen && langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
         setIsLangDropdownOpen(false);
       }
-      if (isUserDropdownOpen && userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
-        setIsUserDropdownOpen(false);
+      if (isCategoriesDropdownOpen && categoriesDropdownRef.current && !categoriesDropdownRef.current.contains(event.target)) {
+        setIsCategoriesDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick, true);
@@ -79,7 +114,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
       document.removeEventListener('mousedown', handleOutsideClick, true);
       document.removeEventListener('touchstart', handleOutsideClick, true);
     };
-  }, [isLangDropdownOpen, isUserDropdownOpen]);
+  }, [isLangDropdownOpen, isCategoriesDropdownOpen]);
 
   useEffect(() => {
     let active = true;
@@ -283,78 +318,79 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
   return (
     <header className="bg-[#FAF9F5] text-brand-charcoal border-b border-brand-sage/10 sticky top-0 z-50 shadow-sm transition-all duration-300">
       {/* Top Bar */}
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        
-        {/* Left: Language (Desktop) or Hamburger Menu (Mobile) */}
-        <div className="flex items-center">
-          <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden text-brand-charcoal hover:text-[#B2AC88] cursor-pointer transition-colors p-1"
-          >
-            <Menu size={24} />
-          </button>
-          
-          {/* Desktop Language Selector */}
-          <div ref={langDropdownRef} className="hidden md:block relative">
+      <div className="container mx-auto px-4 pt-4 pb-3 lg:pt-12 lg:pb-5">
+        {/* Main Top Bar Content */}
+        <div className="items-center justify-between w-full flex">
+          {/* Left: Language (Desktop) or Hamburger Menu (Mobile) */}
+          <div className="flex items-center">
             <button 
-              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-              className="flex items-center space-x-1 cursor-pointer text-sm font-medium hover:text-[#B2AC88] transition-colors select-none bg-transparent border-0"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden text-brand-charcoal hover:text-[#B2AC88] cursor-pointer transition-colors p-1"
             >
-              <span>{language === 'en' ? 'English' : language === 'ar' ? 'العربية' : 'کوردی'}</span>
-              <ChevronDown size={14} className={`transition-transform duration-300 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+              <Menu size={24} />
             </button>
-            <AnimatePresence>
-              {isLangDropdownOpen && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute start-0 mt-2 w-32 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-20 font-sans"
-                  >
-                    {languages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => {
-                          setLanguage(lang.code);
-                          setIsLangDropdownOpen(false);
-                        }}
-                        className={`w-full text-start px-4 py-2 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer border-0 ${
-                          language === lang.code ? 'text-[#B2AC88]' : 'text-brand-charcoal'
-                        }`}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Center: Logo */}
-        <div className="flex-1 flex justify-center">
-          <button 
-            onClick={() => {
-              onViewChange('home');
-              setIsMobileMenuOpen(false);
-            }}
-            dir="ltr"
-            className="flex items-center gap-[2px] cursor-pointer hover:opacity-90 select-none active:scale-[0.98] transition-all text-[#1a365d]"
-          >
-            <HawrishaH size={38} className="text-[#1a365d] shrink-0" />
-            <div className="flex flex-col items-start leading-[0.9] text-start">
-              <span className="text-[21px] font-black tracking-[0.06em] uppercase font-sans">AWRISHA</span>
-              <span className="text-[9px] font-extrabold tracking-[0.35em] uppercase font-sans text-[#B2AC88] mt-1">SOCKS</span>
+            
+            {/* Desktop Language Selector */}
+            <div ref={langDropdownRef} className="hidden lg:block relative">
+              <button 
+                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                className="flex items-center space-x-1 cursor-pointer text-xs font-semibold hover:text-[#B2AC88] transition-colors select-none bg-transparent border-0"
+              >
+                <span>{language === 'en' ? 'English' : language === 'ar' ? 'العربية' : 'کوردی'}</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isLangDropdownOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute start-0 mt-2 w-32 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-20 font-sans"
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={() => {
+                            setLanguage(lang.code);
+                            setIsLangDropdownOpen(false);
+                          }}
+                          className={`w-full text-start px-4 py-2 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer border-0 ${
+                            language === lang.code ? 'text-[#B2AC88]' : 'text-brand-charcoal'
+                          }`}
+                        >
+                          {lang.name}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
-          </button>
-        </div>
+          </div>
 
-        {/* Right: Icons */}
-        <div className="flex items-center space-x-3.5 md:space-x-5">
-          <div className="hidden md:flex items-center space-x-2 relative">
+          {/* Center: Logo */}
+          <div className="flex-1 flex justify-center">
+            <button 
+              onClick={() => {
+                onViewChange('home');
+                setIsMobileMenuOpen(false);
+              }}
+              dir="ltr"
+              className="flex items-center gap-1 cursor-pointer hover:opacity-90 select-none active:scale-[0.98] transition-all text-[#36454F]"
+            >
+              <HawrishaH size={38} className="text-[#36454F] shrink-0 w-[28px] h-[30px] lg:w-[36px] lg:h-[38px]" />
+              <div className="flex flex-col items-start leading-[0.9] text-start">
+                <span className="text-[16px] lg:text-[21px] font-black tracking-[0.06em] uppercase font-sans">AWRISHA</span>
+                <span className="text-[7px] lg:text-[9px] font-extrabold tracking-[0.35em] uppercase font-sans text-[#B2AC88] mt-1">BAZAAR</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Right: Icons */}
+          <div className="flex items-center space-x-2 lg:space-x-5">
+          <div ref={searchContainerRef} className="hidden lg:flex items-center space-x-2 relative">
             <AnimatePresence>
               {isSearchOpen && (
                 <motion.form
@@ -376,7 +412,6 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     value={headerSearchTerm}
                     onChange={(e) => {
                       setHeaderSearchTerm(e.target.value);
-                      if (onSearch) onSearch(e.target.value);
                     }}
                     className="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-brand-charcoal placeholder-gray-400 font-semibold"
                     autoFocus
@@ -401,8 +436,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               onClick={() => {
                 if (isSearchOpen) {
                   setIsSearchOpen(false);
+                  const wasActiveSearch = headerSearchTerm.trim() !== '';
                   setHeaderSearchTerm('');
-                  if (onSearch) onSearch('');
+                  if (wasActiveSearch && onSearch) onSearch('');
                 } else {
                   setIsSearchOpen(true);
                 }
@@ -412,11 +448,12 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               {isSearchOpen ? <X size={20} /> : <Search size={22} />}
             </button>
           </div>
-          <div ref={userDropdownRef} className="relative hidden md:block">
+
+          <div className="hidden lg:block">
             <button 
               onClick={() => {
                 if (isLoggedIn) {
-                  setIsUserDropdownOpen(!isUserDropdownOpen);
+                  onViewChange('account');
                 } else {
                   onLoginClick();
                 }
@@ -427,74 +464,30 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
             >
               <User size={22} />
             </button>
-
-            <AnimatePresence>
-              {isLoggedIn && isUserDropdownOpen && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute end-0 mt-2.5 w-48 bg-white border border-[#E9ECEF] rounded-2xl shadow-xl py-3 px-4 z-20 font-sans"
-                  >
-                    <div className="pb-2.5 border-b border-gray-100 mb-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{language === 'ar' ? 'مسجل الدخول باسم' : language === 'ku' ? 'چوونەژوورەوە وەک' : 'Signed In As'}</p>
-                      <p className="text-xs font-bold text-[#36454F] truncate mt-0.5">{currentUser}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        onViewChange('account');
-                      }}
-                      className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
-                    >
-                      {t('account_page.title')}
-                    </button>
-                    {currentUserRole === 'admin' && (
-                      <>
-                        <div className="h-px bg-gray-150 my-1" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserDropdownOpen(false);
-                            onViewChange('admin');
-                          }}
-                          className="w-full text-start text-xs font-semibold text-brand-charcoal hover:text-[#B2AC88] transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
-                        >
-                          {t('admin_dashboard.title')}
-                        </button>
-                      </>
-                    )}
-                    <div className="h-px bg-gray-150 my-1" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        onLogoutClick();
-                      }}
-                      className="w-full text-start text-xs font-semibold text-red-500 hover:text-red-650 transition-colors py-1.5 cursor-pointer uppercase tracking-wider border-0"
-                    >
-                      {t('nav.sign_out')}
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
           </div>
-          
+          {/* Mobile Search Button */}
+          <button 
+            type="button"
+            onClick={() => {
+              setHeaderSearchTerm('');
+              setIsMobileSearchOpen(true);
+            }}
+            className="lg:hidden hover:text-[#B2AC88] transition-colors relative cursor-pointer active:scale-90 p-1 text-brand-charcoal"
+          >
+            <Search size={18} />
+          </button>
+
           {/* Wishlist Icon */}
           <button 
             onClick={onWishlistClick}
-            className="hover:text-[#B2AC88] transition-colors relative cursor-pointer active:scale-90 p-1"
+            className="hidden lg:flex hover:text-[#B2AC88] transition-colors relative cursor-pointer active:scale-90 p-1"
           >
-            <Heart size={22} />
+            <Heart size={22} className="w-[18px] h-[18px] lg:w-[22px] lg:h-[22px]" />
             <motion.span 
               key={wishlistCount}
               initial={{ scale: 0.6 }}
               animate={{ scale: [1, 1.3, 1] }}
-              className="absolute -top-1 -end-1 bg-brand-charcoal text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold"
+              className="absolute -top-1 -end-1 bg-brand-charcoal text-white text-[8px] lg:text-[9px] w-3.5 h-3.5 lg:w-4 lg:h-4 rounded-full flex items-center justify-center font-bold"
             >
               {wishlistCount}
             </motion.span>
@@ -505,27 +498,28 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
             onClick={onCartClick}
             className="hover:text-[#B2AC88] transition-colors relative cursor-pointer active:scale-90 p-1"
           >
-            <ShoppingCart size={22} />
+            <ShoppingCart size={22} className="w-[18px] h-[18px] lg:w-[22px] lg:h-[22px]" />
             <motion.span 
               key={cartCount}
               initial={{ scale: 0.6 }}
               animate={{ scale: [1, 1.45, 1] }}
               transition={{ type: "spring", stiffness: 450, damping: 12 }}
-              className="absolute -top-1 -end-1 bg-[#B2AC88] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-xs select-none"
+              className="absolute -top-1 -end-1 bg-[#B2AC88] text-white text-[8px] lg:text-[9px] w-3.5 h-3.5 lg:w-4 lg:h-4 rounded-full flex items-center justify-center font-bold shadow-xs select-none"
             >
               {cartCount}
             </motion.span>
           </button>
         </div>
       </div>
+    </div>
 
       {/* Navigation (Desktop only) */}
-      <nav className="hidden md:block container mx-auto px-4 pb-4 relative">
-        <ul className="flex justify-center gap-8 text-sm font-medium select-none">
+      <nav className="hidden lg:block container mx-auto px-4 pb-4 relative">
+        <ul className="flex justify-center gap-8 text-xs font-semibold select-none uppercase tracking-wider">
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('home')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative uppercase tracking-wider ${
                 currentView === 'home' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
               }`}
             >
@@ -535,7 +529,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('stores')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative uppercase tracking-wider ${
                 currentView === 'stores' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
               }`}
             >
@@ -543,13 +537,13 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
             </button>
           </li>
           <li 
+            ref={categoriesDropdownRef}
             className="py-1"
-            onMouseEnter={() => setIsCategoriesDropdownOpen(true)}
-            onMouseLeave={() => setIsCategoriesDropdownOpen(false)}
           >
             <button 
               type="button"
-              className="flex items-center gap-1 hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative text-brand-charcoal font-medium"
+              onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
+              className="flex items-center gap-1 hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative text-brand-charcoal font-semibold uppercase tracking-wider border-0 bg-transparent"
             >
               <span>{t('nav.categories')}</span>
               <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoriesDropdownOpen ? 'rotate-180' : ''}`} />
@@ -562,62 +556,100 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 right-0 top-full mt-0 bg-[#FAF9F5] rounded-none shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start"
+                  className="absolute left-0 right-0 top-full mt-1 bg-[#FAF9F5] border border-brand-sage/10 rounded-2xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start normal-case tracking-normal"
                 >
                   {/* Column 1: Categories & Badges */}
                   <div className="flex flex-col space-y-6">
                     {/* Categories Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'الفئات' : language === 'ku' ? 'پۆلەکان' : 'Categories'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCategoriesDropdownOpen(false);
-                            if (onFilterSelect) onFilterSelect('categories', ['All']);
-                          }}
-                          className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer uppercase tracking-wider"
-                        >
-                          {language === 'ar' ? 'جميع الأقسام' : language === 'ku' ? 'هەموو پۆلەکان' : 'All Categories'}
-                        </button>
-                        {categoriesList.map(cat => (
-                          <button
-                            key={cat.id || cat.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('categories', [cat.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('categories')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'الفئات' : language === 'ku' ? 'پۆلەکان' : 'Categories'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.categories ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.categories && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {tCategory ? tCategory(cat.name) : cat.name}
-                          </button>
-                        ))}
-                      </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('categories', ['All']);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer uppercase tracking-wider"
+                            >
+                              {language === 'ar' ? 'جميع الأقسام' : language === 'ku' ? 'هەموو پۆلەکان' : 'All Categories'}
+                            </button>
+                            {categoriesList.map(cat => (
+                              <button
+                                key={cat.id || cat.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('categories', [cat.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {tCategory ? tCategory(cat.name) : cat.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Badges / Labels Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'الملصقات' : language === 'ku' ? 'نیشانەکان' : 'Badges & Labels'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {badgesList.map(badge => (
-                          <button
-                            key={badge.id || badge.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('badges', [badge.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('badges')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'الملصقات' : language === 'ku' ? 'نیشانەکان' : 'Badges & Labels'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.badges ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.badges && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {badge.name}
-                          </button>
-                        ))}
-                      </div>
+                            {badgesList.map(badge => (
+                              <button
+                                key={badge.id || badge.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('badges', [badge.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {badge.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
@@ -625,50 +657,88 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Colors Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {uniqueColorFilters.map(col => (
-                          <button
-                            key={col.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('colors', [col.name]);
-                            }}
-                            className="flex items-center space-x-2.5 text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer capitalize"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('colors')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.colors ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.colors && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            <span 
-                              className="w-3 h-3 rounded-full border border-gray-200/50 shrink-0" 
-                              style={getColorStyle(col.class)}
-                            />
-                            <span>{col.name}</span>
-                          </button>
-                        ))}
-                      </div>
+                            {uniqueColorFilters.map(col => (
+                              <button
+                                key={col.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('colors', [col.name]);
+                                }}
+                                className="flex items-center space-x-2.5 text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer capitalize"
+                              >
+                                <span 
+                                  className="w-3 h-3 rounded-full border border-gray-200/50 shrink-0" 
+                                  style={getColorStyle(col.class)}
+                                />
+                                <span>{col.name}</span>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Styles Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'الموديلات' : language === 'ku' ? 'شێوازەکان' : 'Styles'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {stylesList.map(st => (
-                          <button
-                            key={st.id || st.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('styles', [st.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('styles')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'الموديلات' : language === 'ku' ? 'شێوازەکان' : 'Styles'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.styles ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.styles && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {st.name}
-                          </button>
-                        ))}
-                      </div>
+                            {stylesList.map(st => (
+                              <button
+                                key={st.id || st.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('styles', [st.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {st.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
@@ -676,46 +746,84 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Materials Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Materials'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {materialsList.map(mat => (
-                          <button
-                            key={mat.id || mat.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('materials', [mat.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('materials')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Materials'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.materials ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.materials && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {mat.name}
-                          </button>
-                        ))}
-                      </div>
+                            {materialsList.map(mat => (
+                              <button
+                                key={mat.id || mat.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('materials', [mat.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {mat.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Seasons Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'الفصول' : language === 'ku' ? 'وەرزەکان' : 'Seasons'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {seasonsList.map(seas => (
-                          <button
-                            key={seas.id || seas.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('seasons', [seas.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('seasons')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'الفصول' : language === 'ku' ? 'وەرزەکان' : 'Seasons'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.seasons ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.seasons && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {seas.name}
-                          </button>
-                        ))}
-                      </div>
+                            {seasonsList.map(seas => (
+                              <button
+                                key={seas.id || seas.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('seasons', [seas.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {seas.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
@@ -723,46 +831,125 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <div className="flex flex-col space-y-6">
                     {/* Sizes Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'المقاسات' : language === 'ku' ? 'قەبارەکان' : 'Sizes'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {sizesList.map(sz => (
-                          <button
-                            key={sz.id || sz.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('sizes', [sz.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('sizes')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'المقاسات' : language === 'ku' ? 'قەبارەکان' : 'Sizes'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.sizes ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.sizes && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {sz.name}
-                          </button>
-                        ))}
-                      </div>
+                            {sizesList.map(sz => (
+                              <button
+                                key={sz.id || sz.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('sizes', [sz.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {sz.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Promotions Group */}
                     <div>
-                      <h4 className="text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-3">
-                        {language === 'ar' ? 'العروض الترويجية' : language === 'ku' ? 'کەمپین و عەرزەکان' : 'Promotions'}
-                      </h4>
-                      <div className="flex flex-col space-y-2">
-                        {promotionsList.map(promo => (
-                          <button
-                            key={promo.id || promo.name}
-                            type="button"
-                            onClick={() => {
-                              setIsCategoriesDropdownOpen(false);
-                              if (onFilterSelect) onFilterSelect('promotions', [promo.name]);
-                            }}
-                            className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('promotions')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'العروض الترويجية' : language === 'ku' ? 'کەمپین و عەرزەکان' : 'Promotions'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.promotions ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.promotions && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
                           >
-                            {promo.name}
-                          </button>
-                        ))}
-                      </div>
+                            {promotionsList.map(promo => (
+                              <button
+                                key={promo.id || promo.name}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('promotions', [promo.name]);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {promo.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Gender Group */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('gender')}
+                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                      >
+                        <span>{language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`text-gray-400 transition-transform duration-200 ${openGroups.gender ? 'rotate-0' : '-rotate-90'}`} 
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {openGroups.gender && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
+                          >
+                            {['Women', 'Men', 'Kids'].map(g => (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => {
+                                  setIsCategoriesDropdownOpen(false);
+                                  if (onFilterSelect) onFilterSelect('gender', g);
+                                }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                              >
+                                {g === 'Women' ? (language === 'ar' ? 'نساء' : language === 'ku' ? 'ژن' : 'Women') : g === 'Men' ? (language === 'ar' ? 'رجال' : language === 'ku' ? 'پیاو' : 'Men') : (language === 'ar' ? 'أطفال' : language === 'ku' ? 'منداڵ' : 'Kids')}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </motion.div>
@@ -772,7 +959,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('all_products')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative uppercase tracking-wider ${
                 currentView === 'all_products' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
               }`}
             >
@@ -782,7 +969,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('story')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative uppercase tracking-wider ${
                 currentView === 'story' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
               }`}
             >
@@ -792,7 +979,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('contact')}
-              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative ${
+              className={`hover:text-[#B2AC88] cursor-pointer transition-colors pb-1.5 relative uppercase tracking-wider ${
                 currentView === 'contact' ? 'text-[#B2AC88] font-bold' : 'text-brand-charcoal'
               }`}
             >
@@ -824,8 +1011,14 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               className={`fixed top-0 bottom-0 ${isRTL ? 'right-0 border-l' : 'left-0 border-r'} w-80 max-w-[80vw] bg-white shadow-2xl z-50 flex flex-col font-sans p-6 text-brand-charcoal border-gray-150`}
             >
               {/* Header of Mobile Menu */}
-              <div className="flex items-center justify-between pb-5 border-b border-gray-100 mb-6">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('nav.home')}</span>
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
+                <div className="flex items-center gap-1 select-none text-start font-sans text-[#36454F] leading-none">
+                  <HawrishaH size={28} className="text-[#36454F] shrink-0 w-[20px] h-[22px]" />
+                  <div className="flex flex-col items-start leading-[0.9]">
+                    <span className="text-[13px] font-black tracking-[0.06em] uppercase">AWRISHA</span>
+                    <span className="text-[6.5px] font-extrabold tracking-[0.22em] uppercase text-[#B2AC88] mt-0.5">BAZAAR</span>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -836,14 +1029,14 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               </div>
 
               {/* Navigation Links in Mobile Menu */}
-              <div className="flex-1 space-y-4 overflow-y-auto pr-2 rtl:pl-2 rtl:pr-0">
+              <div className="flex-1 space-y-2 overflow-y-auto pr-2 rtl:pl-2 rtl:pr-0">
                 <button
                   type="button"
                   onClick={() => {
                     onViewChange('home');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                  className={`w-full text-start py-1 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
                     currentView === 'home' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                   }`}
                 >
@@ -856,7 +1049,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     onViewChange('stores');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                  className={`w-full text-start py-1 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
                     currentView === 'stores' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                   }`}
                 >
@@ -868,10 +1061,10 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   <button
                     type="button"
                     onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
-                    className="w-full flex items-center justify-between py-2 text-base font-bold uppercase tracking-wider text-brand-charcoal cursor-pointer border-0"
+                    className="w-full flex items-center justify-between py-1 text-sm font-bold uppercase tracking-wider text-brand-charcoal cursor-pointer border-0"
                   >
                     <span>{t('nav.categories')}</span>
-                    <ChevronDown size={16} className={`transition-transform duration-200 ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
                   <AnimatePresence>
@@ -880,7 +1073,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="ps-4 mt-2 space-y-2 overflow-hidden border-l border-gray-100/70"
+                        className="ps-4 mt-1 space-y-1.5 overflow-hidden border-l border-gray-100/70"
                       >
                         {renderMobileSubSection(
                           language === 'ar' ? 'الفئات' : language === 'ku' ? 'پۆلەکان' : 'Categories',
@@ -925,6 +1118,17 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                           'promotions',
                           promotionsList
                         )}
+                        {renderMobileSubSection(
+                          language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender',
+                          'gender',
+                          [
+                            { id: 'women', name: language === 'ar' ? 'نساء' : language === 'ku' ? 'ژن' : 'Women', value: 'Women' },
+                            { id: 'men', name: language === 'ar' ? 'رجال' : language === 'ku' ? 'پیاو' : 'Men', value: 'Men' },
+                            { id: 'kids', name: language === 'ar' ? 'أطفال' : language === 'ku' ? 'منداڵ' : 'Kids', value: 'Kids' }
+                          ],
+                          (item) => item.value,
+                          (item) => item.name
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -936,7 +1140,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     onViewChange('all_products');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                  className={`w-full text-start py-1 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
                     currentView === 'all_products' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                   }`}
                 >
@@ -949,7 +1153,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     onViewChange('story');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                  className={`w-full text-start py-1 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
                     currentView === 'story' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                   }`}
                 >
@@ -962,7 +1166,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     onViewChange('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full text-start py-2 text-base font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
+                  className={`w-full text-start py-1 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 ${
                     currentView === 'contact' ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                   }`}
                 >
@@ -977,77 +1181,51 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     type="button"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      if (onSearch) onSearch('');
-                      onViewChange('all_products');
+                      if (isLoggedIn) {
+                        onViewChange('account');
+                      } else {
+                        onLoginClick();
+                      }
                     }}
                     className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
                   >
-                    <Search size={18} />
-                    <span>{t('nav.search_store')}</span>
+                    <User size={18} />
+                    <span>{language === 'en' ? 'Account' : t('account_page.title')}</span>
                   </button>
                   
-                  {isLoggedIn ? (
-                    <div className="space-y-3.5 pt-1.5 border-t border-gray-100 mt-4">
-                      <div className="flex items-center space-x-3 rtl:space-x-reverse text-xs text-gray-400 font-semibold select-none px-1">
-                        <User size={16} />
-                        <span>{language === 'ar' ? 'مسجل باسم' : language === 'ku' ? 'چوونەژوورەوە وەک' : 'Signed in as'} <strong className="text-[#36454F]">{currentUser}</strong></span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          onViewChange('account');
-                        }}
-                        className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
-                      >
-                        <User size={18} />
-                        <span className="uppercase tracking-wider">{t('account_page.title')}</span>
-                      </button>
-                      {currentUserRole === 'admin' && (
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            setIsMobileMenuOpen(false);
-                            onViewChange('admin');
-                          }}
-                          className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
-                        >
-                          <Settings size={18} className="text-gray-500" />
-                          <span className="uppercase tracking-wider">{t('admin_dashboard.title')}</span>
-                        </button>
-                      )}
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          onLogoutClick();
-                        }}
-                        className="flex items-center space-x-3.5 rtl:space-x-reverse text-red-500 hover:text-red-650 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer border-0 w-full text-start"
-                      >
-                        <span>{t('nav.sign_out')}</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        onLoginClick();
-                      }}
-                      className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
-                    >
-                      <User size={18} />
-                      <span>{t('nav.sign_in')}</span>
-                    </button>
-                  )}
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onCartClick();
+                    }}
+                    className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                  >
+                    <ShoppingCart size={18} />
+                    <span>{language === 'en' ? 'Your Basket' : t('nav.cart')}</span>
+                  </button>
+
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onWishlistClick();
+                    }}
+                    className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                  >
+                    <Heart size={18} />
+                    <span>{t('nav.wishlist')}</span>
+                  </button>
+
+
                 </div>
               </div>
 
               {/* Footer of Mobile Menu */}
-              <div className="border-t border-gray-100 pt-6 mt-6">
+              <div className="border-t border-gray-300 pt-6 mt-6">
                 <div className="flex flex-col space-y-2.5">
                   <span className="text-xs font-semibold text-gray-400">{t('nav.language')}:</span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-3 gap-2 w-full">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
@@ -1056,13 +1234,96 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                           setLanguage(lang.code);
                           setIsMobileMenuOpen(false);
                         }}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
+                        className={`text-xs font-bold py-1.5 px-1 rounded-full border transition-colors cursor-pointer w-full text-center ${
                           language === lang.code
                             ? 'bg-[#B2AC88] text-white border-[#B2AC88]'
                             : 'bg-transparent text-brand-charcoal border-gray-200 hover:bg-gray-50'
                         }`}
                       >
                         {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile & Tablet Search Overlay */}
+      <AnimatePresence>
+        {isMobileSearchOpen && (
+          <>
+            {/* Backdrop for lower half click-to-close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="fixed inset-0 bg-black/45 z-[99] lg:hidden cursor-pointer"
+            />
+            <motion.div
+              initial={{ y: '-100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed top-0 left-0 right-0 h-auto pb-6 bg-white z-[100] flex flex-col font-sans lg:hidden rounded-b-3xl shadow-xl overflow-y-auto"
+            >
+              <div className="p-4 flex flex-col mt-2">
+                {/* Search Header - Pill container & X button to the right */}
+                <div className="flex items-center justify-center gap-2 w-full max-w-[260px] mx-auto">
+                  <div className="flex-1 flex items-center bg-[#F8F9FA] border border-gray-250/80 rounded-full px-3 py-1.5 shadow-3xs">
+                    <form 
+                      className="flex-grow flex items-center"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (headerSearchTerm.trim() && onSearch) {
+                          onSearch(headerSearchTerm.trim());
+                          setIsMobileSearchOpen(false);
+                        }
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={headerSearchTerm}
+                        onChange={(e) => {
+                          setHeaderSearchTerm(e.target.value);
+                        }}
+                        className="w-full text-[13px] bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-medium"
+                        autoFocus
+                      />
+                    </form>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileSearchOpen(false)}
+                    className="text-gray-900 hover:text-[#B2AC88] active:text-[#B2AC88] transition-colors p-1"
+                  >
+                    <X size={20} strokeWidth={2} />
+                  </button>
+                </div>
+
+                {/* Popular Searches */}
+                <div className="mt-5 flex-1 max-w-[260px] mx-auto w-full">
+                  <h3 className="text-[9px] font-extrabold tracking-[0.15em] text-slate-400 uppercase mb-3 text-center sm:text-start">
+                    {language === 'ar' ? 'عمليات البحث الشائعة' : language === 'ku' ? 'گەڕانە باوەکان' : 'Popular Searches'}
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+                    {[
+                      "ANKLE SOCKS", "CREW SOCKS", "NO SHOW SOCKS", "WINTER SOCKS", "SUMMER SOCKS", "SPORTS SOCKS", "KIDS SOCKS"
+                    ].map(term => (
+                      <button
+                        key={term}
+                        onClick={() => {
+                          setHeaderSearchTerm(term);
+                          if (onSearch) onSearch(term);
+                          setIsMobileSearchOpen(false);
+                        }}
+                        className="px-3.5 py-1.5 rounded-full border border-gray-150 text-[9px] font-bold text-[#36454F] bg-gray-50/50 shadow-3xs hover:border-[#B2AC88] hover:text-[#B2AC88] active:bg-gray-100 transition-colors uppercase tracking-[0.03em]"
+                      >
+                        {term}
                       </button>
                     ))}
                   </div>

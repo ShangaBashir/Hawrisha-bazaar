@@ -60,47 +60,66 @@ export function LanguageProvider({ children }) {
     return value;
   };
 
+  const getLocalizedValue = (val) => {
+    if (!val) return '';
+    try {
+      if (typeof val === 'string' && val.trim().startsWith('{') && val.trim().endsWith('}')) {
+        const parsed = JSON.parse(val);
+        const l = language ? language.toLowerCase() : 'en';
+        const u = l.toUpperCase();
+        return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return val;
+  };
+
   // Helper to translate categories fetched from backend dynamically
   const tCategory = (categoryName) => {
     if (!categoryName) return '';
-    const nameLower = categoryName.toLowerCase();
+    const localized = getLocalizedValue(categoryName);
+    const nameLower = localized.toLowerCase();
     if (nameLower === 'all') return t('categories_sect.all');
-    if (nameLower === 'animals') return t('categories_sect.animals');
-    if (nameLower === 'fruits') return t('categories_sect.fruits');
-    if (nameLower === 'patterns') return t('categories_sect.patterns');
+    if (nameLower === 'animals' || nameLower === 'animal' || nameLower === 'animall') return t('categories_sect.animals');
+    if (nameLower === 'fruits' || nameLower === 'fruit') return t('categories_sect.fruits');
+    if (nameLower === 'patterns' || nameLower === 'pattern') return t('categories_sect.patterns');
     if (nameLower === 'cozy crew') return t('categories_sect.cozy_crew');
-    return categoryName;
+    return localized;
   };
 
   // Helper to translate badges fetched from backend dynamically
   const tBadge = (badgeName) => {
     if (!badgeName) return '';
-    const nameLower = badgeName.toLowerCase();
+    const localized = getLocalizedValue(badgeName);
+    const nameLower = localized.toLowerCase();
     if (nameLower === 'bestseller') return t('product.badge_bestseller');
     if (nameLower === 'new') return t('product.badge_new');
     if (nameLower === 'sale') return t('product.badge_sale');
-    return badgeName;
+    return localized;
   };
 
   // Helper to translate material names fetched from backend dynamically
   const tMaterial = (materialName) => {
     if (!materialName) return '';
-    const nameLower = materialName.toLowerCase();
+    const localized = getLocalizedValue(materialName);
+    const nameLower = localized.toLowerCase();
     if (nameLower.includes('cotton') || nameLower === 'combed cotton') return t('categories_sect.material_cotton');
     if (nameLower.includes('wool') || nameLower === 'merino wool') return t('categories_sect.material_wool');
     if (nameLower.includes('bamboo')) return t('categories_sect.material_bamboo');
-    return materialName;
+    return localized;
   };
 
   // Helper to translate seasonal type fetched from backend dynamically
   const tSeason = (seasonName) => {
     if (!seasonName) return '';
-    const nameLower = seasonName.toLowerCase();
+    const localized = getLocalizedValue(seasonName);
+    const nameLower = localized.toLowerCase();
     if (nameLower === 'all') return t('categories_sect.season_all');
     if (nameLower === 'winter') return t('categories_sect.season_winter');
     if (nameLower === 'summer') return t('categories_sect.season_summer');
     if (nameLower === 'spring/autumn' || nameLower === 'spring' || nameLower === 'autumn') return t('categories_sect.season_spring');
-    return seasonName;
+    return localized;
   };
 
   return (

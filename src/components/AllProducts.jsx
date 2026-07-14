@@ -16,12 +16,72 @@ const getColorStyle = (colorClass) => {
 
 const parseJsonArray = (val) => {
   if (!val) return [];
+  if (Array.isArray(val)) return val;
   try {
     const parsed = JSON.parse(val);
     return Array.isArray(parsed) ? parsed : [val];
   } catch {
     return [val];
   }
+};
+
+const getProductImage = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('/') || imgUrl.startsWith('data:') || imgUrl.startsWith('http')) {
+    return imgUrl;
+  }
+  return `/uploads/${imgUrl}`;
+};
+
+const getLocalized = (val, lang) => {
+  if (!val) return '';
+  const l = lang ? lang.toLowerCase() : 'en';
+  const u = l.toUpperCase();
+  if (typeof val === 'object') {
+    return val[l] || val[u] || val['en'] || val['EN'] || val['ku'] || val['KU'] || val['ar'] || val['AR'] || '';
+  }
+  let currentVal = val;
+  for (let i = 0; i < 3; i++) {
+    try {
+      if (typeof currentVal !== 'string') break;
+      const parsed = JSON.parse(currentVal);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
+      }
+      currentVal = parsed;
+    } catch {
+      break;
+    }
+  }
+  return currentVal;
+};
+
+const getLocalizedGender = (gender, lang) => {
+  if (!gender) return '';
+  const g = gender.toLowerCase();
+  if (g === 'women') return lang === 'ar' ? 'نساء' : lang === 'ku' ? 'ژن' : 'Women';
+  if (g === 'men') return lang === 'ar' ? 'رجال' : lang === 'ku' ? 'پیاو' : 'Men';
+  if (g === 'kids') return lang === 'ar' ? 'أطفال' : lang === 'ku' ? 'منداڵ' : 'Kids';
+  if (g === 'unisex') return lang === 'ar' ? 'للجنسين' : lang === 'ku' ? 'بۆ هەردوو ڕەگەز' : 'Unisex';
+  return gender;
+};
+
+const getCleanVendorName = (vendorName, language) => {
+  if (!vendorName) return '';
+  let name = getLocalized(vendorName, language).trim();
+  // Strip language-specific prefixes (legacy cleanup)
+  if (name.toLowerCase().endsWith(' store')) {
+    name = name.substring(0, name.length - 6).trim();
+  }
+  return name;
+};
+
+const hasOptions = (product) => {
+  if (!product) return false;
+  const colors = product.colors || [];
+  const sizes = parseJsonArray(product.size_collection).filter(s => s && s !== 'One Size');
+  const styles = parseJsonArray(product.style_length).filter(Boolean);
+  return colors.length > 1 || sizes.length > 0 || styles.length > 1;
 };
 
 const productsData = [
@@ -34,7 +94,8 @@ const productsData = [
     colors: ['bg-[#36454F]', 'bg-[#F5F5DC]', 'bg-[#60A5FA]', 'bg-[#B2AC88]'],
     colorNames: ['Charcoal Slate', 'Classic Beige', 'Soft Sky Blue', 'Sage Green'],
     extraColors: '+15',
-    image: '',
+    image: '/categories/cat1.jpg',
+    extra_images: JSON.stringify(['/categories/cat1.jpg', '/categories/cat2.jpg', '/categories/cat3.jpg', '/categories/cat4.jpg']),
     badge: 'Bestseller',
     desc: 'Express your passion for pets in cozy fashion. Knit with durable premium combed cotton, these socks deliver all-day comfort and a breathable stretch ideal for everyday walks.'
   },
@@ -47,7 +108,8 @@ const productsData = [
     colors: ['bg-orange-500', 'bg-[#36454F]', 'bg-[#F5F5DC]', 'bg-[#60A5FA]'],
     colorNames: ['Citrus Orange', 'Charcoal Slate', 'Classic Beige', 'Soft Sky Blue'],
     extraColors: '+15',
-    image: '',
+    image: '/categories/cat2.jpg',
+    extra_images: JSON.stringify(['/categories/cat2.jpg', '/categories/cat1.jpg', '/categories/cat3.jpg']),
     badge: 'New',
     desc: 'Brighten your day with these lovable tabby kitten designs. Perfect for cat enthusiasts, utilizing soft combed cotton for a premium lightweight and sweat-wicking texture.'
   },
@@ -60,7 +122,8 @@ const productsData = [
     colors: ['bg-[#F5F5DC]', 'bg-[#36454F]', 'bg-[#60A5FA]'],
     colorNames: ['Classic Beige', 'Charcoal Slate', 'Soft Sky Blue'],
     extraColors: '+15',
-    image: '',
+    image: '/categories/cat3.jpg',
+    extra_images: JSON.stringify(['/categories/cat3.jpg', '/categories/cat4.jpg']),
     badge: 'Sale',
     desc: 'Jump into premium comfort with our dynamic Kangaroo socks. Double-looped heel cushion supports high impact steps, keeping your feet padded and comfortable.'
   },
@@ -73,7 +136,8 @@ const productsData = [
     colors: ['bg-[#B2AC88]', 'bg-[#36454F]', 'bg-[#F5F5DC]', 'bg-[#60A5FA]'],
     colorNames: ['Sage Green', 'Charcoal Slate', 'Classic Beige', 'Soft Sky Blue'],
     extraColors: '+12',
-    image: '',
+    image: '/categories/cat2.jpg',
+    extra_images: null,
     badge: '',
     desc: 'Delicate pattern styling that adds a sweet touch to any aesthetic. Designed with standard rib arches to sit comfortably around the calf without binding.'
   },
@@ -86,7 +150,8 @@ const productsData = [
     colors: ['bg-[#B2AC88]', 'bg-[#36454F]', 'bg-[#B2AC88]'],
     colorNames: ['Dusk Rose', 'Charcoal Slate', 'Sage Green'],
     extraColors: '+8',
-    image: '',
+    image: '/categories/cat4.jpg',
+    extra_images: JSON.stringify(['/categories/cat4.jpg', '/categories/cat1.jpg', '/categories/cat2.jpg']),
     badge: 'Bestseller',
     desc: 'Make a bold statement with artist-inspired abstract faces. Knitted with combed yarns for high detailed resolution and rich, long-lasting wash durability.'
   },
@@ -99,7 +164,8 @@ const productsData = [
     colors: ['bg-[#F5F5DC]', 'bg-[#B2AC88]', 'bg-[#36454F]'],
     colorNames: ['Classic Beige', 'Dusk Rose', 'Charcoal Slate'],
     extraColors: '+10',
-    image: '',
+    image: '/categories/cat1.jpg',
+    extra_images: null,
     badge: 'New',
     desc: 'A delightful assortment of repeating kitten patterns. Standard crew length looks fantastic paired with casual sneakers or boots.'
   },
@@ -112,7 +178,8 @@ const productsData = [
     colors: ['bg-[#B2AC88]', 'bg-[#B2AC88]', 'bg-sky-400'],
     colorNames: ['Dusk Rose', 'Sage Green', 'Sky Blue'],
     extraColors: '+18',
-    image: '',
+    image: '/categories/cat3.jpg',
+    extra_images: null,
     badge: 'Bestseller',
     desc: 'Evoke year-round vacation vibes with our tropical flamingo graphics. Offers supportive seamless toes and high elastic ankle bands.'
   },
@@ -125,7 +192,8 @@ const productsData = [
     colors: ['bg-yellow-400', 'bg-[#36454F]', 'bg-[#F5F5DC]'],
     colorNames: ['Lemon Yellow', 'Charcoal Slate', 'Classic Beige'],
     extraColors: '+6',
-    image: '',
+    image: '/categories/cat2.jpg',
+    extra_images: null,
     bgFallback: 'bg-yellow-100/60',
     badge: 'Sale',
     desc: 'A splash of sunshine for your wardrobe! Designed with seamless toe closures to eliminate pressure seams and keep active steps cheerful.'
@@ -139,7 +207,8 @@ const productsData = [
     colors: ['bg-purple-400', 'bg-violet-600', 'bg-gray-100'],
     colorNames: ['Soft Lavender', 'Deep Violet', 'Cloud Gray'],
     extraColors: '+4',
-    image: '',
+    image: '/categories/cat4.jpg',
+    extra_images: null,
     bgFallback: 'bg-purple-100/60',
     badge: '',
     desc: 'Sink into luxurious relaxation with our extra-cushion lavender collection. Designed with organic wool blending to provide breathable warming wraps.'
@@ -153,7 +222,8 @@ const productsData = [
     colors: ['bg-sky-100', 'bg-blue-600', 'bg-white'],
     colorNames: ['Snow Sky Blue', 'Royal Blue', 'Pure White'],
     extraColors: '+14',
-    image: '',
+    image: '/categories/cat3.jpg',
+    extra_images: null,
     bgFallback: 'bg-sky-200/60',
     badge: 'New',
     desc: 'Stay warm even in sub-zero climates with extra brushed-nap loops. Excellent thermoregulatory layers featuring festive holiday patterns.'
@@ -167,7 +237,8 @@ const productsData = [
     colors: ['bg-red-400', 'bg-amber-400', 'bg-[#36454F]'],
     colorNames: ['Coral Red', 'Amber Yellow', 'Charcoal Slate'],
     extraColors: '+20',
-    image: '',
+    image: '/categories/cat2.jpg',
+    extra_images: null,
     bgFallback: 'bg-amber-100/60',
     badge: '',
     desc: 'Vintage varsity stripes that pair beautifully with athleisure wear. Offers medium arch compressions to reduce foot fatigue.'
@@ -181,7 +252,8 @@ const productsData = [
     colors: ['bg-emerald-600', 'bg-yellow-300', 'bg-[#36454F]'],
     colorNames: ['Avocado Green', 'Lemon Yellow', 'Charcoal Slate'],
     extraColors: '+8',
-    image: '',
+    image: '/categories/cat1.jpg',
+    extra_images: null,
     bgFallback: 'bg-emerald-100/60',
     badge: 'New',
     desc: 'Start your mornings with positive, smiling avocado prints. Made with breathable mesh panels to keep sweat low and comfort exceptionally high.'
@@ -200,12 +272,207 @@ const colorFilters = [
   { name: 'orange', class: 'bg-orange-500' }
 ];
 
-export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHome, initialCategory = 'All', likedProducts = [], onToggleWishlist, initialViewingProduct = null, cart = [], initialSearchTerm = '', previousView = 'home', isLoggedIn, onLoginRequired, globalFilters }) {
-  const { t, language } = useLanguage();
+function ProductCard({
+  product,
+  index,
+  cart,
+  likedProducts,
+  onAddToCart,
+  onRemoveFromCart,
+  onToggleWishlist,
+  onProductClick,
+  t,
+  onStoreClick
+}) {
+  const { language } = useLanguage();
+  const [activeImage, setActiveImage] = useState(product.image || product.image_url);
+
+  useEffect(() => {
+    setActiveImage(product.image || product.image_url);
+  }, [product.image, product.image_url]);
+
+
+  const hasOpts = hasOptions(product);
+  const isInCart = !hasOpts && cart.some((item) => String(item.id) === String(product.id));
+  const isLiked = likedProducts.includes(product.id);
+
+  return (
+    <motion.div
+      custom={index}
+      variants={{
+        hidden: { opacity: 0, y: 50, scale: 0.95 },
+        visible: (i) => ({
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          transition: {
+            duration: 0.5,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: (i % 4) * 0.07
+          }
+        })
+      }}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: false, amount: 0.08 }}
+      whileHover={{ y: -5 }}
+      exit={{ opacity: 0, y: -16, scale: 0.95, transition: { duration: 0.22 } }}
+      onClick={() => onProductClick(product)}
+      className="group cursor-pointer flex flex-col bg-transparent border border-transparent hover:border-[#B2AC88] p-0 rounded-2xl transition-all duration-300 relative overflow-hidden"
+    >
+      {/* Product Corner Badges (Rounded corners) */}
+      {(product.stock === 0 || product.discount > 0 || parseJsonArray(product.badge).filter(Boolean).length > 0) && (
+        <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
+          {product.stock === 0 && (
+            <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-lg shadow-xs">
+              Out of Stock
+            </div>
+          )}
+          {product.discount > 0 && (
+            <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-lg shadow-xs">
+              {product.discount}% OFF
+            </div>
+          )}
+          {parseJsonArray(product.badge).filter(Boolean).map((b) => {
+            const localizedB = getLocalized(b, language);
+            return (
+              <div
+                key={b}
+                className={`text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg shadow-xs ${
+                  localizedB === 'New' || localizedB === 'جديد' || localizedB === 'نوێ' ? 'bg-[#B2AC88] text-white' :
+                  localizedB === 'Bestseller' || localizedB === 'الأكثر مبيعا' || localizedB === 'پڕفرۆشترین' ? 'bg-[#36454F] text-white' : 'bg-[#C08081] text-white'
+                }`}
+              >
+                {localizedB}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Wishlist Button top-right */}
+      <div className="absolute top-3 right-3 z-10">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleWishlist(product, e);
+          }}
+          className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer"
+        >
+          <Heart
+            size={14}
+            className={isLiked ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-500"}
+          />
+        </button>
+      </div>
+
+      {/* Product Image Box */}
+      <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb]">
+        {activeImage ? (
+          <img
+            src={getProductImage(activeImage)}
+            alt={getLocalized(product.name, language)}
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103 rounded-2xl"
+          />
+        ) : (
+          <span className="text-gray-300 font-serif text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
+            {parseJsonArray(product.category).map(cat => getLocalized(cat, language)).join(', ')}
+          </span>
+        )}
+      </div>
+
+      {/* Details Area */}
+      <div className="flex flex-col flex-grow mt-3 px-3 pb-3">
+        {/* Product Name (Under the photo / thumbnails) */}
+        <h3 className="font-extrabold text-[#36454F] text-[14px] sm:text-[16px] group-hover:text-[#B2AC88] transition-colors line-clamp-2 text-start leading-snug">
+          {getLocalized(product.name, language)}
+        </h3>
+
+        {/* Price (Under the product name) */}
+        <div className="text-[16px] font-extrabold text-[#36454F] text-start flex items-center gap-2 flex-wrap mt-1">
+          {product.discount > 0 ? (
+            <>
+              <span className="text-[#36454F] text-[15px] sm:text-base">
+                {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
+              </span>
+              <span className="text-[11px] sm:text-[12px] line-through text-gray-400 font-normal">
+                {product.price.toLocaleString()} IQD
+              </span>
+              <span className="text-red-500 text-[10px] sm:text-[11px] font-bold">
+                {product.discount}% OFF
+              </span>
+            </>
+          ) : (
+            <span className="text-[#36454F] text-[15px] sm:text-base">{product.price.toLocaleString()} IQD</span>
+          )}
+        </div>
+
+        {/* Store Name (Under the product name) */}
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <p 
+            onClick={(e) => {
+              if (product.vendor_name && onStoreClick) {
+                e.stopPropagation();
+                onStoreClick(product.vendor_name);
+              }
+            }}
+            className={`text-[11px] sm:text-[13px] text-gray-400 font-medium ${product.vendor_name ? 'cursor-pointer hover:text-[#B2AC88] transition-colors' : ''}`}
+          >
+            {product.vendor_name
+              ? t('vendor_dashboard.sold_by', { vendor: getCleanVendorName(product.vendor_name, language) })
+              : t('vendor_dashboard.platform_store')}
+          </p>
+        </div>
+
+        {/* Promotion Badge (Under the store name) */}
+        {(() => {
+          const promos = parseJsonArray(product.promotion).filter(p => p && p !== 'None' && p !== '');
+          if (promos.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {promos.map((promo, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[9px] sm:text-[10px] font-bold text-[#B2AC88] uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#B2AC88] shrink-0" />
+                  {promo}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Cart Button (Under the store name) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isInCart) {
+              onRemoveFromCart(product, e);
+            } else {
+              onAddToCart(product, e);
+            }
+          }}
+          className={`w-full mt-3 py-2.5 px-4 rounded-xl border border-transparent text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer text-white ${
+            isInCart
+              ? 'bg-[#36454F] hover:bg-[#36454F]'
+              : 'bg-[#B2AC88] hover:bg-[#36454F]'
+          }`}
+        >
+          <ShoppingBag size={14} className="shrink-0" />
+          <span>
+            {isInCart ? 'Added to Cart' : 'Add to cart'}
+          </span>
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHome, initialCategory = 'All', likedProducts = [], onToggleWishlist, initialViewingProduct = null, cart = [], initialSearchTerm = '', onClearGlobalSearch, previousView = 'home', isLoggedIn, onLoginRequired, globalFilters, onOpenCart, resetDetailTrigger = 0, onStoreClick }) {
+  const { t, language, tCategory } = useLanguage();
   const isRTL = language === 'ar' || language === 'ku';
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('featured');
   const [priceRange, setPriceRange] = useState([0, 15000]);
 
@@ -265,11 +532,27 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [loading, setLoading] = useState(true);
   const [viewingProduct, setViewingProduct] = useState(initialViewingProduct);
   const [prevInitialProduct, setPrevInitialProduct] = useState(initialViewingProduct);
+  const [lastResetTrigger, setLastResetTrigger] = useState(resetDetailTrigger);
 
   if (initialViewingProduct !== prevInitialProduct) {
     setPrevInitialProduct(initialViewingProduct);
     setViewingProduct(initialViewingProduct);
   }
+
+  if (resetDetailTrigger !== lastResetTrigger) {
+    setLastResetTrigger(resetDetailTrigger);
+    setViewingProduct(null);
+  }
+
+  const [detailActiveImage, setDetailActiveImage] = useState(null);
+
+  useEffect(() => {
+    if (viewingProduct) {
+      setDetailActiveImage(viewingProduct.image || viewingProduct.image_url);
+    } else {
+      setDetailActiveImage(null);
+    }
+  }, [viewingProduct]);
   
   // Fetch products from database
   useEffect(() => {
@@ -281,7 +564,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       })
       .then((data) => {
         if (active) {
-          setProducts(data);
+          const sorted = [...data].sort((a, b) => Number(b.id) - Number(a.id));
+          setProducts(sorted);
           setLoading(false);
         }
       })
@@ -439,21 +723,20 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [viewingProduct]);
 
-  useEffect(() => {
-    setSearchTerm(initialSearchTerm);
-  }, [initialSearchTerm]);
+
   const [selectedCategories, setSelectedCategories] = useState(
     initialCategory === 'All' ? [] : [initialCategory]
   );
   const [prevInitialCategory, setPrevInitialCategory] = useState(initialCategory);
   const [prevGlobalFilters, setPrevGlobalFilters] = useState(null);
   
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [onlyDiscounted, setOnlyDiscounted] = useState(false);
   const [maxPriceFilter, setMaxPriceFilter] = useState(15000);
   const [hasSetDefaultPrice, setHasSetDefaultPrice] = useState(false);
   const [selectedColors, setSelectedColors] = useState([]);
   const [sortBy, setSortBy] = useState('Featured');
+  const [selectedGender, setSelectedGender] = useState('');
 
   if (initialCategory !== prevInitialCategory) {
     setPrevInitialCategory(initialCategory);
@@ -475,6 +758,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setSelectedBadges(globalFilters.badges || []);
     setSelectedPromotions(globalFilters.promotions || []);
     setOnlyDiscounted(globalFilters.onlyDiscounted || false);
+    setSelectedGender(globalFilters.gender || '');
     
     if (globalFilters.categories && globalFilters.categories.length > 0) {
       setActiveCategory(globalFilters.categories[0]);
@@ -485,6 +769,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   
   const [collapsedSections, setCollapsedSections] = useState({
     offers: false,
+    gender: false,
     categories: false,
     badges: false,
     promotions: false,
@@ -516,9 +801,49 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [currentPage, setCurrentPage] = useState(0);
 
   // Product Detail Page configurations
-  const [detailColorIndex, setDetailColorIndex] = useState(0);
+  const [detailSelectedColor, setDetailSelectedColor] = useState(null);
   const [detailQuantity, setDetailQuantity] = useState(1);
   const [isDetailRemovedBlue, setIsDetailRemovedBlue] = useState(false);
+  const [detailSelectedStyle, setDetailSelectedStyle] = useState(null);
+  const [detailSelectedSize, setDetailSelectedSize] = useState(null);
+  const [relatedPage, setRelatedPage] = useState(0);
+  const [hoveredRelatedId, setHoveredRelatedId] = useState(null);
+  const [detailValidationError, setDetailValidationError] = useState('');
+
+  // "Choose Options" Modal state
+  const [optionsModalProduct, setOptionsModalProduct] = useState(null);
+  const [modalColorIndex, setModalColorIndex] = useState(null);
+  const [modalSelectedSize, setModalSelectedSize] = useState(null);
+  const [modalSelectedStyle, setModalSelectedStyle] = useState(null);
+  const [modalQuantity, setModalQuantity] = useState(1);
+  const [modalValidationError, setModalValidationError] = useState('');
+  const [modalActiveImage, setModalActiveImage] = useState(null);
+
+  const selectedColorClass = (optionsModalProduct && modalColorIndex !== null)
+    ? optionsModalProduct.colors?.[modalColorIndex]
+    : null;
+
+  useEffect(() => {
+    if (optionsModalProduct) {
+      setModalColorIndex(optionsModalProduct.colors && optionsModalProduct.colors.length > 0 ? 0 : null);
+      setModalSelectedSize(null);
+      setModalSelectedStyle(null);
+      setModalQuantity(1);
+      setModalValidationError('');
+      setModalActiveImage(optionsModalProduct.image || optionsModalProduct.image_url);
+      
+      // Prevent background scrolling
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Re-enable background scrolling
+      document.body.style.overflow = '';
+    }
+    
+    // Cleanup on unmount or when modal closes
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [optionsModalProduct]);
 
   useEffect(() => {
     setIsDetailRemovedBlue(false);
@@ -536,18 +861,22 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       if (onLoginRequired) onLoginRequired();
       return;
     }
+    if (hasOptions(product)) {
+      setOptionsModalProduct(product);
+      return;
+    }
     const finalPrice = product.discount > 0 
       ? Math.round(product.price * (1 - product.discount / 100))
       : product.price;
-    onAddToCart({ ...product, price: finalPrice });
-    showToast(`Added ${product.name} to your cart!`);
+    onAddToCart({ ...product, price: finalPrice }, 1);
+    showToast(`Added ${getLocalized(product.name, language)} to your cart!`);
   };
 
   const handleRemoveFromCartClick = (product, e) => {
     e.stopPropagation();
     if (onRemoveFromCart) {
       onRemoveFromCart(product.id);
-      showToast(`Removed ${product.name} from your cart!`);
+      showToast(`Removed ${getLocalized(product.name, language)} from your cart!`);
     }
   };
 
@@ -556,15 +885,15 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     const isLiked = likedProducts.includes(product.id);
     onToggleWishlist(product.id);
     if (isLiked) {
-      showToast(`Removed ${product.name} from your wishlist!`);
+      showToast(`Removed ${getLocalized(product.name, language)} from your wishlist!`);
     } else {
-      showToast(`Added ${product.name} to your wishlist!`);
+      showToast(`Added ${getLocalized(product.name, language)} to your wishlist!`);
     }
   };
 
   // Reset Filters
   const handleResetFilters = () => {
-    setSearchTerm('');
+    setLocalSearchTerm('');
     setSelectedCategories([]);
     setOnlyDiscounted(false);
     setMaxPriceFilter(maxPriceOfProducts);
@@ -576,13 +905,20 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setSelectedSizes([]);
     setSelectedBadges([]);
     setSelectedPromotions([]);
+    setSelectedGender('');
   };
 
   // Memoized Filtered & Sorted Products
   const filteredProducts = useMemo(() => {
     return products
       .filter((product) => {
-        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const lTerm = localSearchTerm.toLowerCase();
+        const matchesLocal = !lTerm || getLocalized(product.name, language).toLowerCase().includes(lTerm);
+
+        const gTerm = initialSearchTerm.toLowerCase();
+        const matchesGlobal = !gTerm || getLocalized(product.name, language).toLowerCase().includes(gTerm) ||
+          (product.vendor_name && getLocalized(product.vendor_name, language).toLowerCase().includes(gTerm));
+        const matchesSearch = matchesLocal && matchesGlobal;
         const matchesCategory = selectedCategories.length === 0 || 
           selectedCategories.some(cat => 
             cat === 'Wishlist' 
@@ -647,7 +983,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         const matchesPromotion = selectedPromotions.length === 0 || 
           selectedPromotions.some(promo => parseJsonArray(product.promotion).includes(promo));
 
-        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount && matchesBadge && matchesPromotion;
+        const matchesGender = !selectedGender || product.gender === selectedGender;
+
+        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount && matchesBadge && matchesPromotion && matchesGender;
       })
       .sort((a, b) => {
         if (sortBy === 'Price: Low to High') {
@@ -669,36 +1007,41 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         }
         return 0;
       });
-  }, [products, searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions]);
+  }, [products, localSearchTerm, initialSearchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions, selectedGender]);
 
   // Reset page when any filter updates
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions]);
+  }, [localSearchTerm, initialSearchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions, selectedGender]);
 
   // Memoized page count
   const pageCount = useMemo(() => {
-    return Math.ceil(filteredProducts.length / 12);
+    return Math.ceil(filteredProducts.length / 16);
   }, [filteredProducts]);
 
   // Paginated Products
   const paginatedProducts = useMemo(() => {
-    if (filteredProducts.length <= 12) {
+    if (filteredProducts.length <= 16) {
       return filteredProducts;
     }
-    const start = currentPage * 12;
-    const end = start + 12;
+    const start = currentPage * 16;
+    const end = start + 16;
     return filteredProducts.slice(start, end);
   }, [filteredProducts, currentPage]);
 
-  const hasActiveFilters = onlyDiscounted || selectedCategories.length > 0 || maxPriceFilter < maxPriceOfProducts || selectedColors.length > 0 || searchTerm !== '' || selectedStyles.length > 0 || selectedMaterials.length > 0 || selectedSeasons.length > 0 || selectedSizes.length > 0;
+  const hasActiveFilters = onlyDiscounted || selectedCategories.length > 0 || maxPriceFilter < maxPriceOfProducts || selectedColors.length > 0 || localSearchTerm !== '' || initialSearchTerm !== '' || selectedStyles.length > 0 || selectedMaterials.length > 0 || selectedSeasons.length > 0 || selectedSizes.length > 0 || !!selectedGender;
 
   // Trigger entering product detail state
   const handleCardClick = (product) => {
     setViewingProduct(product);
-    setDetailColorIndex(0);
+    setDetailSelectedColor(null);
     setDetailQuantity(1);
     setIsDetailRemovedBlue(false);
+    setDetailSelectedStyle(null);
+    setDetailSelectedSize(null);
+    setRelatedPage(0);
+    setHoveredRelatedId(null);
+    setDetailValidationError('');
   };
 
   // Perform multiple dynamic additions to shopping bag or removal
@@ -707,22 +1050,46 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       if (onLoginRequired) onLoginRequired();
       return;
     }
-    const isDetailInCart = cart.some(item => item.id === viewingProduct.id);
-    if (isDetailInCart) {
-      if (onRemoveFromCart) {
-        onRemoveFromCart(viewingProduct.id);
-      }
-      setIsDetailRemovedBlue(true);
-      showToast(`Removed ${viewingProduct.name} from cart!`);
-    } else {
-      const finalPrice = viewingProduct.discount > 0 
-        ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
-        : viewingProduct.price;
-      onAddToCart({ ...viewingProduct, price: finalPrice }, detailQuantity);
-      setIsDetailRemovedBlue(false);
-      const colorLabel = viewingProduct.colorNames ? viewingProduct.colorNames[detailColorIndex] : 'selected color';
-      showToast(`Added ${detailQuantity}x ${viewingProduct.name} (${colorLabel}) to cart!`);
+    // Validate style selection when multiple styles exist
+    const styleOptions = parseJsonArray(viewingProduct.style_length).filter(Boolean);
+    if (styleOptions.length > 1 && !detailSelectedStyle) {
+      setDetailValidationError('Please select a Style / Length first.');
+      return;
     }
+    // Validate size selection when sizes exist
+    const sizeOptions = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+    if (sizeOptions.length > 0 && !detailSelectedSize) {
+      setDetailValidationError('Please select a Size first.');
+      return;
+    }
+    // Validate color selection
+    const sizeColorMap = (() => { try { return JSON.parse(viewingProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+    const availableColorClasses = detailSelectedSize && sizeColorMap[detailSelectedSize] 
+      ? sizeColorMap[detailSelectedSize] 
+      : (viewingProduct.colors || []);
+    if (availableColorClasses.length > 0 && !detailSelectedColor) {
+      setDetailValidationError('Please select a Color first.');
+      return;
+    }
+    setDetailValidationError('');
+    const finalPrice = viewingProduct.discount > 0
+      ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
+      : viewingProduct.price;
+    const selectedColorName = viewingProduct.colorNames
+      ? viewingProduct.colorNames[viewingProduct.colors ? viewingProduct.colors.indexOf(detailSelectedColor) : -1]
+      : null;
+    onAddToCart({ 
+      ...viewingProduct, 
+      price: finalPrice, 
+      selectedStyle: detailSelectedStyle, 
+      selectedSize: detailSelectedSize,
+      selectedColor: detailSelectedColor,
+      selectedColorName: selectedColorName
+    }, detailQuantity);
+    const colorLabel = selectedColorName || detailSelectedColor || 'selected color';
+    showToast(`Added ${detailQuantity}x ${viewingProduct.name} (${colorLabel}) to cart!`);
+    // Open cart panel immediately
+    if (onOpenCart) onOpenCart();
   };
 
   return (
@@ -757,34 +1124,44 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
             >
               {/* Luxury Banner Header */}
               {/* Clean Header & Filters Bar */}
-              <div className="mb-10">
+              <div className="mb-4 md:mb-10">
                 {/* Title Row */}
                 <motion.div
                   initial={{ opacity: 0, y: -24 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8"
+                  className="flex flex-col md:flex-row md:items-end justify-between gap-2 md:gap-4 mb-4 md:mb-8"
                 >
-                  <div>
-                    <h1 className="text-5xl font-black text-[#36454F] tracking-tight uppercase leading-none">{t('nav.all_products')}</h1>
+                  <div className="w-full">
+                    <h1 className="text-3xl md:text-5xl font-black text-[#36454F] tracking-tight uppercase leading-none">{t('nav.all_products')}</h1>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.4 }}
+                      className="mt-4 md:mt-6 relative group inline-block"
+                    >
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-gray-400 group-focus-within:text-[#B2AC88] transition-colors duration-300" />
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder={language === 'ar' ? 'البحث عن منتج...' : language === 'ku' ? 'گەڕان بۆ بەرهەم...' : 'Search products...'}
+                        value={localSearchTerm}
+                        onChange={(e) => setLocalSearchTerm(e.target.value)}
+                        className="w-64 md:w-72 focus:w-80 md:focus:w-96 pl-11 pr-4 py-2.5 md:py-3 bg-white border border-gray-200 hover:border-gray-300 rounded-full focus:border-[#B2AC88] focus:ring-4 focus:ring-[#B2AC88]/15 outline-none transition-all duration-300 text-sm font-semibold text-[#36454F] placeholder-gray-400 shadow-sm"
+                      />
+                      {localSearchTerm && (
+                        <button 
+                          onClick={() => setLocalSearchTerm('')}
+                          className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </motion.div>
                   </div>
 
-                  {/* Search input - clean minimal style */}
-                  <motion.div
-                    initial={{ opacity: 0, x: isRTL ? -24 : 24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
-                    className="relative w-full md:w-80"
-                  >
-                    <input
-                      type="text"
-                      placeholder={t('product.search_catalog')}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 bg-white border border-gray-200 focus:border-[#B2AC88] rounded-full focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/15 text-sm text-[#36454F] transition-all placeholder:text-gray-400 shadow-xs font-semibold`}
-                    />
-                    <Search className={`absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-3.5 text-gray-400`} size={14} />
-                  </motion.div>
+                  {/* Search input deleted as requested */}
                 </motion.div>
 
                 {/* Filters Controls Bar */}
@@ -792,23 +1169,23 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, delay: 0.2, ease: 'easeOut' }}
-                  className="flex flex-wrap items-center justify-between gap-4 border-t border-b border-gray-100 py-3.5"
+                  className="flex flex-col md:flex-row justify-between gap-4 border-t border-b border-gray-100 py-3.5 items-start"
                 >
-                  <div className="flex items-center space-x-4 rtl:space-x-reverse">
-                    {/* Hide Filters Button */}
-                    <button
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="px-5 py-2 border border-gray-200 hover:border-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white"
-                    >
-                      {showFilters 
-                        ? (language === 'ar' ? 'إخفاء الفلاتر' : language === 'ku' ? 'شاردنەوەی فلتەرەکان' : 'Hide filters')
-                        : (language === 'ar' ? 'عرض الفلاتر' : language === 'ku' ? 'پیشاندانی فلتەرەکان' : 'Show filters')}
-                    </button>
+                  {/* Left Side: Hide Filters Button + Active filter badges */}
+                  <div className="flex flex-col gap-3 flex-1">
+                    <div className="flex items-center space-x-4 rtl:space-x-reverse">
+                      {/* Hide Filters Button */}
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="px-5 py-2 border border-gray-200 hover:border-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white"
+                      >
+                        {showFilters 
+                          ? (language === 'ar' ? 'إخفاء الفلاتر' : language === 'ku' ? 'شاردنەوەی فلتەرەکان' : 'Hide filters')
+                          : (language === 'ar' ? 'عرض الفلاتر' : language === 'ku' ? 'پیشاندانی فلتەرەکان' : 'Show filters')}
+                      </button>
+                    </div>
 
-                  </div>
-
-                  {/* Active filter badges / pills */}
-                  <div className="flex flex-wrap gap-2 items-center">
+                    <div className="flex flex-wrap gap-2 items-center">
                     {selectedCategories.map(cat => (
                       <span key={cat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
                         <span>{language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}: {cat}</span>
@@ -833,10 +1210,16 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                         <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedColors([])} />
                       </span>
                     )}
-                    {searchTerm !== '' && (
+                    {localSearchTerm !== '' && (
                       <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'البحث' : language === 'ku' ? 'گەڕان' : 'Search'}: "{searchTerm}"</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSearchTerm('')} />
+                        <span>{language === 'ar' ? 'البحث' : language === 'ku' ? 'گەڕان' : 'Search'}: "{localSearchTerm}"</span>
+                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setLocalSearchTerm('')} />
+                      </span>
+                    )}
+                    {initialSearchTerm !== '' && (
+                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                        <span>{language === 'ar' ? 'البحث العام' : language === 'ku' ? 'گەڕانی گشتی' : 'Global Search'}: "{initialSearchTerm}"</span>
+                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => onClearGlobalSearch && onClearGlobalSearch()} />
                       </span>
                     )}
                     {selectedStyles.map(st => (
@@ -871,13 +1254,19 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                         {t('product.clear_all')}
                       </button>
                     )}
+                  </div>
+                  </div>
+                  
+                  {/* Right Side: Local Products Search ABOVE Sort By */}
+                  <div className="flex flex-col items-end gap-2 shrink-0 w-full md:w-auto mt-2 md:mt-0">
                     
-                    <div className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-gray-300 rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white ml-2 rtl:space-x-reverse rtl:mr-2 rtl:ml-0">
-                      <span className="shrink-0 text-gray-400 text-xs font-semibold select-none">{t('product.sort_title')}:</span>
+                    {/* Sort By Dropdown */}
+                    <div className="flex items-center space-x-1.5 px-2 py-1.5 md:px-4 md:py-2 border border-gray-200 hover:border-gray-300 rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white rtl:space-x-reverse">
+                      <span className="shrink-0 text-gray-400 text-[10px] md:text-xs font-semibold select-none">{t('product.sort_title')}:</span>
                       <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
-                        className="bg-transparent border-0 py-0 pr-6 rtl:pl-6 rtl:pr-0 text-xs font-bold text-[#36454F] focus:outline-none cursor-pointer"
+                        className="bg-transparent border-0 py-0 pr-4 rtl:pl-4 rtl:pr-0 text-[10px] md:text-xs font-bold text-[#36454F] focus:outline-none cursor-pointer max-w-[90px] md:max-w-none"
                       >
                         <option value="Featured">{language === 'ar' ? 'المميز' : language === 'ku' ? 'تایبەتمەند' : 'Featured'}</option>
                         <option value="Newest Arrivals">{t('product.sort_newest')}</option>
@@ -903,23 +1292,6 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                       className="w-full lg:w-64 shrink-0 self-start lg:sticky lg:top-28 z-20 overflow-hidden"
                     >
                       <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col space-y-6">
-                        {/* All Products Button */}
-                        <div className="space-y-1">
-                          <button
-                            onClick={handleResetFilters}
-                            className={`flex items-center justify-between w-full text-xs font-bold py-2.5 px-3.5 rounded-full transition-all cursor-pointer text-left ${
-                              !hasActiveFilters
-                                ? 'bg-[#B2AC88]/20 hover:bg-[#B2AC88]/30 text-[#B2AC88] font-black border border-[#B2AC88]/40 shadow-xs'
-                                : 'bg-gray-50 hover:bg-gray-100 text-[#36454F] border border-gray-200/60 shadow-2xs'
-                            }`}
-                          >
-                            <span>All</span>
-                            <span className={`text-[10px] font-bold ${
-                              !hasActiveFilters ? 'text-[#B2AC88]' : 'text-gray-400'
-                            }`}>{products.length}</span>
-                          </button>
-                        </div>
-
                         {/* Discount / Offers Section */}
                         <div className="space-y-2">
                           <div 
@@ -958,6 +1330,50 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                 />
                                 <span>Discount</span>
                               </label>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Gender Section */}
+                        <div className="space-y-2">
+                          <div 
+                            onClick={() => toggleSection('gender')} 
+                            className="flex items-center justify-between cursor-pointer group select-none"
+                          >
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}</h4>
+                            <div className="flex items-center space-x-2">
+                              {selectedGender && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedGender('');
+                                  }}
+                                  className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                              <ChevronDown 
+                                size={13} 
+                                className={`text-gray-400 group-hover:text-[#36454F] transition-transform duration-200 ${
+                                  collapsedSections.gender ? '-rotate-90' : 'rotate-0'
+                                }`} 
+                              />
+                            </div>
+                          </div>
+                          {!collapsedSections.gender && (
+                            <div className="flex flex-col space-y-2">
+                              {['Women', 'Men', 'Kids'].map(g => (
+                                <label key={g} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={selectedGender === g}
+                                    onChange={() => setSelectedGender(selectedGender === g ? '' : g)}
+                                    className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
+                                  />
+                                  <span>{g === 'Women' ? (language === 'ar' ? 'نساء' : language === 'ku' ? 'ژن' : 'Women') : g === 'Men' ? (language === 'ar' ? 'رجال' : language === 'ku' ? 'پیاو' : 'Men') : (language === 'ar' ? 'أطفال' : language === 'ku' ? 'منداڵ' : 'Kids')}</span>
+                                </label>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -1005,26 +1421,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                     }}
                                     className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                   />
-                                  <span>{cat.name}</span>
+                                  <span>{getLocalized(cat.name, language)}</span>
                                 </label>
                               ))}
-                              {likedProducts.length > 0 && (
-                                <label className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none border-t border-gray-50 pt-2 mt-1">
-                                  <input 
-                                    type="checkbox" 
-                                    checked={selectedCategories.includes('Wishlist')}
-                                    onChange={() => {
-                                      if (selectedCategories.includes('Wishlist')) {
-                                        setSelectedCategories(selectedCategories.filter(c => c !== 'Wishlist'));
-                                      } else {
-                                        setSelectedCategories([...selectedCategories, 'Wishlist']);
-                                      }
-                                    }}
-                                    className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
-                                  />
-                                  <span>Wishlist</span>
-                                </label>
-                              )}
                             </div>
                           )}
                         </div>
@@ -1072,7 +1471,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                     }}
                                     className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                   />
-                                  <span>{badge.name}</span>
+                                  <span>{getLocalized(badge.name, language)}</span>
                                 </label>
                               ))}
                             </div>
@@ -1122,7 +1521,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                     }}
                                     className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                   />
-                                  <span>{promo.name}</span>
+                                  <span>{getLocalized(promo.name, language)}</span>
                                 </label>
                               ))}
                             </div>
@@ -1457,200 +1856,93 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                        className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 md:gap-x-6 gap-y-8 md:gap-y-14"
                       >
                         <AnimatePresence mode="popLayout">
                           {paginatedProducts.map((product, index) => {
                             return (
-                              <motion.div
+                              <ProductCard
                                 key={product.id}
-                                custom={index}
-                                variants={{
-                                  hidden: { opacity: 0, y: 50, scale: 0.95 },
-                                  visible: (i) => ({
-                                    opacity: 1,
-                                    y: 0,
-                                    scale: 1,
-                                    transition: {
-                                      duration: 0.5,
-                                      ease: [0.25, 0.46, 0.45, 0.94],
-                                      delay: (i % 4) * 0.07
-                                    }
-                                  })
-                                }}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: false, amount: 0.08 }}
-                                whileHover={{ y: -5 }}
-                                exit={{ opacity: 0, y: -16, scale: 0.95, transition: { duration: 0.22 } }}
-                                onClick={() => handleCardClick(product)}
-                                className="group cursor-pointer flex flex-col bg-transparent transition-colors duration-300 relative overflow-hidden"
-                              >
-                                 {/* Product Corner Badges */}
-                                 <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
-                                   {product.discount > 0 && (
-                                     <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-full shadow-xs">
-                                       {product.discount}% OFF
-                                     </div>
-                                   )}
-                                   {parseJsonArray(product.badge).map((b) => (
-                                     <div 
-                                       key={b}
-                                       className={`text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-xs ${
-                                         b === 'New' ? 'bg-[#B2AC88] text-white' :
-                                         b === 'Bestseller' ? 'bg-[#36454F] text-white' : 'bg-[#C08081] text-white'
-                                       }`}
-                                     >
-                                       {b}
-                                     </div>
-                                   ))}
-                                 </div>
-
-                                 {/* Wishlist Button top-right */}
-                                 <div className="absolute top-3 right-3 z-10">
-                                   <button 
-                                     onClick={(e) => { 
-                                       e.stopPropagation(); 
-                                       handleToggleWishlistClick(product, e);
-                                     }}
-                                     className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer"
-                                   >
-                                     <Heart 
-                                       size={14} 
-                                       className={likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-500"} 
-                                     />
-                                   </button>
-                                 </div>
-
-                                {/* Product Image Box */}
-                                <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb]">
-                                  {(product.image || product.image_url) ? (
-                                    <img 
-                                      src={product.image || product.image_url} 
-                                      alt={product.name} 
-                                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103" 
-                                    />
-                                  ) : (
-                                    <span className="text-gray-300 font-serif text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
-                                      {parseJsonArray(product.category).join(', ')}
-                                    </span>
-                                  )}
-                                </div>
-
-                                 {/* Product Details (Grid layout like Picture 2) */}
-                                 <div className="flex flex-col flex-grow mt-3 px-1">
-                                   <div className="flex items-start justify-between gap-2">
-                                     <h3 className="font-bold text-[#36454F] text-sm group-hover:text-[#B2AC88] transition-colors truncate text-start">
-                                       {product.name}
-                                     </h3>
-                                     <div className="text-sm font-bold text-[#36454F] text-end shrink-0">
-                                       {product.discount > 0 ? (
-                                         <div className="flex flex-col items-end">
-                                           <span className="text-[10px] line-through text-gray-300 font-normal leading-none mb-0.5">
-                                             {product.price.toLocaleString()} IQD
-                                           </span>
-                                           <span className="text-[#36454F] leading-none">
-                                             {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
-                                           </span>
-                                         </div>
-                                       ) : (
-                                         <span>{product.price.toLocaleString()} IQD</span>
-                                       )}
-                                     </div>
-                                   </div>
-                                   <p className="text-[11px] text-gray-400 text-start mt-0.5">
-                                     {product.vendor_name 
-                                       ? t('vendor_dashboard.sold_by', { vendor: product.vendor_name }) 
-                                       : t('vendor_dashboard.platform_store')}
-                                   </p>
-
-                                   {/* Add to Cart Button */}
-                                   <button
-                                     type="button"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       if (cart.some(item => item.id === product.id)) {
-                                         handleRemoveFromCartClick(product, e);
-                                       } else {
-                                         handleAddToCartClick(product, e);
-                                       }
-                                     }}
-                                     className={`w-full mt-3.5 py-2 px-4 rounded-full border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                       cart.some(item => item.id === product.id)
-                                         ? 'bg-[#B2AC88] border-[#B2AC88] text-white hover:bg-[#a09a76]'
-                                         : 'bg-transparent border-gray-200 text-brand-charcoal hover:bg-gray-50 hover:border-gray-300'
-                                     }`}
-                                   >
-                                     <ShoppingBag size={14} className="shrink-0" />
-                                     <span>
-                                       {cart.some(item => item.id === product.id) ? 'Added to Cart' : 'Add to cart'}
-                                     </span>
-                                   </button>
-                                 </div>
-                              </motion.div>
+                                product={product}
+                                index={index}
+                                cart={cart}
+                                likedProducts={likedProducts}
+                                onAddToCart={handleAddToCartClick}
+                                onRemoveFromCart={handleRemoveFromCartClick}
+                                onToggleWishlist={handleToggleWishlistClick}
+                                onProductClick={handleCardClick}
+                                t={t}
+                                onStoreClick={onStoreClick}
+                              />
                             );
                           })}
                         </AnimatePresence>
                       </motion.div>
 
                       {/* Pagination Controls */}
-                      {filteredProducts.length > 12 && (
+                      {filteredProducts.length > 16 && (
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: false, amount: 0.5 }}
                           transition={{ duration: 0.4, ease: 'easeOut' }}
-                          className="flex items-center justify-center space-x-4 mt-10"
+                          className="flex flex-col items-center justify-center space-y-4 mt-12"
                         >
-                          {/* Prev Button */}
-                          <button
-                            type="button"
-                            disabled={currentPage === 0}
-                            onClick={() => {
-                              setCurrentPage(prev => Math.max(0, prev - 1));
-                              window.scrollTo(0, 0);
-                            }}
-                            className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                            aria-label="Previous Page"
-                          >
-                            <ChevronLeft size={16} />
-                          </button>
-
-                          {/* Dots */}
-                          <div className="flex items-center space-x-2.5">
-                            {[...Array(pageCount)].map((_, i) => {
-                              const isActive = currentPage === i;
-                              return (
-                                <button
-                                  key={i}
-                                  onClick={() => {
-                                    setCurrentPage(i);
-                                    window.scrollTo(0, 0);
-                                  }}
-                                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                    isActive 
-                                      ? 'bg-[#C08081] scale-110 shadow-xs' 
-                                      : 'border border-[#C08081] bg-transparent hover:bg-[#C08081]/15'
-                                  }`}
-                                  aria-label={`Go to page ${i + 1}`}
-                                />
-                              );
-                            })}
+                          <div className="text-xs text-gray-500 font-medium font-sans select-none">
+                            Showing {currentPage * 16 + 1} to {Math.min(filteredProducts.length, (currentPage + 1) * 16)} of {filteredProducts.length} items — Page {currentPage + 1} of {pageCount}
                           </div>
+                          
+                          <div className="flex items-center justify-center space-x-4">
+                            {/* Prev Button */}
+                            <button
+                              type="button"
+                              disabled={currentPage === 0}
+                              onClick={() => {
+                                setCurrentPage(prev => Math.max(0, prev - 1));
+                                window.scrollTo(0, 0);
+                              }}
+                              className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
+                              aria-label="Previous Page"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
 
-                          {/* Next Button */}
-                          <button
-                            type="button"
-                            disabled={currentPage === pageCount - 1}
-                            onClick={() => {
-                              setCurrentPage(prev => Math.min(pageCount - 1, prev + 1));
-                              window.scrollTo(0, 0);
-                            }}
-                            className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                            aria-label="Next Page"
-                          >
-                            <ChevronRight size={16} />
-                          </button>
+                            {/* Dots */}
+                            <div className="flex items-center space-x-2.5">
+                              {[...Array(pageCount)].map((_, i) => {
+                                const isActive = currentPage === i;
+                                return (
+                                  <button
+                                    key={i}
+                                    onClick={() => {
+                                      setCurrentPage(i);
+                                      window.scrollTo(0, 0);
+                                    }}
+                                    className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                                      isActive 
+                                        ? 'bg-[#C08081] scale-110 shadow-xs' 
+                                        : 'border border-[#C08081] bg-transparent hover:bg-[#C08081]/15'
+                                    }`}
+                                    aria-label={`Go to page ${i + 1}`}
+                                  />
+                                );
+                              })}
+                            </div>
+
+                            {/* Next Button */}
+                            <button
+                              type="button"
+                              disabled={currentPage === pageCount - 1}
+                              onClick={() => {
+                                setCurrentPage(prev => Math.min(pageCount - 1, prev + 1));
+                                window.scrollTo(0, 0);
+                              }}
+                              className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
+                              aria-label="Next Page"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
                         </motion.div>
                       )}
 
@@ -1724,57 +2016,56 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                     {/* Glowing highlight ring based on selected active color */}
                     <div className="absolute inset-0 border-[6px] border-white/95 rounded-2xl pointer-events-none z-10" />
 
-                    {(viewingProduct.image || viewingProduct.image_url) ? (
-                      <img 
-                        src={viewingProduct.image || viewingProduct.image_url} 
-                        alt={viewingProduct.name} 
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
-                      />
+                    {detailActiveImage ? (
+                      <div className="w-full h-full relative">
+                        <img 
+                          src={getProductImage(detailActiveImage)} 
+                          alt={getLocalized(viewingProduct.name, language)} 
+                          className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" 
+                        />
+                        {detailSelectedColor && (
+                          <div 
+                            className="absolute inset-0 pointer-events-none z-2 opacity-50"
+                            style={{
+                              ...getColorStyle(detailSelectedColor),
+                              mixBlendMode: 'color'
+                            }}
+                          />
+                        )}
+                      </div>
                     ) : (
                       <span className="text-[#36454F]/20 font-serif text-3xl font-bold tracking-widest uppercase rotate-[-20deg]">
-                        {viewingProduct.category}
+                        {getLocalized(viewingProduct.category, language)}
                       </span>
                     )}
 
-                    {viewingProduct.badge && (
+                    {parseJsonArray(viewingProduct.badge).filter(Boolean).length > 0 && (
                       <span className="absolute top-4 left-4 z-10 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 bg-[#36454F] text-white rounded-full">
-                        {viewingProduct.badge}
+                        {parseJsonArray(viewingProduct.badge).filter(Boolean).join(', ')}
                       </span>
                     )}
                   </motion.div>
 
-                  {/* Thumbnail Previews */}
-                  <div className="flex space-x-3 mt-4 w-full">
-                    {[...Array(3)].map((_, index) => (
-                      <div 
-                        key={index}
-                        className={`w-1/3 aspect-[4/3] rounded-lg border-2 flex items-center justify-center overflow-hidden cursor-pointer bg-gray-50 ${
-                          index === 0 ? 'border-[#B2AC88]' : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {(viewingProduct.image || viewingProduct.image_url) ? (
-                          <img src={viewingProduct.image || viewingProduct.image_url} alt="" className="w-full h-full object-cover opacity-80" />
-                        ) : (
-                          <span className="text-[10px] font-bold text-gray-300">Angle {index+1}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+
                 </div>
 
                 {/* Right Side: Product Details & Purchase Form */}
                 <div className="lg:col-span-7 flex flex-col">
                   
-                  {/* Category & Product Name */}
-                  <span className="text-xs font-bold text-[#B2AC88] uppercase tracking-widest mb-1.5">{viewingProduct.category} socks</span>
-                  <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#1a365d] italic leading-tight mb-2">
-                    {viewingProduct.name}
+                  {/* Product Name only - category label removed */}
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic leading-tight mb-2">
+                    {getLocalized(viewingProduct.name, language)}
                   </h2>
-                  <p className="text-xs font-bold text-[#B2AC88] tracking-wider uppercase mb-4">
-                    {viewingProduct.vendor_name 
-                      ? t('vendor_dashboard.sold_by', { vendor: viewingProduct.vendor_name }) 
-                      : t('vendor_dashboard.platform_store')}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap mb-4">
+                    <p 
+                      className={`text-xs font-bold text-[#B2AC88] tracking-wider uppercase ${viewingProduct.vendor_name ? 'cursor-pointer hover:text-[#36454F] transition-colors' : ''}`}
+                      onClick={() => viewingProduct.vendor_name && onStoreClick && onStoreClick(viewingProduct.vendor_name)}
+                    >
+                      {viewingProduct.vendor_name 
+                        ? t('vendor_dashboard.sold_by', { vendor: getCleanVendorName(viewingProduct.vendor_name, language) }) 
+                        : t('vendor_dashboard.platform_store')}
+                    </p>
+                  </div>
 
                   {/* Localized Price with Discount Support */}
                   <div className="flex items-center space-x-3 mb-6">
@@ -1797,90 +2088,200 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                     )}
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm text-gray-500 leading-relaxed max-w-xl mb-6">
-                    {viewingProduct.description || viewingProduct.desc || ''}
-                  </p>
+                  {/* Description — directly under the price */}
+                  {(viewingProduct.description || viewingProduct.desc) && (
+                    <p className="text-sm text-gray-500 leading-relaxed max-w-xl mb-6">
+                      {getLocalized(viewingProduct.description || viewingProduct.desc, language)}
+                    </p>
+                  )}
 
-                  {/* Specifications Grid */}
-                  <div className="grid grid-cols-2 gap-4 border border-gray-150 bg-gray-50/50 p-4 rounded-2xl mb-6 text-xs text-[#36454F] font-sans">
-                    <div>
-                      <span className="text-gray-400 font-medium block">Style / Length</span>
-                      <span className="font-bold">{parseJsonArray(viewingProduct.style_length).join(', ') || 'Standard'}</span>
+                  {/* Specifications Table */}
+                  <div className="border border-gray-200 rounded-2xl overflow-hidden mb-6 text-sm text-[#36454F]">
+                    {/* Gender */}
+                    {viewingProduct.gender && (
+                      <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+                        <span className="w-36 font-medium text-gray-400 shrink-0">
+                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری رەگەز' : 'Gender'}
+                        </span>
+                        <span className="font-semibold">
+                          {getLocalizedGender(viewingProduct.gender, language)}
+                        </span>
+                      </div>
+                    )}
+                    {/* Category */}
+                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+                      <span className="w-36 font-medium text-gray-400 shrink-0">
+                        {language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}
+                      </span>
+                      <span className="font-semibold">
+                        {parseJsonArray(viewingProduct.category).map(cat => getLocalized(cat, language)).filter(Boolean).join(', ') || 'General'}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-gray-400 font-medium block">Material</span>
-                      <span className="font-bold">{parseJsonArray(viewingProduct.material).join(', ') || 'Cotton blend'}</span>
+                    {/* Style / Length */}
+                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+                      <span className="w-36 font-medium text-gray-400 shrink-0">
+                        {language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Style / Length'}
+                      </span>
+                      <span className="font-semibold">
+                        {parseJsonArray(viewingProduct.style_length).map(st => getLocalized(st, language)).join(', ') || 'Standard'}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-gray-400 font-medium block">Seasonal Type</span>
-                      <span className="font-bold">{parseJsonArray(viewingProduct.seasonal_type).join(', ') || 'All Season'}</span>
+                    {/* Material */}
+                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+                      <span className="w-36 font-medium text-gray-400 shrink-0">
+                        {language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}
+                      </span>
+                      <span className="font-semibold">
+                        {parseJsonArray(viewingProduct.material).map(mat => getLocalized(mat, language)).join(', ') || 'Cotton blend'}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-gray-400 font-medium block">Size Collection</span>
-                      <span className="font-bold">{parseJsonArray(viewingProduct.size_collection).join(', ') || 'One Size'}</span>
+                    {/* Seasonal Type */}
+                    <div className={`flex items-center px-5 py-3.5 hover:bg-gray-50/60 transition-colors ${parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').length > 0 ? 'border-b border-gray-100' : ''}`}>
+                      <span className="w-36 font-medium text-gray-400 shrink-0">
+                        {language === 'ar' ? 'النوع الموسمي' : language === 'ku' ? 'جۆری وەرزی' : 'Seasonal Type'}
+                      </span>
+                      <span className="font-semibold">
+                        {parseJsonArray(viewingProduct.seasonal_type).map(seas => getLocalized(seas, language)).join(', ') || 'All Season'}
+                      </span>
                     </div>
+                    {/* Promo row */}
                     {parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').length > 0 && (
-                      <div className="col-span-2 bg-[#B2AC88]/10 p-2.5 rounded-xl border border-[#B2AC88]/20 flex items-center justify-between mt-1">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#B2AC88]">Active Promo</span>
+                      <div className="flex items-center px-5 py-3.5 bg-[#B2AC88]/8 hover:bg-[#B2AC88]/12 transition-colors">
+                        <span className="w-36 text-[11px] font-bold uppercase tracking-wider text-[#B2AC88] shrink-0">
+                          {language === 'ar' ? 'العرض النشط' : language === 'ku' ? 'داشکاندنی چالاک' : 'Active Promo'}
+                        </span>
                         <span className="font-bold text-[#36454F]">
-                          {parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').join(', ')}
+                          {parseJsonArray(viewingProduct.promotion).map(promo => getLocalized(promo, language)).filter(p => p !== 'None' && p !== '').join(', ')}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="h-px bg-gray-100 w-full mb-6" />
+
 
                   {/* Form fields */}
                   <div className="space-y-6">
                     
-                    {/* Swatch Selector */}
-                    <div>
-                      <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5">
-                        <span className="text-gray-400">Select Color Family</span>
-                        <span className="text-[#36454F] font-semibold">
-                          {viewingProduct.colorNames ? viewingProduct.colorNames[detailColorIndex] : `Color option ${detailColorIndex + 1}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-3.5">
-                        {viewingProduct.colors.map((colorClass, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setDetailColorIndex(idx)}
-                            style={getColorStyle(colorClass)}
-                            className={`w-8 h-8 rounded-full border cursor-pointer hover:scale-110 active:scale-90 transition-transform relative flex items-center justify-center ${colorClass.startsWith('#') ? '' : colorClass} ${
-                              detailColorIndex === idx 
-                                ? 'ring-2 ring-offset-2 ring-[#B2AC88] border-transparent' 
-                                : 'border-gray-200'
-                            }`}
-                          >
-                            {detailColorIndex === idx && <Check size={14} className="text-white mix-blend-difference" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {/* Size & Color Cross-Filtering Selectors */}
+                    {(() => {
+                      const sizeColorMap = (() => { try { return JSON.parse(viewingProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+                      const hasSizeColors = Object.keys(sizeColorMap).length > 0;
+                      const sizeOptions = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+                      // Colors available for the selected size (or all product colors if no size selected)
+                      const availableColorClasses = detailSelectedSize && sizeColorMap[detailSelectedSize]
+                        ? sizeColorMap[detailSelectedSize]
+                        : (viewingProduct.colors || []);
+                      // If a color is selected, show which sizes carry it
+                      const sizesForSelectedColor = detailSelectedColor
+                        ? sizeOptions.filter(size => (sizeColorMap[size] || []).includes(detailSelectedColor))
+                        : sizeOptions;
+                      return (
+                        <>
+                          {/* Size Selector */}
+                          {sizeOptions.length > 0 && (
+                            <div>
+                              <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5">
+                                <span className="text-gray-400">Select Size</span>
+                                {detailSelectedSize && <span className="text-[#36454F] font-semibold">{detailSelectedSize}</span>}
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {sizeOptions.map((size) => {
+                                  const isAvailable = !detailSelectedColor || sizesForSelectedColor.includes(size);
+                                  return (
+                                    <button
+                                      key={size}
+                                      type="button"
+                                      onClick={() => {
+                                        setDetailSelectedSize(size);
+                                        // If current color not available in new size, reset
+                                        if (detailSelectedColor && sizeColorMap[size] && !sizeColorMap[size].includes(detailSelectedColor)) {
+                                          setDetailSelectedColor(null);
+                                        }
+                                      }}
+                                      className={`px-4 py-1.5 rounded-full text-xs font-bold border cursor-pointer transition-all ${
+                                        !isAvailable
+                                          ? 'opacity-30 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400'
+                                          : detailSelectedSize === size
+                                          ? 'bg-[#36454F] text-white border-[#36454F]'
+                                          : 'bg-white text-[#36454F] border-gray-200 hover:border-[#36454F]'
+                                      }`}
+                                      disabled={!isAvailable}
+                                    >
+                                      {size}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Color Swatches */}
+                          {availableColorClasses.length > 0 && (
+                            <div>
+                              <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5">
+                                <span className="text-gray-400">Select Color</span>
+                                {detailSelectedColor && (
+                                  <span className="text-[#36454F] font-semibold">
+                                    {viewingProduct.colorNames
+                                      ? viewingProduct.colorNames[viewingProduct.colors ? viewingProduct.colors.indexOf(detailSelectedColor) : -1]
+                                      : detailSelectedColor}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center flex-wrap gap-3">
+                                {(viewingProduct.colors || []).filter(colorClass => availableColorClasses.includes(colorClass)).map((colorClass, idx) => {
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setDetailSelectedColor(colorClass);
+                                        // If no size is selected, auto-pick first size available for this color
+                                        if (!detailSelectedSize && hasSizeColors) {
+                                          const firstSize = sizeOptions.find(s => (sizeColorMap[s] || []).includes(colorClass));
+                                          if (firstSize) setDetailSelectedSize(firstSize);
+                                        }
+                                      }}
+                                      style={getColorStyle(colorClass)}
+                                      className={`w-8 h-8 rounded-full border relative flex items-center justify-center transition-transform cursor-pointer hover:scale-110 active:scale-90 ${colorClass.startsWith('#') ? '' : colorClass} ${
+                                        detailSelectedColor === colorClass
+                                          ? 'ring-2 ring-offset-2 ring-[#B2AC88] border-transparent'
+                                          : 'border-gray-200'
+                                      }`}
+                                    >
+                                      {detailSelectedColor === colorClass && <Check size={14} className="text-white mix-blend-difference" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
 
 
-                    {/* Stock Alert Warning Status */}
+                    {/* Inline validation error */}
+                    {detailValidationError && (
+                      <div className="flex items-center gap-2 text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-xs font-bold">
+                        <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+                        {detailValidationError}
+                      </div>
+                    )}
+
+                    {/* Stock Alert - only shown when out of stock or low stock */}
                     <div>
                       {viewingProduct.stock !== undefined && (
                         viewingProduct.stock === 0 ? (
-                          <div className="bg-red-50 border border-red-200/40 text-red-650 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans">
+                          <div className="bg-red-50 border border-red-200/40 text-red-600 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans">
                             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                            <span>Out of Stock - Temporarily Unavailable</span>
+                            <span>Out of Stock — Temporarily Unavailable</span>
                           </div>
-                        ) : viewingProduct.stock <= 5 ? (
+                        ) : viewingProduct.stock <= 6 ? (
                           <div className="bg-amber-50 border border-amber-200/40 text-amber-700 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans">
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
                             <span>Only {viewingProduct.stock} pairs left in stock! Order soon.</span>
                           </div>
-                        ) : (
-                          <div className="bg-green-50 border border-green-200/40 text-green-700 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans">
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                            <span>In Stock (Ready to dispatch)</span>
-                          </div>
-                        )
+                        ) : null
                       )}
                     </div>
 
@@ -1910,20 +2311,14 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                         </button>
                       </div>
 
-                      {/* Add to Bag CTA Button */}
+                      {/* Add to Cart CTA Button — always says Add to Cart */}
                       {(() => {
-                        const isDetailInCart = cart.some(item => item.id === viewingProduct.id);
                         let buttonBgClass = '';
                         let buttonText = 'Add to Cart';
 
                         if (viewingProduct.stock === 0) {
                           buttonBgClass = 'bg-gray-200 border border-gray-300 text-gray-400 cursor-not-allowed shadow-none hover:bg-gray-200';
                           buttonText = 'Out of Stock';
-                        } else if (isDetailInCart) {
-                          buttonBgClass = 'bg-[#B2AC88] hover:bg-[#B2AC88]';
-                          buttonText = 'Added to Cart';
-                        } else if (isDetailRemovedBlue) {
-                          buttonBgClass = 'bg-blue-600 hover:bg-[#B2AC88]';
                         } else {
                           buttonBgClass = 'bg-[#36454F] hover:bg-[#B2AC88]';
                         }
@@ -1968,7 +2363,427 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
 
               </div>
 
+              {/* You Might Also Like */}
+              {(() => {
+                const allRelated = filteredProducts.filter(p => p.id !== viewingProduct.id).slice(0, 6);
+                if (allRelated.length === 0) return null;
+                
+                const maxIndex = Math.max(0, allRelated.length - 4);
+                const safeIndex = Math.min(relatedPage, maxIndex);
+                const visibleItems = allRelated.slice(safeIndex, safeIndex + 4);
+                
+                const activeDotIndex = hoveredRelatedId !== null
+                  ? allRelated.findIndex(item => item.id === hoveredRelatedId)
+                  : safeIndex;
+
+                const accentColors = [
+                  { bg: 'bg-amber-50', text: 'text-amber-600' },
+                  { bg: 'bg-rose-50', text: 'text-rose-500' },
+                  { bg: 'bg-sky-50', text: 'text-sky-500' },
+                  { bg: 'bg-violet-50', text: 'text-violet-500' },
+                ];
+                return (
+                  <div className="mt-16 border-t border-gray-100 pt-12">
+                    {/* Header */}
+                    <h3 className="text-center text-lg font-extrabold uppercase tracking-[0.2em] text-[#36454F] mb-10">You Might Also Like</h3>
+
+                    {/* Carousel row: left arrow + grid + right arrow */}
+                    <div className="flex items-center gap-4">
+                      {/* Left arrow */}
+                      <motion.button
+                        type="button"
+                        onClick={() => setRelatedPage(p => Math.max(0, p - 1))}
+                        disabled={safeIndex === 0}
+                        whileHover={safeIndex > 0 ? { scale: 1.1 } : {}}
+                        whileTap={safeIndex > 0 ? { scale: 0.9 } : {}}
+                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          safeIndex === 0
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88] hover:text-white cursor-pointer'
+                        }`}
+                      >
+                        <ChevronLeft size={16} />
+                      </motion.button>
+
+                      {/* Cards grid */}
+                      <div className={`grid gap-4 flex-1 justify-center ${
+                        allRelated.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+                        allRelated.length === 2 ? 'grid-cols-2 max-w-xl mx-auto' :
+                        allRelated.length === 3 ? 'grid-cols-3 max-w-3xl mx-auto' :
+                        'grid-cols-2 lg:grid-cols-4'
+                      }`}>
+                        {visibleItems.map((p, idx) => {
+                          const relatedFinalPrice = p.discount > 0
+                            ? Math.round(p.price * (1 - p.discount / 100))
+                            : p.price;
+                          const relatedImg = p.image || p.image_url;
+                          const accent = accentColors[idx % accentColors.length];
+                          const isHovered = hoveredRelatedId === p.id;
+                          const someoneElseHovered = hoveredRelatedId !== null && !isHovered;
+                          return (
+                            <motion.button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleCardClick(p)}
+                              onMouseEnter={() => setHoveredRelatedId(p.id)}
+                              onMouseLeave={() => setHoveredRelatedId(null)}
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{
+                                opacity: someoneElseHovered ? 0.35 : 1,
+                                y: 0,
+                                scale: isHovered ? 1.03 : 1,
+                                filter: someoneElseHovered ? 'blur(2px)' : 'blur(0px)',
+                              }}
+                              transition={{ duration: 0.25, delay: idx * 0.07 }}
+                              className={`flex flex-col text-left cursor-pointer rounded-2xl overflow-hidden border-2 shadow-sm transition-shadow ${
+                                isHovered ? 'border-[#B2AC88] shadow-lg' : 'border-[#B2AC88]/30'
+                              }`}
+                            >
+                              {/* Image */}
+                              <div className={`w-full aspect-square ${isHovered ? accent.bg : 'bg-gray-50'} transition-colors duration-300 overflow-hidden relative`}>
+                                {relatedImg ? (
+                                  <img
+                                    src={relatedImg.startsWith('/') || relatedImg.startsWith('data:') ? relatedImg : `/uploads/${relatedImg}`}
+                                    alt={p.name}
+                                    className="w-full h-full object-contain transition-transform duration-500"
+                                    style={{ transform: isHovered ? 'scale(1.08)' : 'scale(1)' }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <span className={`text-xs font-bold uppercase ${accent.text}`}>{parseJsonArray(p.category).map(cat => tCategory(cat)).join(', ')}</span>
+                                  </div>
+                                )}
+                                {/* Category badge */}
+                                <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B2AC88]/10 text-[#B2AC88] border border-[#B2AC88]/30`}>
+                                  {tCategory(parseJsonArray(p.category).filter(Boolean)[0]) || 'Socks'}
+                                </span>
+                              </div>
+                              {/* Info */}
+                              <div className="px-3 py-2.5 bg-white">
+                                <p className={`text-xs font-bold uppercase tracking-wide line-clamp-1 transition-colors ${isHovered ? 'text-[#B2AC88]' : 'text-[#36454F]'}`}>{getLocalized(p.name, language)}</p>
+                                <p className="text-xs font-semibold text-[#36454F] mt-0.5">{relatedFinalPrice.toLocaleString()} IQD</p>
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Right arrow */}
+                      <motion.button
+                        type="button"
+                        onClick={() => setRelatedPage(p => Math.min(maxIndex, p + 1))}
+                        disabled={safeIndex >= maxIndex}
+                        whileHover={safeIndex < maxIndex ? { scale: 1.1 } : {}}
+                        whileTap={safeIndex < maxIndex ? { scale: 0.9 } : {}}
+                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          safeIndex >= maxIndex
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88] hover:text-white cursor-pointer'
+                        }`}
+                      >
+                        <ChevronRight size={16} />
+                      </motion.button>
+                    </div>
+
+                    {/* dots — one per item */}
+                    <div className="flex justify-center gap-1.5 mt-6">
+                      {allRelated.map((p, i) => {
+                        const isActive = i === activeDotIndex;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setRelatedPage(Math.min(i, maxIndex))}
+                            className={`rounded-full transition-all cursor-pointer ${
+                              isActive 
+                                ? 'w-5 h-2 bg-[#B2AC88]' 
+                                : 'w-2 h-2 bg-[#B2AC88]/25 hover:w-5 hover:h-2 hover:bg-[#B2AC88]'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Choose Options Modal */}
+        <AnimatePresence>
+          {optionsModalProduct && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setOptionsModalProduct(null)}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 cursor-pointer"
+              />
+              
+              {/* Modal Container */}
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  className="bg-white rounded-3xl max-w-3xl w-full text-start shadow-2xl relative flex flex-col md:flex-row max-h-[90vh] overflow-y-auto md:overflow-hidden overflow-x-hidden font-sans text-brand-charcoal border border-gray-100"
+                >
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setOptionsModalProduct(null)}
+                    className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white hover:bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+
+                  {/* Left Side: Image Gallery */}
+                  <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center bg-gray-50 border-r border-gray-100 shrink-0 rounded-t-3xl md:rounded-t-none md:rounded-l-3xl overflow-hidden">
+                    <div className="w-full aspect-[3/4] bg-white rounded-2xl relative shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden mb-4">
+                      {modalActiveImage ? (
+                        <div className="w-full h-full relative">
+                          <img 
+                            src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
+                            alt={getLocalized(optionsModalProduct.name, language)} 
+                            className="w-full h-full object-contain" 
+                          />
+                          {selectedColorClass && (
+                            <div 
+                              className="absolute inset-0 pointer-events-none z-2 opacity-50"
+                              style={{
+                                ...getColorStyle(selectedColorClass),
+                                mixBlendMode: 'color'
+                              }}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[#36454F]/20 font-serif text-2xl font-bold uppercase rotate-[-20deg]">
+                          {parseJsonArray(optionsModalProduct.category).map(cat => getLocalized(cat, language)).join(', ')}
+                        </span>
+                      )}
+                    </div>
+
+
+                  </div>
+
+                  {/* Right Side: Options Form */}
+                  <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-visible md:overflow-y-auto rounded-b-3xl md:rounded-b-none md:rounded-r-3xl shrink-0">
+                    <div className="space-y-5">
+                      <div>
+                        <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">Choose Options</span>
+                        <h3 className="text-xl md:text-2xl font-serif font-bold text-[#36454F] leading-tight mb-1">
+                          {getLocalized(optionsModalProduct.name, language)}
+                        </h3>
+                        {/* Price */}
+                        <div className="flex items-center space-x-2.5 mt-2">
+                          {optionsModalProduct.discount > 0 ? (
+                            <>
+                              <span className="text-lg font-bold text-[#36454F]">
+                                {Math.round(optionsModalProduct.price * (1 - optionsModalProduct.discount / 100)).toLocaleString()} IQD
+                              </span>
+                              <span className="text-xs font-semibold line-through text-gray-400">
+                                {optionsModalProduct.price.toLocaleString()} IQD
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-lg font-bold text-[#36454F]">
+                              {optionsModalProduct.price.toLocaleString()} IQD
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-gray-100" />
+
+                      {/* Size & Color Cross-Filtering Selectors */}
+                      {(() => {
+                        const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+                        const hasSizeColors = Object.keys(sizeColorMap).length > 0;
+                        const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                        const availableColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
+                          ? sizeColorMap[modalSelectedSize]
+                          : (optionsModalProduct.colors || []);
+                        const sizesForSelectedColor = modalColorIndex !== null
+                          ? sizeOptions.filter(size => (sizeColorMap[size] || []).includes(optionsModalProduct.colors?.[modalColorIndex]))
+                          : sizeOptions;
+                        return (
+                          <>
+                            {/* Size Selector */}
+                            {sizeOptions.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                                  <span className="text-gray-400">Select Size</span>
+                                  {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {sizeOptions.map((size) => {
+                                    const selectedColorClass = modalColorIndex !== null ? optionsModalProduct.colors?.[modalColorIndex] : null;
+                                    const isAvailable = !selectedColorClass || sizesForSelectedColor.includes(size);
+                                    return (
+                                      <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => {
+                                          setModalSelectedSize(size);
+                                          // Reset color if not available for new size
+                                          if (selectedColorClass && sizeColorMap[size] && !sizeColorMap[size].includes(selectedColorClass)) {
+                                            setModalColorIndex(null);
+                                          }
+                                        }}
+                                        className={`px-3.5 py-1 rounded-full text-xs font-bold border cursor-pointer transition-all ${
+                                          !isAvailable
+                                            ? 'opacity-30 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400'
+                                            : modalSelectedSize === size
+                                            ? 'bg-[#36454F] text-white border-[#36454F]'
+                                            : 'bg-white text-[#36454F] border-gray-200 hover:border-[#36454F]'
+                                        }`}
+                                        disabled={!isAvailable}
+                                      >
+                                        {size}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Color Selector */}
+                            {availableColorClasses.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                                  <span className="text-gray-400">Select Color</span>
+                                  {modalColorIndex !== null && (
+                                    <span className="text-[#36454F] font-semibold">
+                                      {optionsModalProduct.colorNames ? getLocalized(optionsModalProduct.colorNames[modalColorIndex], language) : `Option ${modalColorIndex + 1}`}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-2.5">
+                                  {optionsModalProduct.colors.filter(colorClass => availableColorClasses.includes(colorClass)).map((colorClass, idx) => {
+                                    const actualIndex = optionsModalProduct.colors.indexOf(colorClass);
+                                    const isSelected = modalColorIndex === actualIndex;
+                                    return (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                          setModalColorIndex(actualIndex);
+                                          if (!modalSelectedSize && hasSizeColors) {
+                                            const firstSize = sizeOptions.find(s => (sizeColorMap[s] || []).includes(colorClass));
+                                            if (firstSize) setModalSelectedSize(firstSize);
+                                          }
+                                        }}
+                                        style={getColorStyle(colorClass)}
+                                        className={`w-7 h-7 rounded-full border cursor-pointer flex items-center justify-center relative transition-transform hover:scale-110 active:scale-95 ${colorClass.startsWith('#') ? '' : colorClass} ${
+                                          isSelected
+                                            ? 'ring-2 ring-offset-2 ring-[#B2AC88] border-transparent'
+                                            : 'border-gray-200'
+                                        }`}
+                                      >
+                                        {isSelected && <Check size={12} className="text-white mix-blend-difference" />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+
+                      {/* Quantity Picker */}
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Quantity</label>
+                        <div className="flex items-center space-x-3.5 border border-[#E9ECEF] rounded-xl px-4 py-2 w-32 bg-gray-50/20">
+                          <button
+                            type="button"
+                            onClick={() => setModalQuantity(q => Math.max(1, q - 1))}
+                            className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform cursor-pointer border-0 bg-transparent"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="text-sm font-bold text-[#36454F] select-none min-w-[20px] text-center">
+                            {modalQuantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setModalQuantity(q => q + 1)}
+                            className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform cursor-pointer border-0 bg-transparent"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions / Add Button */}
+                    <div className="mt-8 pt-4 border-t border-gray-100">
+                      {/* Error display */}
+                      {modalValidationError && (
+                        <p className="text-xs text-red-500 font-bold mb-3 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                          {modalValidationError}
+                        </p>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Validation
+                          const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean);
+                          if (styleOptions.length > 1 && !modalSelectedStyle) {
+                            setModalValidationError('Please select a Style / Length first.');
+                            return;
+                          }
+                          const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                          if (sizeOptions.length > 0 && !modalSelectedSize) {
+                            setModalValidationError('Please select a Size first.');
+                            return;
+                          }
+                          const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
+                          const availColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
+                            ? sizeColorMap[modalSelectedSize]
+                            : (optionsModalProduct.colors || []);
+                          if (availColorClasses.length > 0 && modalColorIndex === null) {
+                            setModalValidationError('Please select a Color first.');
+                            return;
+                          }
+
+                          // Add to cart
+                          const finalPrice = optionsModalProduct.discount > 0
+                            ? Math.round(optionsModalProduct.price * (1 - optionsModalProduct.discount / 100))
+                            : optionsModalProduct.price;
+
+                          const modalColorName = optionsModalProduct.colorNames && modalColorIndex !== null ? optionsModalProduct.colorNames[modalColorIndex] : null;
+                          onAddToCart({ 
+                            ...optionsModalProduct, 
+                            price: finalPrice, 
+                            selectedStyle: modalSelectedStyle, 
+                            selectedSize: modalSelectedSize,
+                            selectedColor: optionsModalProduct.colors && modalColorIndex !== null ? optionsModalProduct.colors[modalColorIndex] : null,
+                            selectedColorName: modalColorName
+                          }, modalQuantity);
+
+                          const colorLabel = modalColorName || 'selected color';
+                          showToast(`Added ${modalQuantity}x ${optionsModalProduct.name} (${colorLabel}) to cart!`);
+                          setOptionsModalProduct(null);
+                          
+                          if (onOpenCart) onOpenCart();
+                        }}
+                        className="w-full py-4 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-[0.98] border-0"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+
+                </motion.div>
+              </div>
+            </>
           )}
         </AnimatePresence>
       </div>

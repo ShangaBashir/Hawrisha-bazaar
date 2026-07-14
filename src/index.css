@@ -12,4 +12,15 @@
   body {
     @apply bg-brand-beige text-brand-charcoal font-sans;
   }
+
+  /* Ensure SVG icons from lucide-react always render and don't collapse */
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  button svg, a svg, div svg, span svg {
+    pointer-events: none;
+  }
 }

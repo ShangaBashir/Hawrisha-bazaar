@@ -21,12 +21,19 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
+const uploadFields = upload.fields([
+  { name: 'image', maxCount: 1 }
+]);
 
 // 1. GET ALL PRODUCTS
 router.get('/', async (req, res) => {
   try {
     const [products] = await db.query(
-      'SELECT p.*, u.store_name AS vendor_name FROM products p LEFT JOIN users u ON p.vendor_id = u.id ORDER BY p.id DESC'
+      `SELECT p.*, s.name AS vendor_name, s.status AS store_status 
+       FROM products p 
+       LEFT JOIN stores s ON p.store_id = s.id 
+       WHERE s.status = 'Active' OR p.store_id IS NULL 
+       ORDER BY p.updated_at DESC, p.id DESC`
     );
     
     // Fetch associated colors for each product
@@ -50,16 +57,29 @@ router.get('/vendor', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required.' });
     }
 
-    const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    const [users] = await db.query('SELECT id, role, store_id FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
       return res.status(404).json({ error: 'Vendor not found.' });
     }
-    const vendorId = users[0].id;
+    const user = users[0];
 
-    const [products] = await db.query(
-      'SELECT p.*, u.store_name AS vendor_name FROM products p LEFT JOIN users u ON p.vendor_id = u.id WHERE p.vendor_id = ? ORDER BY p.id DESC',
-      [vendorId]
-    );
+    let query = '';
+    let params = [];
+    if (user.role === 'admin') {
+      query = `SELECT p.*, s.name AS vendor_name 
+               FROM products p 
+               LEFT JOIN stores s ON p.store_id = s.id 
+               ORDER BY p.updated_at DESC, p.id DESC`;
+    } else {
+      query = `SELECT p.*, s.name AS vendor_name 
+               FROM products p 
+               LEFT JOIN stores s ON p.store_id = s.id 
+               WHERE p.store_id = ? 
+               ORDER BY p.updated_at DESC, p.id DESC`;
+      params.push(user.store_id || 0);
+    }
+
+    const [products] = await db.query(query, params);
     
     for (let product of products) {
       const [colors] = await db.query('SELECT color_class, color_name FROM product_colors WHERE product_id = ?', [product.id]);
@@ -74,38 +94,65 @@ router.get('/vendor', async (req, res) => {
 });
 
 // 2. CREATE A NEW PRODUCT
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', uploadFields, async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
-      styleLength, stock, promotion, material, seasonalType, sizeCollection, discount,
-      vendorEmail
+      styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
+      vendorEmail, storeId, gender
     } = req.body;
+    
+    console.log("POST /api/products - req.body:", { name, price, category, vendorEmail, storeId });
     
     if (!price || Number(price) < 250) {
       return res.status(400).json({ error: 'Price must be a valid Iraqi Dinar amount (minimum 250 IQD)' });
     }
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    const imageUrl = req.files && req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
 
     let dbVendorId = null;
+    let dbStoreId = null;
     if (vendorEmail) {
-      const [vusers] = await connection.query('SELECT id FROM users WHERE email = ?', [vendorEmail]);
+      const [vusers] = await connection.query('SELECT id, store_id FROM users WHERE email = ?', [vendorEmail]);
       if (vusers.length > 0) {
         dbVendorId = vusers[0].id;
+        dbStoreId = vusers[0].store_id;
       }
     }
+    if (storeId) {
+      dbStoreId = Number(storeId) || null;
+      const [susers] = await connection.query('SELECT id FROM users WHERE store_id = ? AND role = "vendor"', [dbStoreId]);
+      if (susers.length > 0) {
+        dbVendorId = susers[0].id;
+      }
+    }
+    
+    // Calculate commission
+    let adminShare = 0;
+    let storeShare = Number(price);
+    if (dbStoreId) {
+      const [storeRows] = await connection.query('SELECT commission_percentage FROM stores WHERE id = ?', [dbStoreId]);
+      if (storeRows.length > 0) {
+        const commPct = storeRows[0].commission_percentage || 0;
+        adminShare = Math.round(Number(price) * (commPct / 100));
+        storeShare = Number(price) - adminShare;
+      }
+    }
+
+    console.log("POST /api/products - resolved dbStoreId:", dbStoreId, "dbVendorId:", dbVendorId, "adminShare:", adminShare, "storeShare:", storeShare);
 
     const [result] = await connection.query(
       `INSERT INTO products (
         name, price, category, color_family, badge, description, image_url,
-        style_length, stock, promotion, material, seasonal_type, size_collection, discount, vendor_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        style_length, stock, promotion, material, seasonal_type, size_collection, size_colors, discount, vendor_id, store_id, extra_images, gender, admin_share, store_share
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
       [
         name, price, category, colorFamily, badge, desc, imageUrl,
         styleLength || null, Number(stock) || 0, promotion || null, material || null, 
-        seasonalType || null, sizeCollection || null, Number(discount) || 0, dbVendorId
+        seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0, dbVendorId, dbStoreId, gender || null, adminShare, storeShare
       ]
     );
 
@@ -133,35 +180,54 @@ router.post('/', upload.single('image'), async (req, res) => {
 });
 
 // 3. UPDATE AN EXISTING PRODUCT
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', uploadFields, async (req, res) => {
   const { id } = req.params;
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
-      styleLength, stock, promotion, material, seasonalType, sizeCollection, discount,
-      vendorEmail
+      styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
+      vendorEmail, storeId, gender
     } = req.body;
+    
+    console.log("PUT /api/products/:id - req.body:", { id, name, price, category, vendorEmail, storeId });
     
     if (!price || Number(price) < 250) {
       return res.status(400).json({ error: 'Price must be a valid Iraqi Dinar amount (minimum 250 IQD)' });
     }
 
+    let dbStoreId = undefined;
+    let dbVendorId = undefined;
     if (vendorEmail) {
-      const [u] = await connection.query('SELECT id, role FROM users WHERE email = ?', [vendorEmail]);
+      const [u] = await connection.query('SELECT id, role, store_id FROM users WHERE email = ?', [vendorEmail]);
       if (u.length === 0) {
         return res.status(403).json({ error: 'Unauthorized user.' });
       }
       const user = u[0];
       if (user.role !== 'admin') {
+        dbStoreId = user.store_id;
         const [prod] = await connection.query('SELECT vendor_id FROM products WHERE id = ?', [id]);
         if (prod.length === 0 || prod[0].vendor_id !== user.id) {
           return res.status(403).json({ error: 'You do not own this product.' });
         }
+      } else {
+        if (storeId !== undefined) {
+          dbStoreId = storeId ? Number(storeId) : null;
+          if (dbStoreId) {
+            const [susers] = await connection.query('SELECT id FROM users WHERE store_id = ? AND role = "vendor"', [dbStoreId]);
+            dbVendorId = susers.length > 0 ? susers[0].id : null;
+          } else {
+            dbVendorId = null;
+          }
+        }
       }
     }
     
+    console.log("PUT /api/products/:id - resolved dbStoreId:", dbStoreId, "dbVendorId:", dbVendorId);
+    
+    const mainImage = req.files && req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
+
     let updateQuery = `UPDATE products SET 
       name = ?, 
       price = ?, 
@@ -175,17 +241,28 @@ router.put('/:id', upload.single('image'), async (req, res) => {
       material = ?, 
       seasonal_type = ?, 
       size_collection = ?, 
-      discount = ?`;
+      size_colors = ?,
+      discount = ?,
+      extra_images = NULL,
+      gender = ?`;
     let queryParams = [
       name, price, category, colorFamily, badge, desc, 
       styleLength || null, Number(stock) || 0, promotion || null, material || null, 
-      seasonalType || null, sizeCollection || null, Number(discount) || 0
+      seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0,
+      gender || null
     ];
 
-    if (req.file) {
-      const imageUrl = `/uploads/${req.file.filename}`;
+    if (mainImage) {
       updateQuery += ', image_url = ?';
-      queryParams.push(imageUrl);
+      queryParams.push(mainImage);
+    }
+    if (dbStoreId !== undefined) {
+      updateQuery += ', store_id = ?';
+      queryParams.push(dbStoreId);
+    }
+    if (dbVendorId !== undefined) {
+      updateQuery += ', vendor_id = ?';
+      queryParams.push(dbVendorId);
     }
 
     updateQuery += ' WHERE id = ?';

@@ -27,6 +27,7 @@ export default function Contact() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // FAQ State
   const [activeFaq, setActiveFaq] = useState(null);
@@ -79,25 +80,73 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmSend = () => {
+    setShowConfirmModal(false);
     setIsSubmitting(true);
-    
-    // Simulate API request delay
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
+    setErrors(prev => ({ ...prev, submit: '' }));
+
+    fetch('/api/auth/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message
+      })
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error sending message');
+
+        if (data.emailSent === false) {
+          const emailSubject = encodeURIComponent(`Hawrisha Bazaar - Contact Message from ${formData.name}`);
+          const emailBody = encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`);
+          window.location.href = `mailto:hawrisha.socks@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+        }
+
+        setIsSuccess(true);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+        // Reset success state after a few seconds
+        setTimeout(() => {
+          setIsSuccess(false);
+        }, 5000);
+      })
+      .catch((err) => {
+        console.warn('Backend email failed, falling back to mailto client:', err);
+        
+        // Construct mailto link
+        const emailSubject = encodeURIComponent(`Hawrisha Bazaar - Contact Message from ${formData.name}`);
+        const emailBody = encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`);
+        
+        // Open mail client
+        window.location.href = `mailto:hawrisha.socks@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+
+        // Treat as success since mailto client handles final transmission
+        setIsSuccess(true);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+        // Reset success state after a few seconds
+        setTimeout(() => {
+          setIsSuccess(false);
+        }, 5000);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      // Reset success state after a few seconds
-      setTimeout(() => {
-        setIsSuccess(false);
-      }, 5000);
-    }, 1800);
   };
 
   const toggleFaq = (index) => {
@@ -158,7 +207,7 @@ export default function Contact() {
           {/* Info cards (Col spans 5) */}
           <motion.div 
             variants={itemVariants} 
-            className="lg:col-span-5 flex flex-col space-y-4"
+            className="lg:col-span-5"
           >
             {/* Email Card */}
             <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse">
@@ -170,25 +219,7 @@ export default function Contact() {
                   {language === 'ar' ? 'أرسل لنا بريداً إلكترونياً' : language === 'ku' ? 'ئیمەیڵمان بۆ بنێرە' : 'Email Us'}
                 </h4>
                 <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
-                  <a href="mailto:info@hawrishasocks.com">info@hawrishasocks.com</a>
-                </p>
-                <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
-                  <a href="mailto:support@hawrishasocks.com">support@hawrishasocks.com</a>
-                </p>
-              </div>
-            </div>
-
-            {/* Call & Chat Card */}
-            <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse">
-              <div className="w-12 h-12 rounded-2xl bg-[#B2AC88]/10 flex items-center justify-center text-[#B2AC88] shrink-0">
-                <Phone size={20} />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-[#36454F] uppercase tracking-wider mb-2">
-                  {language === 'ar' ? 'اتصل وتحدث معنا' : language === 'ku' ? 'پەیوەندی و چات' : 'Call & Chat'}
-                </h4>
-                <p className="text-xs text-gray-500 font-semibold hover:text-[#B2AC88] transition-colors leading-relaxed">
-                  <a href="tel:+9647500000000">+964 750 000 00 00</a>
+                  <a href="mailto:hawrisha.socks@gmail.com">hawrisha.socks@gmail.com</a>
                 </p>
               </div>
             </div>
@@ -271,6 +302,11 @@ export default function Contact() {
 
                   {/* Submit button */}
                   <div className="pt-2">
+                    {errors.submit && (
+                      <div className="text-[10px] text-red-500 font-semibold mb-3 text-center">
+                        {errors.submit}
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={isSubmitting}
@@ -389,6 +425,49 @@ export default function Contact() {
         </motion.div>
 
       </div>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs font-sans">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center"
+            >
+              <h3 className="text-base font-bold text-[#36454F] uppercase tracking-wider mb-2">
+                {language === 'ar' ? 'هل أنت متأكد؟' : language === 'ku' ? 'دڵنیای؟' : 'Are you sure?'}
+              </h3>
+              <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                {language === 'ar' 
+                  ? 'هل تريد إرسال هذه الرسالة إلى hawrisha.socks@gmail.com؟' 
+                  : language === 'ku' 
+                    ? 'دەتەوێت ئەم پەیامە بنێریت بۆ hawrisha.socks@gmail.com؟' 
+                    : 'Do you want to send this message to hawrisha.socks@gmail.com?'}
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 py-3 bg-[#F4F4F6] hover:bg-gray-200 text-[#36454F] text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border-0"
+                >
+                  {language === 'ar' ? 'إلغاء' : language === 'ku' ? 'پاشگەزبوونەوە' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSend}
+                  className="flex-1 py-3 bg-[#36454F] hover:bg-[#C08081] text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border-0"
+                >
+                  {language === 'ar' ? 'نعم، أرسل' : language === 'ku' ? 'بەڵێ، بنێرە' : 'Yes, Send'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

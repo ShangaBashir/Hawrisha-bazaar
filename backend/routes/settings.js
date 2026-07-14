@@ -313,4 +313,150 @@ router.delete('/promotions/:id', async (req, res) => {
   }
 });
 
+// --- 9. SYSTEM SETTINGS ---
+// Get all system settings
+router.get('/system-settings', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM system_settings');
+    const settings = {};
+    rows.forEach(r => {
+      settings[r.setting_key] = r.setting_value;
+    });
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update/create a system setting
+router.post('/system-settings', async (req, res) => {
+  const { key, value } = req.body;
+  if (!key) {
+    return res.status(400).json({ error: 'Setting key is required' });
+  }
+  try {
+    await db.query(
+      'INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+      [key, String(value), String(value)]
+    );
+    res.json({ success: true, message: `Setting ${key} updated successfully` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- 10. CITIES CRUD ---
+
+// Get all cities
+router.get('/cities', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM cities ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const fallbackCoordinates = {
+  baghdad: { lat: 33.3152, lng: 44.3661 },
+  erbil: { lat: 36.1901, lng: 44.0093 },
+  sulaymaniyah: { lat: 35.5620, lng: 45.4372 },
+  duhok: { lat: 36.8665, lng: 42.9880 },
+  kirkuk: { lat: 35.4681, lng: 44.3922 },
+  basra: { lat: 30.5081, lng: 47.7979 },
+  halabja: { lat: 35.1777, lng: 45.9861 },
+  najaf: { lat: 31.9961, lng: 44.3250 },
+  karbala: { lat: 32.6160, lng: 44.0248 },
+  mosul: { lat: 36.3489, lng: 43.1577 },
+  nineveh: { lat: 36.3489, lng: 43.1577 },
+  hillah: { lat: 32.4847, lng: 44.4239 },
+  babil: { lat: 32.4847, lng: 44.4239 },
+  ramadi: { lat: 33.4216, lng: 43.3032 },
+  anbar: { lat: 33.4216, lng: 43.3032 },
+  baqubah: { lat: 33.7431, lng: 44.6497 },
+  diyala: { lat: 33.7431, lng: 44.6497 },
+  tikrit: { lat: 34.6074, lng: 43.6782 },
+  "salah al-din": { lat: 34.6074, lng: 43.6782 },
+  kut: { lat: 32.5021, lng: 45.8177 },
+  wasit: { lat: 32.5021, lng: 45.8177 },
+  amarah: { lat: 31.8411, lng: 47.1450 },
+  maysan: { lat: 31.8411, lng: 47.1450 },
+  nasiriyah: { lat: 31.0579, lng: 46.2574 },
+  "dhi qar": { lat: 31.0579, lng: 46.2574 },
+  samawah: { lat: 31.3120, lng: 45.2808 },
+  muthanna: { lat: 31.3120, lng: 45.2808 },
+  diwaniyah: { lat: 31.9904, lng: 44.9250 },
+  qadisiya: { lat: 31.9904, lng: 44.9250 },
+  akre: { lat: 36.7411, lng: 43.8933 }
+};
+
+const geocodeCity = async (cityName) => {
+  const normalized = cityName.trim().toLowerCase();
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)},Iraq&format=json&limit=1`,
+      {
+        headers: { 'User-Agent': 'Hawrisha-Socks-App' }
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+      }
+    }
+  } catch (err) {
+    console.warn(`Nominatim geocoding failed for ${cityName}, using fallback:`, err.message);
+  }
+
+  if (fallbackCoordinates[normalized]) {
+    return fallbackCoordinates[normalized];
+  }
+  return { lat: 33.3152, lng: 44.3661 };
+};
+
+// Add new city
+router.post('/cities', async (req, res) => {
+  const { name, latitude, longitude } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'City name is required' });
+  }
+  
+  let lat = parseFloat(latitude);
+  let lng = parseFloat(longitude);
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    const coords = await geocodeCity(name);
+    lat = coords.lat;
+    lng = coords.lng;
+  }
+  
+  try {
+    const [result] = await db.query(
+      'INSERT INTO cities (name, latitude, longitude) VALUES (?, ?, ?)',
+      [name.trim(), lat, lng]
+    );
+    res.status(201).json({ id: result.insertId, name: name.trim(), latitude: lat, longitude: lng });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'City already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a city
+router.delete('/cities/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM cities WHERE id = ?', [id]);
+    res.json({ message: 'City deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

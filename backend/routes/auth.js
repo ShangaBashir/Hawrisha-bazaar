@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'test@gmail.com',
+    pass: process.env.EMAIL_PASS || 'password'
+  }
+});
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 // Helper to hash password
 function hashPassword(password) {
@@ -30,11 +44,11 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // 2. Email ending check
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
+    // 2. Email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         success: false,
-        message: 'Email address must end with @gmail.com'
+        message: 'Invalid email address'
       });
     }
 
@@ -85,6 +99,7 @@ router.post('/register', async (req, res) => {
       success: true,
       message: 'Account created successfully!',
       firstName: firstName,
+      lastName: lastName,
       email: email,
       role: role || 'customer',
       storeName: role === 'vendor' ? storeName : null
@@ -110,13 +125,10 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Hash the input password to compare with DB
-    const hashedPassword = hashPassword(password);
-
     // Fetch user
     const [users] = await db.query(
-      'SELECT first_name, email, role, store_name FROM users WHERE email = ? AND password = ?',
-      [email, hashedPassword]
+      'SELECT first_name, last_name, email, role, store_name, password FROM users WHERE email = ?',
+      [email]
     );
 
     if (users.length === 0) {
@@ -127,10 +139,29 @@ router.post('/login', async (req, res) => {
     }
 
     const user = users[0];
+    let isMatch = false;
+
+    // Check if the stored password is a bcrypt hash
+    if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Fallback to legacy SHA-256 hash
+      const hashedPassword = hashPassword(password);
+      isMatch = (hashedPassword === user.password);
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password. Please verify your credentials.'
+      });
+    }
+
     return res.json({
       success: true,
       message: 'Logged in successfully!',
       firstName: user.first_name,
+      lastName: user.last_name,
       email: user.email,
       role: user.role,
       storeName: user.store_name
@@ -144,29 +175,158 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 3. Reset Password Route
+// 3. Forgot Password Route (OTP)
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, message: 'No account found with this email' });
+    }
+
+    const userId = users[0].id;
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Invalidate previous codes
+    await db.query('UPDATE password_reset_verifications SET used = TRUE WHERE user_id = ? AND used = FALSE', [userId]);
+
+    await db.query(
+      'INSERT INTO password_reset_verifications (user_id, email, verification_code, expires_at) VALUES (?, ?, ?, ?)',
+      [userId, email, otp, expiresAt]
+    );
+
+    // Send Email
+    try {
+      const info = await transporter.sendMail({
+        from: `"Hawrisha Bazaar" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Password Reset Verification Code',
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      });
+      console.log(`[DEV MODE] OTP sent to ${email} is ${otp}. MessageId: ${info.messageId}`);
+    } catch (err) {
+      console.error('Email send error:', err);
+      // Fallback: log to console if email fails
+      console.log(`[DEV MODE] SMTP failed. OTP for ${email} is ${otp}`);
+    }
+
+    return res.json({ success: true, message: 'Verification code sent' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// 3.1 Verify Code
+router.post('/verify-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ success: false, message: 'Email and code are required' });
+
+    const [records] = await db.query(
+      'SELECT * FROM password_reset_verifications WHERE email = ? AND used = FALSE ORDER BY created_at DESC LIMIT 1',
+      [email]
+    );
+
+    if (records.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+    }
+
+    const record = records[0];
+
+    if (record.attempts >= 5) {
+      await db.query('UPDATE password_reset_verifications SET used = TRUE WHERE id = ?', [record.id]);
+      return res.status(400).json({ success: false, message: 'Too many failed attempts. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(record.expires_at)) {
+      await db.query('UPDATE password_reset_verifications SET used = TRUE WHERE id = ?', [record.id]);
+      return res.status(400).json({ success: false, message: 'Verification code has expired' });
+    }
+
+    if (record.verification_code !== code) {
+      await db.query('UPDATE password_reset_verifications SET attempts = attempts + 1 WHERE id = ?', [record.id]);
+      return res.status(400).json({ success: false, message: 'Incorrect verification code' });
+    }
+
+    return res.json({ success: true, message: 'Code verified successfully' });
+  } catch (error) {
+    console.error('Verify code error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// 3.2 Resend Code
+router.post('/resend-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, message: 'No account found with this email' });
+    }
+
+    const userId = users[0].id;
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db.query('UPDATE password_reset_verifications SET used = TRUE WHERE user_id = ? AND used = FALSE', [userId]);
+
+    await db.query(
+      'INSERT INTO password_reset_verifications (user_id, email, verification_code, expires_at) VALUES (?, ?, ?, ?)',
+      [userId, email, otp, expiresAt]
+    );
+
+    // Send Email
+    try {
+      const info = await transporter.sendMail({
+        from: `"Hawrisha Bazaar" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Password Reset Verification Code',
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      });
+      console.log(`[DEV MODE] New OTP sent to ${email} is ${otp}. MessageId: ${info.messageId}`);
+    } catch (err) {
+      console.error('Email send error:', err);
+      console.log(`[DEV MODE] SMTP failed. New OTP for ${email} is ${otp}`);
+    }
+
+    return res.json({ success: true, message: 'A new code has been sent' });
+  } catch (error) {
+    console.error('Resend code error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// 3.3 Reset Password Route (Final Step)
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, phone, newPassword } = req.body;
+    const { email, code, newPassword } = req.body;
 
-    if (!email || !phone || !newPassword) {
+    if (!email || !code || !newPassword) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required.'
       });
     }
 
-    // Check if user exists with matching email and phone
-    const [users] = await db.query(
-      'SELECT id FROM users WHERE email = ? AND phone = ?',
-      [email.toLowerCase(), phone]
+    const [records] = await db.query(
+      'SELECT * FROM password_reset_verifications WHERE email = ? AND verification_code = ? AND used = FALSE ORDER BY created_at DESC LIMIT 1',
+      [email, code]
     );
 
-    if (users.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No account found with this email and phone number.'
-      });
+    if (records.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired session' });
+    }
+
+    const record = records[0];
+
+    if (new Date() > new Date(record.expires_at)) {
+      return res.status(400).json({ success: false, message: 'Verification code expired' });
     }
 
     if (newPassword.length < 8) {
@@ -176,8 +336,11 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    const hashedPassword = hashPassword(newPassword);
-    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, users[0].id]);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, record.user_id]);
+    await db.query('UPDATE password_reset_verifications SET used = TRUE WHERE user_id = ?', [record.user_id]);
 
     return res.json({
       success: true,
@@ -238,6 +401,62 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+// 4.5 Update Profile Route
+router.put('/profile', async (req, res) => {
+  try {
+    const { email, firstName, lastName, phone } = req.body;
+
+    if (!email || !firstName || !lastName || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required.'
+      });
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!phone.startsWith('+964') || cleanPhone.length !== 13) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number must start with +964 and contain exactly 10 digits.'
+      });
+    }
+
+    const [users] = await db.query(
+      'SELECT id FROM users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found.'
+      });
+    }
+
+    await db.query(
+      'UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?',
+      [firstName, lastName, phone, users[0].id]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully!',
+      profile: {
+        firstName,
+        lastName,
+        phone,
+        email
+      }
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating user profile.'
+    });
+  }
+});
+
 // 5. Get All Vendors Route (Multivendor Directory)
 router.get('/vendors', async (req, res) => {
   try {
@@ -268,6 +487,102 @@ router.get('/vendors', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred while fetching vendors.'
+    });
+  }
+});
+
+// 6. Contact Form Submission Route
+router.post('/contact', async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+    console.log('DEBUG: EMAIL_USER =', process.env.EMAIL_USER, 'EMAIL_PASS =', process.env.EMAIL_PASS ? '***' + process.env.EMAIL_PASS.slice(-4) : 'undefined');
+
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and message are required.'
+      });
+    }
+
+    // 1. Save to Database
+    await db.query(
+      'INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)',
+      [name, email, message]
+    );
+
+    let emailSent = false;
+    // 2. Attempt to Send Email via FormSubmit
+    try {
+      const response = await fetch('https://formsubmit.co/ajax/hawrisha.socks@gmail.com', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          _subject: `Hawrisha Bazaar - Contact Message from ${name}`
+        })
+      });
+      
+      const result = await response.json();
+      if (response.ok) {
+        console.log('✅ Contact email successfully forwarded via FormSubmit.');
+        emailSent = true;
+      } else {
+        console.warn('⚠️ FormSubmit failed:', result);
+      }
+    } catch (smtpErr) {
+      console.warn('⚠️ FormSubmit send failed:', smtpErr.message);
+    }
+
+    return res.json({
+      success: true,
+      emailSent,
+      message: 'Message sent successfully.'
+    });
+  } catch (error) {
+    console.error('Error saving/sending contact message:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while saving your message. Please try again later.'
+    });
+  }
+});
+
+// 7. Get All Contact Messages (Admin Only)
+router.get('/contact-messages', async (req, res) => {
+  try {
+    const [messages] = await db.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+    return res.json({
+      success: true,
+      messages
+    });
+  } catch (error) {
+    console.error('Error fetching contact messages:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching contact messages.'
+    });
+  }
+});
+
+// 8. Delete Contact Message (Admin Only)
+router.delete('/contact-messages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM contact_messages WHERE id = ?', [id]);
+    return res.json({
+      success: true,
+      message: 'Message deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Error deleting contact message:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while deleting the message.'
     });
   }
 });

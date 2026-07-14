@@ -4,6 +4,9 @@ const path = require('path');
 const productRoutes = require('./routes/products');
 const settingsRoutes = require('./routes/settings');
 const authRoutes = require('./routes/auth');
+const storeRoutes = require('./routes/stores');
+const orderRoutes = require('./routes/orders');
+const userDataRoutes = require('./routes/user_data');
 const initializeDatabase = require('./config/initDb');
 require('dotenv').config();
 
@@ -24,6 +27,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/stores', storeRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/user_data', userDataRoutes);
 
 
 // General healthcheck endpoint

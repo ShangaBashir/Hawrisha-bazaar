@@ -9,6 +9,7 @@ import ProductGrid from './components/ProductGrid';
 import Footer from './components/Footer';
 import AllProducts from './components/AllProducts';
 import AdminDashboard from './components/AdminDashboard';
+import DashboardLogin from './components/DashboardLogin';
 import Wishlist from './components/Wishlist';
 import Checkout from './components/Checkout';
 import Contact from './components/Contact';
@@ -18,22 +19,116 @@ import Account from './components/Account';
 import AuthPage from './components/AuthPage';
 import Stores from './components/Stores';
 
+// Helper: extract English from multilingual JSON string
+const parseEn = (val) => {
+  if (!val) return '';
+  try {
+    const parsed = JSON.parse(val);
+    return (typeof parsed === 'object' && parsed.en) ? parsed.en : val;
+  } catch { return val; }
+};
+
+const getLocalized = (val, lang) => {
+  if (!val) return '';
+  const l = lang ? lang.toLowerCase() : 'en';
+  const u = l.toUpperCase();
+  if (typeof val === 'object') {
+    return val[l] || val[u] || val['en'] || val['EN'] || val['ku'] || val['KU'] || val['ar'] || val['AR'] || '';
+  }
+  let currentVal = val;
+  for (let i = 0; i < 3; i++) {
+    try {
+      if (typeof currentVal !== 'string') break;
+      const parsed = JSON.parse(currentVal);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
+      }
+      currentVal = parsed;
+    } catch {
+      break;
+    }
+  }
+  return currentVal;
+};
+
+import ShowcaseSection from './components/ShowcaseSection';
+import SocksStory from './components/SocksStory';
+import StoreMarquee from './components/StoreMarquee';
+
+const getAppCartColorStyle = (colorVal) => {
+  if (!colorVal) return {};
+  if (colorVal.startsWith('bg-[#') && colorVal.endsWith(']')) {
+    return { backgroundColor: colorVal.slice(4, -1) };
+  }
+  if (colorVal.startsWith('#')) {
+    return { backgroundColor: colorVal };
+  }
+  return {};
+};
+
+// Check if we are on the dashboard path
+const isDashboardPath = () => {
+  const path = window.location.pathname;
+  return path === '/dashboard' || path === '/admin';
+};
+
 function App() {
   const { t, language } = useLanguage();
+
+  // Separate dashboard session — completely isolated from the main site
+  const [dashboardUser, setDashboardUser] = useState(null); // { email, role, firstName, storeName }
+  const [isDashboard] = useState(isDashboardPath);
+
   const [currentView, setCurrentView] = useState(() => {
-    // Check if the route is /admin
-    if (window.location.pathname === '/admin') {
-      return 'admin';
-    }
+    const path = window.location.pathname;
+    if (path === '/stores' || path.startsWith('/store/')) return 'stores';
+    if (path === '/login' || path === '/forgot-password' || path === '/verify-code' || path === '/reset-password') return 'auth';
+    if (path === '/all_products') return 'all_products';
+    if (path === '/story') return 'story';
+    if (path === '/contact') return 'contact';
+    if (path === '/wishlist') return 'wishlist';
+    if (path === '/account') return 'account';
+    if (path === '/cart') return 'cart';
+    if (path === '/checkout') return 'checkout';
     return 'home';
   });
 
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const [cart, setCart] = useState(() => {
+    const saved = localStorage.getItem('cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [wishlist, setWishlist] = useState(() => {
+    const saved = localStorage.getItem('wishlist');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isInitializingSync, setIsInitializingSync] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [drawerItemToDelete, setDrawerItemToDelete] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState(null);
+  const [selectedStoreIdForDetail, setSelectedStoreIdForDetail] = useState(null);
+  const [resetDetailTrigger, setResetDetailTrigger] = useState(0);
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [globalProducts, setGlobalProducts] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setGlobalProducts(data);
+      })
+      .catch(err => console.error('Error fetching global products:', err));
+  }, []);
+
+  // Clean up invalid wishlist items
+  useEffect(() => {
+    if (globalProducts.length > 0 && wishlist.length > 0) {
+      const validWishlist = wishlist.filter(id => globalProducts.some(p => p.id === id));
+      if (validWishlist.length !== wishlist.length) {
+        setWishlist(validWishlist);
+      }
+    }
+  }, [globalProducts, wishlist]);
   const [globalFilters, setGlobalFilters] = useState({
     categories: [],
     colors: [],
@@ -43,27 +138,99 @@ function App() {
     sizes: [],
     badges: [],
     promotions: [],
-    onlyDiscounted: false
+    onlyDiscounted: false,
+    gender: ''
   });
   
   // Auth states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentUserEmail, setCurrentUserEmail] = useState(null);
-  const [currentUserRole, setCurrentUserRole] = useState(null);
-  const [currentUserStoreName, setCurrentUserStoreName] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('currentUser') || null);
+  const [currentUserLastName, setCurrentUserLastName] = useState(() => localStorage.getItem('currentUserLastName') || null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(() => localStorage.getItem('currentUserEmail') || null);
+  const [currentUserRole, setCurrentUserRole] = useState(() => localStorage.getItem('currentUserRole') || null);
+  const [currentUserStoreName, setCurrentUserStoreName] = useState(() => localStorage.getItem('currentUserStoreName') || null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showMultiStoreModal, setShowMultiStoreModal] = useState(false);
+  const [storesList, setStoresList] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/stores')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.vendors) {
+          setStoresList(data.vendors);
+        }
+      })
+      .catch(err => console.error('Error fetching stores for search:', err));
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn && currentUserEmail) {
+      setIsInitializingSync(true);
+      Promise.all([
+        fetch(`/api/user_data/cart?email=${encodeURIComponent(currentUserEmail)}`).then(r => r.json()),
+        fetch(`/api/user_data/wishlist?email=${encodeURIComponent(currentUserEmail)}`).then(r => r.json())
+      ])
+      .then(([cartData, wishlistData]) => {
+        if (cartData.success) {
+          setCart(cartData.cart || []);
+        }
+        if (wishlistData.success) {
+          setWishlist(wishlistData.wishlist || []);
+        }
+      })
+      .catch(err => console.error('Error fetching user data:', err))
+      .finally(() => setIsInitializingSync(false));
+    } else {
+      setIsInitializingSync(false);
+    }
+  }, [isLoggedIn, currentUserEmail]);
+
+  useEffect(() => {
+    if (!isInitializingSync && isLoggedIn && currentUserEmail) {
+      fetch('/api/user_data/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentUserEmail, cart })
+      }).catch(err => console.error('Error saving cart:', err));
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart, isLoggedIn, currentUserEmail, isInitializingSync]);
+
+  useEffect(() => {
+    if (!isInitializingSync && isLoggedIn && currentUserEmail) {
+      fetch('/api/user_data/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentUserEmail, wishlist })
+      }).catch(err => console.error('Error saving wishlist:', err));
+    }
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+  }, [wishlist, isLoggedIn, currentUserEmail, isInitializingSync]);
+
+  // Handle route protection and redirects
+  useEffect(() => {
+    if (isInitializingSync) return;
+    
+    if (!isLoggedIn && (currentView === 'cart' || currentView === 'checkout' || currentView === 'account')) {
+      setCurrentView('auth');
+      syncBrowserUrl('auth');
+    } else if (isLoggedIn && currentView === 'auth') {
+      setCurrentView('account');
+      syncBrowserUrl('account');
+    }
+  }, [isLoggedIn, currentView, isInitializingSync]);
 
   const showToast = (message) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(''), 2500);
   };
 
-  // Automatically scroll to the top of the screen when switching pages
+  // Automatically scroll to the top of the screen when switching pages or opening product details
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentView]);
+    window.scrollTo(0, 0);
+  }, [currentView, selectedProductForDetail]);
 
   // Prevent body scroll when logout confirmation is open
   useEffect(() => {
@@ -77,18 +244,60 @@ function App() {
     };
   }, [showLogoutConfirm]);
 
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/stores' || path.startsWith('/store/')) setCurrentView('stores');
+      else if (path === '/login' || path === '/forgot-password' || path === '/verify-code' || path === '/reset-password') setCurrentView('auth');
+      else if (path === '/all_products') setCurrentView('all_products');
+      else if (path === '/story') setCurrentView('story');
+      else if (path === '/contact') setCurrentView('contact');
+      else if (path === '/wishlist') setCurrentView('wishlist');
+      else if (path === '/account') setCurrentView('account');
+      else if (path === '/cart') setCurrentView('cart');
+      else if (path === '/checkout') setCurrentView('checkout');
+      else setCurrentView('home');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [viewHistory, setViewHistory] = useState(['home']);
 
-  const handleViewChange = (view) => {
+  const syncBrowserUrl = (view, customUrl = null) => {
+    const targetPath = customUrl 
+      ? customUrl 
+      : view === 'home' ? '/' 
+      : view === 'admin' ? '/dashboard' 
+      : view === 'auth' ? '/login' 
+      : `/${view}`;
+      
+    const currentPath = window.location.pathname + window.location.search;
+    if (currentPath !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  };
+
+  const handleViewChange = (view, keepProductDetail = false, customUrl = null) => {
     if ((view === 'cart' || view === 'checkout') && !isLoggedIn) {
       setCurrentView('auth');
       setViewHistory(prev => [...prev, 'auth']);
       showToast(t('toasts.login_required_cart'));
+      syncBrowserUrl('auth');
       return;
     }
+
+    // Update browser URL history
+    syncBrowserUrl(view, customUrl);
+
     setCurrentView(view);
-    if (view !== 'all_products') {
+    if (!keepProductDetail) {
       setSelectedProductForDetail(null);
+      if (view === 'all_products' || view === 'stores') {
+        setResetDetailTrigger(prev => prev + 1);
+        if (view !== 'stores') setSelectedStoreIdForDetail(null);
+      }
     }
     if (view === 'home') {
       setViewHistory(['home']);
@@ -111,10 +320,13 @@ function App() {
       sizes: [],
       badges: [],
       promotions: [],
-      onlyDiscounted: false
+      onlyDiscounted: false,
+      gender: ''
     };
     if (type === 'categories' && value.includes('All')) {
       newFilters.categories = [];
+    } else if (type === 'gender') {
+      newFilters.gender = Array.isArray(value) ? value[0] : value;
     } else {
       newFilters[type] = value;
     }
@@ -127,12 +339,14 @@ function App() {
     if (viewHistory.length <= 1) {
       setCurrentView('home');
       setViewHistory(['home']);
+      syncBrowserUrl('home');
       return;
     }
     const newHistory = viewHistory.slice(0, -1);
     const lastView = newHistory[newHistory.length - 1] || 'home';
     setCurrentView(lastView);
     setViewHistory(newHistory);
+    syncBrowserUrl(lastView);
   };
 
   const previousView = viewHistory[viewHistory.length - 2] || 'home';
@@ -143,25 +357,41 @@ function App() {
       showToast(t('toasts.login_required_add'));
       return;
     }
+
+    // Check if user is trying to add a product from a different store
+    if (cart.length > 0) {
+      const currentStoreId = cart[0].store_id;
+      const productStoreId = product.store_id;
+      if (String(currentStoreId || 0) !== String(productStoreId || 0)) {
+        setShowMultiStoreModal(true);
+        return;
+      }
+    }
+
+    const cartItemId = `${product.id}-${product.selectedColor || ''}-${product.selectedStyle || ''}-${product.selectedSize || ''}`;
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => item.cartItemId === cartItemId);
       if (existing) {
         return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prev, { ...product, quantity }];
+      return [...prev, { ...product, cartItemId, quantity }];
     });
   };
 
-  const handleRemoveFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.id !== productId));
+  const handleRemoveFromCart = (idOrCartItemId) => {
+    setCart(prev => prev.filter(item => {
+      const isCartItemMatch = item.cartItemId === idOrCartItemId;
+      const isProductMatch = String(item.id) === String(idOrCartItemId);
+      return !isCartItemMatch && !isProductMatch;
+    }));
   };
 
-  const handleUpdateCartQuantity = (productId, delta) => {
+  const handleUpdateCartQuantity = (cartItemId, delta) => {
     setCart(prev =>
       prev.map(item => {
-        if (item.id === productId) {
+        if (item.cartItemId === cartItemId || item.id === cartItemId) {
           const newQty = item.quantity + delta;
           return newQty > 0 ? { ...item, quantity: newQty } : item;
         }
@@ -182,6 +412,33 @@ function App() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const wishlistCount = wishlist.length;
   const isAdminView = currentView === 'admin';
+
+  // ── DASHBOARD PORTAL (completely separate from the store) ──────────────
+  if (isDashboard) {
+    if (!dashboardUser) {
+      return (
+        <DashboardLogin
+          onLoginSuccess={(firstName, email, role, storeName) => {
+            setDashboardUser({ firstName, email, role, storeName });
+          }}
+        />
+      );
+    }
+    return (
+      <AdminDashboard
+        currentUserEmail={dashboardUser.email}
+        currentUserRole={dashboardUser.role}
+        currentUserStoreName={dashboardUser.storeName}
+        onBackToHome={() => {
+          window.location.href = '/';
+        }}
+        onLogout={() => {
+          setDashboardUser(null);
+        }}
+      />
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-brand-beige">
@@ -209,8 +466,21 @@ function App() {
             handleViewChange('wishlist');
           }}
           onSearch={(term) => {
-            setGlobalSearchTerm(term);
-            handleViewChange('all_products');
+            const lowerTerm = term.toLowerCase().trim();
+            if (!lowerTerm) {
+              setGlobalSearchTerm('');
+              return;
+            }
+            const matchesStore = lowerTerm.includes('store') || storesList.some(store => 
+              store.name && parseEn(store.name).toLowerCase().includes(lowerTerm)
+            );
+            if (matchesStore) {
+              setGlobalSearchTerm(term);
+              handleViewChange('stores', false, '/stores');
+            } else {
+              setGlobalSearchTerm(term);
+              handleViewChange('all_products');
+            }
           }}
           onFilterSelect={(type, value) => handleFilterSelect(type, value)}
         />
@@ -218,20 +488,20 @@ function App() {
       <main className="flex-grow">
         {currentView === 'home' && (
           <>
-            <HeroCarousel />
-            <BestSeller 
-              onViewAll={() => {
-                setSelectedCategory('All');
-                handleViewChange('all_products');
-              }} 
-              onAddToCart={handleAddToCart}
+            <HeroCarousel onShopNow={() => {
+              setSelectedCategory('All');
+              handleViewChange('all_products');
+            }} />
+            <ShowcaseSection onViewAll={() => {
+              setSelectedCategory('All');
+              handleViewChange('all_products');
+            }} />
+            <SocksStory 
+              isLoggedIn={isLoggedIn}
+              onReadStory={() => handleViewChange('story')}
+              onJoinUs={() => handleViewChange('auth')}
             />
-            <ProductGrid 
-              onCategorySelect={(catName) => {
-                setSelectedCategory(catName);
-                handleViewChange('all_products');
-              }} 
-            />
+            <StoreMarquee />
           </>
         )}
         
@@ -246,10 +516,18 @@ function App() {
             onToggleWishlist={handleToggleWishlist}
             initialViewingProduct={selectedProductForDetail}
             initialSearchTerm={globalSearchTerm}
+            onClearGlobalSearch={() => setGlobalSearchTerm('')}
             previousView={previousView}
             isLoggedIn={isLoggedIn}
             onLoginRequired={() => handleViewChange('auth')}
             globalFilters={globalFilters}
+            onOpenCart={() => setIsCartOpen(true)}
+            resetDetailTrigger={resetDetailTrigger}
+            onStoreClick={(storeName) => {
+              const cleanName = parseEn(storeName);
+              const slug = cleanName.toLowerCase().replace(/\s+/g, '-');
+              handleViewChange('stores', false, `/store/${encodeURIComponent(slug)}`);
+            }}
           />
         )}
 
@@ -267,7 +545,7 @@ function App() {
             onBackToHome={handleBack}
             onProductClick={(product) => {
               setSelectedProductForDetail(product);
-              handleViewChange('all_products');
+              handleViewChange('all_products', true);
             }}
             previousView={previousView}
             isLoggedIn={isLoggedIn}
@@ -277,6 +555,10 @@ function App() {
 
         {currentView === 'stores' && (
           <Stores 
+            key={window.location.pathname}
+            resetTrigger={resetDetailTrigger}
+            initialSearchTerm={globalSearchTerm}
+            initialStoreId={selectedStoreIdForDetail}
             cart={cart}
             likedProducts={wishlist}
             onAddToCart={handleAddToCart}
@@ -284,7 +566,7 @@ function App() {
             onToggleWishlist={handleToggleWishlist}
             onProductClick={(product) => {
               setSelectedProductForDetail(product);
-              handleViewChange('all_products');
+              handleViewChange('all_products', true);
             }}
             isLoggedIn={isLoggedIn}
             onLoginRequired={() => handleViewChange('auth')}
@@ -294,7 +576,20 @@ function App() {
 
 
         {currentView === 'admin' && (
-          <AdminDashboard />
+          <AdminDashboard 
+            currentUserEmail={currentUserEmail}
+            currentUserRole={currentUserRole}
+            currentUserStoreName={currentUserStoreName}
+            onBackToHome={() => handleViewChange('home')}
+            onViewProduct={(product) => {
+              setSelectedProductForDetail(product);
+              handleViewChange('all_products', true);
+            }}
+            onViewStore={(storeId, storeName) => {
+              setSelectedStoreIdForDetail(String(storeId));
+              handleViewChange('stores', false);
+            }}
+          />
         )}
 
         {currentView === 'checkout' && (
@@ -302,7 +597,11 @@ function App() {
             cart={cart}
             onClearCart={() => setCart([])}
             onBackToHome={handleBack}
+            onViewAccount={() => handleViewChange('account', true)}
             previousView={previousView}
+            currentUser={currentUser}
+            currentUserLastName={currentUserLastName}
+            currentUserEmail={currentUserEmail}
           />
         )}
 
@@ -319,18 +618,26 @@ function App() {
             email={currentUserEmail}
             onBackToHome={() => handleViewChange('home')}
             onLogoutClick={() => setShowLogoutConfirm(true)}
+            onViewChange={handleViewChange}
           />
         )}
 
         {currentView === 'auth' && (
           <AuthPage 
-            onLoginSuccess={(username, email, role, storeName) => {
+            onLoginSuccess={(firstName, lastName, email, role, storeName) => {
               setIsLoggedIn(true);
-              setCurrentUser(username);
+              setCurrentUser(firstName);
+              setCurrentUserLastName(lastName);
               setCurrentUserEmail(email);
               setCurrentUserRole(role);
               setCurrentUserStoreName(storeName);
-              showToast(t('toasts.login_success', { user: username }));
+              localStorage.setItem('isLoggedIn', 'true');
+              localStorage.setItem('currentUser', firstName);
+              localStorage.setItem('currentUserLastName', lastName || '');
+              localStorage.setItem('currentUserEmail', email);
+              localStorage.setItem('currentUserRole', role || '');
+              if (storeName) localStorage.setItem('currentUserStoreName', storeName);
+              showToast(t('toasts.login_success', { user: firstName }));
               handleBack();
             }}
             onCancel={handleBack}
@@ -351,6 +658,10 @@ function App() {
             onCheckout={() => handleViewChange('checkout')}
             onBack={handleBack}
             previousView={previousView}
+            onProductClick={(product) => {
+              setSelectedProductForDetail(product);
+              handleViewChange('all_products', true);
+            }}
           />
         )}
       </main>
@@ -424,7 +735,7 @@ function App() {
                       : (imgUrl.startsWith('data:') || imgUrl.startsWith('/') ? imgUrl : `/uploads/${imgUrl}`);
                     
                     return (
-                      <div key={item.id} className="flex space-x-4 border border-gray-100 rounded-2xl p-3 bg-white hover:shadow-xs transition-shadow">
+                      <div key={item.cartItemId || item.id} className="flex space-x-4 border border-gray-100 rounded-2xl p-3 bg-white hover:shadow-xs transition-shadow">
                         {/* Thumbnail */}
                         <div className="w-16 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0 flex items-center justify-center">
                           <img src={finalImg} alt={item.name} className="w-full h-full object-cover" />
@@ -432,16 +743,76 @@ function App() {
                         {/* Details */}
                         <div className="flex-1 flex flex-col justify-between py-0.5">
                           <div>
-                            <h4 className="text-xs font-bold text-[#36454F]">{item.name}</h4>
-                            <p className="text-[11px] text-gray-400 font-semibold mt-0.5">
-                              {item.price.toLocaleString()} IQD
+                            <h4 className="text-xs font-bold text-[#36454F] truncate">{getLocalized(item.name, language)}</h4>
+                            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+                              {getLocalized(item.vendor_name, language) || 'HAWRISHA'}
                             </p>
+                            {/* Promotion Badge */}
+                            {(() => {
+                              const parsePromo = (val) => {
+                                if (!val) return [];
+                                if (Array.isArray(val)) return val;
+                                try { const p = JSON.parse(val); return Array.isArray(p) ? p : [val]; } catch { return [val]; }
+                              };
+                              const promos = parsePromo(item.promotion).filter(p => p && p !== 'None' && p !== '');
+                              if (promos.length === 0) return null;
+                              return (
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {promos.map((promo, idx) => (
+                                    <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[8px] font-bold text-[#B2AC88] uppercase tracking-wider">
+                                      <span className="w-1 h-1 rounded-full bg-[#B2AC88] shrink-0" />
+                                      {promo}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                            <div className="text-[11px] text-gray-400 font-semibold mt-0.5">
+                              {item.discount > 0 ? (
+                                <span className="inline-flex gap-1 items-center">
+                                  <span className="line-through text-gray-300">{Math.round(item.price / (1 - item.discount / 100)).toLocaleString()}</span>
+                                  <span className="text-[#36454F]">{item.price.toLocaleString()} IQD</span>
+                                  <span className="text-red-500 font-bold ml-1 text-[8px]">({item.discount}% OFF)</span>
+                                </span>
+                              ) : (
+                                <span className="text-[#36454F]">{item.price.toLocaleString()} IQD</span>
+                              )}
+                            </div>
+                            {/* Selected Options */}
+                            {(item.selectedColor || item.selectedStyle || item.selectedSize) && (
+                              <div className="flex flex-col gap-1 mt-1.5">
+                                {item.selectedColor && (
+                                  <div className="flex items-center space-x-1 rtl:space-x-reverse bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 w-fit">
+                                    <span className="text-gray-400 font-normal text-[9px]">{language === 'ar' ? 'اللون: ' : language === 'ku' ? 'ڕەنگ: ' : 'Color: '}</span>
+                                    <span 
+                                      className={`w-2.5 h-2.5 rounded-full border border-gray-200 shrink-0 ${item.selectedColor?.startsWith('bg-') && !item.selectedColor?.includes('[') ? item.selectedColor : ''}`} 
+                                      style={getAppCartColorStyle(item.selectedColor)}
+                                    />
+                                    <span className="text-[9px] font-bold text-[#36454F]">
+                                      {item.selectedColorName || item.selectedColor?.replace('bg-[', '').replace(']', '') || ''}
+                                    </span>
+                                  </div>
+                                )}
+                                {item.selectedStyle && (
+                                  <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 text-[9px] font-bold text-[#36454F] w-fit">
+                                    <span className="text-gray-400 font-normal">{language === 'ar' ? 'النوع: ' : language === 'ku' ? 'جۆر: ' : 'Style: '}</span>
+                                    {item.selectedStyle}
+                                  </div>
+                                )}
+                                {item.selectedSize && (
+                                  <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 text-[9px] font-bold text-[#36454F] w-fit">
+                                    <span className="text-gray-400 font-normal">{language === 'ar' ? 'المقاس: ' : language === 'ku' ? 'قەبارە: ' : 'Size: '}</span>
+                                    {item.selectedSize}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mt-2">
                             {/* Quantity Controls */}
                             <div className="flex items-center space-x-2.5 border border-gray-150 rounded-full px-2 py-0.5 bg-gray-50/50">
                               <button
-                                onClick={() => handleUpdateCartQuantity(item.id, -1)}
+                                onClick={() => handleUpdateCartQuantity(item.cartItemId || item.id, -1)}
                                 className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform"
                               >
                                 <Minus size={11} />
@@ -450,19 +821,19 @@ function App() {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => handleUpdateCartQuantity(item.id, 1)}
+                                onClick={() => handleUpdateCartQuantity(item.cartItemId || item.id, 1)}
                                 className="text-gray-400 hover:text-[#36454F] active:scale-75 transition-transform"
                               >
                                 <Plus size={11} />
                               </button>
                             </div>
                             {/* Remove Icon */}
-                            <button
-                              onClick={() => handleRemoveFromCart(item.id)}
-                              className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                             <button
+                               onClick={() => setDrawerItemToDelete(item)}
+                               className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                             >
+                               <Trash2 size={13} />
+                             </button>
                           </div>
                         </div>
                       </div>
@@ -487,8 +858,13 @@ function App() {
                     <div className="flex justify-between text-xs font-semibold text-gray-500">
                       <span>Delivery</span>
                       {(() => {
-                        const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                        return subtotal >= 45000 ? (
+                        const parsePromo = (val) => {
+                          if (!val) return [];
+                          if (Array.isArray(val)) return val;
+                          try { const p = JSON.parse(val); return Array.isArray(p) ? p : [val]; } catch { return [val]; }
+                        };
+                        const hasFreeDelivery = cart.some(item => parsePromo(item.promotion).some(p => p && p.toLowerCase().includes('free delivery')));
+                        return hasFreeDelivery ? (
                           <span className="text-green-600 font-bold">FREE</span>
                         ) : (
                           <span>4,000 IQD</span>
@@ -500,7 +876,13 @@ function App() {
                       <span>
                         {(() => {
                           const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                          const shipping = subtotal >= 45000 ? 0 : 4000;
+                          const parsePromo = (val) => {
+                            if (!val) return [];
+                            if (Array.isArray(val)) return val;
+                            try { const p = JSON.parse(val); return Array.isArray(p) ? p : [val]; } catch { return [val]; }
+                          };
+                          const hasFreeDelivery = cart.some(item => parsePromo(item.promotion).some(p => p && p.toLowerCase().includes('free delivery')));
+                          const shipping = hasFreeDelivery ? 0 : 4000;
                           return (subtotal + shipping).toLocaleString();
                         })()} IQD
                       </span>
@@ -530,6 +912,62 @@ function App() {
                   </div>
                 </div>
               )}
+
+              {/* Delete Confirmation Modal inside Drawer */}
+              <AnimatePresence>
+                {drawerItemToDelete && (
+                  <motion.div
+                    key="drawer-delete-modal"
+                    className="absolute inset-0 z-10 flex items-center justify-center p-6"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.5 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setDrawerItemToDelete(null)}
+                      className="absolute inset-0 bg-black cursor-pointer"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                      className="relative bg-white border border-[#E9ECEF] rounded-[28px] p-7 w-full text-center shadow-2xl font-sans"
+                    >
+                      <div className="w-10 h-10 bg-red-50 border border-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 size={18} className="stroke-[1.5]" />
+                      </div>
+                      <h3 className="text-sm font-bold text-[#36454F] uppercase tracking-wider mb-2">
+                        {language === 'ar' ? 'إزالة العنصر؟' : language === 'ku' ? 'سڕینەوەی بەرهەم؟' : 'Remove Item?'}
+                      </h3>
+                      <p className="text-xs text-gray-500 leading-relaxed mb-5">
+                        {language === 'ar'
+                          ? `هل أنت متأكد من إزالة ${drawerItemToDelete.name} من السلة؟`
+                          : language === 'ku'
+                          ? `دڵنیایت لە سڕینەوەی ${drawerItemToDelete.name} لە سەبەتەکەتدا؟`
+                          : `Remove "${drawerItemToDelete.name}" from your cart?`}
+                      </p>
+                      <div className="flex space-x-3 rtl:space-x-reverse">
+                        <button
+                          onClick={() => setDrawerItemToDelete(null)}
+                          className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer border-0"
+                        >
+                          {language === 'ar' ? 'إلغاء' : language === 'ku' ? 'پاشگەزبوونەوە' : 'Cancel'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleRemoveFromCart(drawerItemToDelete.cartItemId || drawerItemToDelete.id);
+                            setDrawerItemToDelete(null);
+                          }}
+                          className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer shadow-md border-0"
+                        >
+                          {language === 'ar' ? 'إزالة' : language === 'ku' ? 'سڕینەوە' : 'Remove'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </>
         )}
@@ -597,11 +1035,22 @@ function App() {
                     onClick={() => {
                       setIsLoggedIn(false);
                       setCurrentUser(null);
+                      setCurrentUserLastName(null);
                       setCurrentUserEmail(null);
                       setCurrentUserRole(null);
                       setCurrentUserStoreName(null);
                       setCart([]);
+                      setWishlist([]);
+                      setIsInitializingSync(true);
                       setShowLogoutConfirm(false);
+                      localStorage.removeItem('isLoggedIn');
+                      localStorage.removeItem('cart');
+                      localStorage.removeItem('wishlist');
+                      localStorage.removeItem('currentUser');
+                      localStorage.removeItem('currentUserLastName');
+                      localStorage.removeItem('currentUserEmail');
+                      localStorage.removeItem('currentUserRole');
+                      localStorage.removeItem('currentUserStoreName');
                       if (currentView === 'account' || currentView === 'checkout' || currentView === 'admin') {
                         setCurrentView('home');
                         setViewHistory(['home']);
@@ -611,6 +1060,53 @@ function App() {
                     className="py-3 bg-red-500 hover:bg-red-650 text-white text-xs font-bold uppercase tracking-wider rounded-2xl transition-all cursor-pointer text-center select-none active:scale-98 font-bold shadow-sm"
                   >
                     {t('logout_confirm.yes')}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Multi-Store Restriction Modal */}
+      <AnimatePresence>
+        {showMultiStoreModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMultiStoreModal(false)}
+              className="fixed inset-0 bg-black/60 z-[250] cursor-pointer backdrop-blur-xs"
+            />
+            {/* Modal Dialog */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[260] pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: "spring", duration: 0.3 }}
+                className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-100 shadow-2xl pointer-events-auto text-center font-sans text-brand-charcoal"
+                dir={language === 'ar' || language === 'ku' ? 'rtl' : 'ltr'}
+              >
+                <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100 mx-auto mb-5">
+                  <ShoppingBag className="text-amber-500" size={24} />
+                </div>
+                
+                <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">
+                  {language === 'ar' ? 'تنبيه السلة' : language === 'ku' ? 'ئاگاداری سەبەتە' : 'Cart Warning'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-3 max-w-xs mx-auto leading-relaxed font-semibold">
+                  {t('toasts.multi_store_restriction')}
+                </p>
+
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={() => setShowMultiStoreModal(false)}
+                    className="py-3 px-8 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold uppercase tracking-wider rounded-2xl transition-all cursor-pointer text-center select-none active:scale-98 font-bold shadow-md"
+                  >
+                    {t('toasts.ok')}
                   </button>
                 </div>
               </motion.div>

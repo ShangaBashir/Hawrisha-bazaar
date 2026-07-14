@@ -2,7 +2,7 @@ export const translations = {
   en: {
     nav: {
       home: "Home",
-      categories: "Categories",
+      categories: "Socks",
       all_products: "All Products",
       stores: "Stores",
       story: "Our Story",
@@ -42,7 +42,7 @@ export const translations = {
       newsletter_desc: "Subscribe to receive updates, access to exclusive deals, and more.",
       email_placeholder: "Enter your email",
       subscribe: "Subscribe",
-      copyright: "HAWRISHA SOCKS. All rights reserved."
+      copyright: "HAWRISHA BAZAAR. All rights reserved."
     },
     categories_sect: {
       title: "Shop by Category",
@@ -102,14 +102,14 @@ export const translations = {
       empty: "Your shopping cart is empty.",
       continue_shopping: "Continue Shopping",
       subtotal: "Subtotal",
-      shipping_desc: "Shipping and taxes calculated at checkout.",
+      shipping_desc: "Delivery and taxes calculated at checkout.",
       checkout: "Proceed to Checkout",
       remove: "Remove",
       items_count: "({count} items)"
     },
     checkout_page: {
       title: "Checkout",
-      shipping_address: "Shipping Address",
+      shipping_address: "Delivery Address",
       first_name: "First Name",
       last_name: "Last Name",
       email: "Email Address",
@@ -120,11 +120,11 @@ export const translations = {
       payment_method: "Payment Method",
       cod: "Cash on Delivery (COD)",
       order_summary: "Order Summary",
-      shipping: "Shipping",
+      shipping: "Delivery",
       free: "Free",
       place_order: "Place Order",
       success_title: "Order Placed Successfully!",
-      success_desc: "Thank you for your order. We will process and ship your items soon.",
+      success_desc: "Thank you for your order. We will process and deliver your items soon.",
       back_home: "Back to Home"
     },
     contact_page: {
@@ -139,9 +139,9 @@ export const translations = {
       faq_title: "Frequently Asked Questions",
       faq1_q: "What materials do you use in your socks?",
       faq1_a: "We primary use high-grade Combed Cotton blended with premium spandex and elastane to ensure maximum softness, durability, and a stretch that holds up all day.",
-      faq2_q: "How long does shipping take within Iraq?",
-      faq2_a: "Delivery usually takes 1-3 business days depending on your city. We offer flat-rate shipping with cash on delivery options.",
-      faq3_q: "How should I wash my Hawrisha socks?",
+      faq2_q: "How long does delivery take within Iraq?",
+      faq2_a: "Delivery usually takes 1-3 business days depending on your city. We offer flat-rate delivery with cash on delivery options.",
+      faq3_q: "How should I wash my Hawrisha bazaar?",
       faq3_a: "To keep your character designs vibrant, we recommend machine washing in cold water (max 30°C) with similar colors, inside out. Avoid bleaching or ironing.",
       faq4_q: "Do you offer bulk packs or gift options?",
       faq4_a: "Yes! We offer pre-curated sets of 3, 5, or 10 pairs. We also provide gift wrapping services at checkout."
@@ -149,9 +149,9 @@ export const translations = {
     story_page: {
       tagline: "About Our Brand",
       title: "We weave happiness into every inch",
-      subtitle: "Welcome to Hawrisha Socks. We believe that a great outfit starts with your socks. Here is our story, what we make our socks from, and why people love them.",
+      subtitle: "Welcome to Hawrisha Bazaar. We believe that a great outfit starts with your socks. Here is our story, what we make our socks from, and why people love them.",
       philosophy: "Our Philosophy",
-      philosophy_desc: "For too long, socks have been treated as an afterthought — simple white or black fabrics hidden inside shoes. At Hawrisha Socks, we view socks as a canvas of expression. Whether you are sporting a corporate suit, running errands, or relaxing at home, your socks should speak volumes about your mood, passions, and personality.",
+      philosophy_desc: "For too long, socks have been treated as an afterthought — simple white or black fabrics hidden inside shoes. At Hawrisha Bazaar, we view socks as a canvas of expression. Whether you are sporting a corporate suit, running errands, or relaxing at home, your socks should speak volumes about your mood, passions, and personality.",
       quote: "Comfort is just as important as style. Every single thread in our socks is made to feel soft, warm, and comfortable around your feet.",
       mission: "Our Mission",
       mission_desc: "Our mission is to bring comfort and smiles to your feet. We combine extra-soft combed cotton with creative, colorful character designs so you can feel great, look unique, and walk with confidence every single day.",
@@ -241,7 +241,9 @@ export const translations = {
       signup_success: "Account created successfully! Please log in.",
       order_placed: "Order placed successfully!",
       added_to_cart: "Added to cart!",
-      removed_from_cart: "Removed from cart!"
+      removed_from_cart: "Removed from cart!",
+      multi_store_restriction: "You can only place orders from one store at a time. Please complete your current order or clear your cart.",
+      ok: "OK"
     },
     admin_dashboard: {
       title: "Admin Dashboard"
@@ -260,14 +262,14 @@ export const translations = {
       add_success: "Product added successfully!",
       edit_success: "Product updated successfully!",
       delete_success: "Product deleted successfully!",
-      platform_store: "Hawrisha Socks",
-      sold_by: "Sold by: {vendor}"
+      platform_store: "Hawrisha Bazaar",
+      sold_by: "{vendor} Store"
     }
   },
   ar: {
     nav: {
       home: "الرئيسية",
-      categories: "الأقسام",
+      categories: "الجوارب",
       all_products: "كل المنتجات",
       stores: "المتاجر",
       story: "قصتنا",
@@ -307,7 +309,7 @@ export const translations = {
       newsletter_desc: "اشترك معنا لتصلك آخر التحديثات، العروض الحصرية، والمزيد.",
       email_placeholder: "أدخل بريدك الإلكتروني",
       subscribe: "اشترك الآن",
-      copyright: "HAWRISHA SOCKS. جميع الحقوق محفوظة."
+      copyright: "HAWRISHA BAZAAR. جميع الحقوق محفوظة."
     },
     categories_sect: {
       title: "تسوق حسب الفئة",
@@ -367,14 +369,14 @@ export const translations = {
       empty: "سلة تسوقك فارغة حالياً.",
       continue_shopping: "مواصلة التسوق",
       subtotal: "المجموع الفرعي",
-      shipping_desc: "يتم احتساب الشحن والضرائب عند إتمام عملية الشراء.",
+      shipping_desc: "يتم احتساب التوصيل والضرائب عند إتمام عملية الشراء.",
       checkout: "الذهاب إلى الدفع",
       remove: "حذف",
       items_count: "({count} قطع)"
     },
     checkout_page: {
       title: "إتمام الشراء",
-      shipping_address: "عنوان الشحن",
+      shipping_address: "عنوان التوصيل",
       first_name: "الاسم الأول",
       last_name: "الاسم الأخير",
       email: "البريد الإلكتروني",
@@ -385,11 +387,11 @@ export const translations = {
       payment_method: "طريقة الدفع",
       cod: "الدفع عند الاستلام (COD)",
       order_summary: "ملخص الطلب",
-      shipping: "الشحن",
+      shipping: "التوصيل",
       free: "مجانًا",
       place_order: "تأكيد الطلب",
       success_title: "تم تقديم الطلب بنجاح!",
-      success_desc: "نشكرك على تسوقك معنا. سنقوم بمعالجة وشحن طلبك في أقرب وقت ممكن.",
+      success_desc: "نشكرك على تسوقك معنا. سنقوم بمعالجة وتوصيل طلبك في أقرب وقت ممكن.",
       back_home: "العودة للرئيسية"
     },
     contact_page: {
@@ -404,8 +406,8 @@ export const translations = {
       faq_title: "الأسئلة الشائعة",
       faq1_q: "ما هي المواد المستخدمة في صناعة جواربكم؟",
       faq1_a: "نستخدم بشكل أساسي القطن الممشط عالي الجودة الممزوج بالسباندكس الفاخر والإيلاستين لضمان أقصى درجات النعومة والمتانة والمرونة التي تدوم طوال اليوم.",
-      faq2_q: "كم يستغرق الشحن داخل العراق؟",
-      faq2_a: "يستغرق التوصيل عادةً من 1 إلى 3 أيام عمل حسب مدينتك. ونوفر شحناً بسعر ثابت مع خيار الدفع عند الاستلام.",
+      faq2_q: "كم يستغرق التوصيل داخل العراق؟",
+      faq2_a: "يستغرق التوصيل عادةً من 1 إلى 3 أيام عمل حسب مدينتك. ونوفر توصيلاً بسعر ثابت مع خيار الدفع عند الاستلام.",
       faq3_q: "كيف يجب عليّ غسل جوارب هاوريشة؟",
       faq3_a: "للحفاظ على حيوية وتفاصيل التصاميم، نوصي بغسلها في الغسالة بماء بارد (بحد أقصى 30 درجة مئوية) مع ألوان مماثلة، وتكون الجوارب مقلوبة للداخل. تجنب التبييض أو الكي.",
       faq4_q: "هل توفرون جوارب في مجموعات أو خيارات هدايا؟",
@@ -506,7 +508,9 @@ export const translations = {
       signup_success: "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.",
       order_placed: "تم تقديم طلبك بنجاح!",
       added_to_cart: "تمت الإضافة إلى السلة!",
-      removed_from_cart: "تمت إزالة المنتج من السلة!"
+      removed_from_cart: "تمت إزالة المنتج من السلة!",
+      multi_store_restriction: "يمكنك تقديم طلبات من متجر واحد فقط في كل مرة. يرجى إكمال طلبك الحالي أو تفريغ السلة.",
+      ok: "موافق"
     },
     admin_dashboard: {
       title: "لوحة التحكم للمسؤول"
@@ -526,13 +530,13 @@ export const translations = {
       edit_success: "تم تحديث المنتج بنجاح!",
       delete_success: "تم حذف المنتج بنجاح!",
       platform_store: "جوارب هاوريشا",
-      sold_by: "تباع بواسطة: {vendor}"
+      sold_by: "متجر {vendor}"
     }
   },
   ku: {
     nav: {
       home: "سەرەکی",
-      categories: "پۆلەکان",
+      categories: "گۆرەوی",
       all_products: "هەموو بەرهەمەکان",
       stores: "فرۆشگاکان",
       story: "چیرۆکی ئێمە",
@@ -572,7 +576,7 @@ export const translations = {
       newsletter_desc: "ببە بە ئەندام بۆ وەرگرتنی نوێکارییەکان، ئۆفەرە تایبەتەکان، و زیاتر.",
       email_placeholder: "ئیمەیڵەکەت بنووسە",
       subscribe: "ئەندام بە",
-      copyright: "HAWRISHA SOCKS. هەموو مافەکان پارێزراون."
+      copyright: "HAWRISHA BAZAAR. هەموو مافەکان پارێزراون."
     },
     categories_sect: {
       title: "کڕین بەپێی پۆلەکان",
@@ -639,7 +643,7 @@ export const translations = {
     },
     checkout_page: {
       title: "کۆتاییهێنان بە کڕین",
-      shipping_address: "ناونیشانی ناردن",
+      shipping_address: "ناونیشانی گەیاندن",
       first_name: "ناوی یەکەم",
       last_name: "ناوی کۆتایی",
       email: "ناونیشانی ئیمەیڵ",
@@ -654,7 +658,7 @@ export const translations = {
       free: "بێ بەرامبەر",
       place_order: "داواکاری تۆمار بکە",
       success_title: "داواکارییەکە بە سەرکەوتوویی تۆمارکرا!",
-      success_desc: "سپاس بۆ کڕینەکەت. بەم زووانە داواکارییەکەت کارا دەکەین و دەنێرین.",
+      success_desc: "سپاس بۆ کڕینەکەت. بەم زووانە داواکارییەکەت کارا دەکەین و دەگەیەنین.",
       back_home: "گەڕانەوە بۆ سەرەکی"
     },
     contact_page: {
@@ -771,7 +775,9 @@ export const translations = {
       signup_success: "حیسابەکە بە سەرکەوتوویی دروستکرا! تکایە بچۆ ژوورەوە.",
       order_placed: "داواکارییەکە بە سەرکەوتوویی تۆمارکرا!",
       added_to_cart: "زیادکرا بۆ سەبەتە!",
-      removed_from_cart: "لە سەبەتە لادرا!"
+      removed_from_cart: "لە سەبەتە لادرا!",
+      multi_store_restriction: "تەنها دەتوانیت لە یەک کاتدا لە یەک فرۆشگا داواکاری بکەیت. تکایە داواکارییەکەت تەواو بکە یان سەبەتەکەت چۆڵ بکە.",
+      ok: "باشە"
     },
     admin_dashboard: {
       title: "داشبۆردی ئەدمین"
@@ -791,7 +797,7 @@ export const translations = {
       edit_success: "بەرهەمەکە بە سەرکەوتوویی نوێکرایەوە!",
       delete_success: "بەرهەمەکە بە سەرکەوتوویی سڕایەوە!",
       platform_store: "گۆرەوی هاوڕێشە",
-      sold_by: "فرۆشراو لەلایەن: {vendor}"
+      sold_by: "فرۆشگای {vendor}"
     }
   }
 };

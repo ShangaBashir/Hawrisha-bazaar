@@ -3,9 +3,9 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 const HawrishaH = ({ size = 28, className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width={size}
+    width={size * 19 / 20}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="1 2 19 20"
     fill="currentColor"
     className={className}
   >
@@ -22,12 +22,12 @@ export default function Footer({ onViewChange }) {
           <div 
             onClick={() => onViewChange && onViewChange('home')}
             dir="ltr"
-            className="flex items-center gap-[2px] text-white select-none mb-4 cursor-pointer hover:opacity-90"
+            className="flex items-center gap-1 text-white select-none mb-4 cursor-pointer hover:opacity-90"
           >
             <HawrishaH size={32} className="text-white shrink-0" />
             <div className="flex flex-col items-start leading-[0.9] text-start">
               <span className="text-[18px] font-black tracking-[0.06em] uppercase font-sans text-white">AWRISHA</span>
-              <span className="text-[8px] font-extrabold tracking-[0.35em] uppercase font-sans text-[#B2AC88] mt-1">SOCKS</span>
+              <span className="text-[8px] font-extrabold tracking-[0.35em] uppercase font-sans text-[#B2AC88] mt-1">BAZAAR</span>
             </div>
           </div>
           <p className="text-sm opacity-80">
