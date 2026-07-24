@@ -80,7 +80,7 @@ const hasOptions = (product) => {
   if (!product) return false;
   const colors = product.colors || [];
   const sizes = parseJsonArray(product.size_collection).filter(s => s && s !== 'One Size');
-  const styles = parseJsonArray(product.style_length).filter(Boolean);
+  const styles = parseJsonArray(product.style_length).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale');
   return colors.length > 1 || sizes.length > 0 || styles.length > 1;
 };
 
@@ -321,7 +321,7 @@ function ProductCard({
       className="group cursor-pointer flex flex-col bg-transparent border border-transparent hover:border-[#B2AC88] p-0 rounded-2xl transition-all duration-300 relative overflow-hidden"
     >
       {/* Product Corner Badges (Rounded corners) */}
-      {(product.stock === 0 || product.discount > 0 || parseJsonArray(product.badge).filter(Boolean).length > 0) && (
+      {(product.stock === 0 || product.discount > 0 || parseJsonArray(product.badge).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale').length > 0) && (
         <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
           {product.stock === 0 && (
             <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-lg shadow-xs">
@@ -333,7 +333,7 @@ function ProductCard({
               {product.discount}% OFF
             </div>
           )}
-          {parseJsonArray(product.badge).filter(Boolean).map((b) => {
+          {parseJsonArray(product.badge).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale').map((b) => {
             const localizedB = getLocalized(b, language);
             return (
               <div
@@ -369,11 +369,9 @@ function ProductCard({
       {/* Product Image Box */}
       <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb]">
         {activeImage ? (
-          <img
-            src={getProductImage(activeImage)}
+          <img src={getProductImage(activeImage)}
             alt={getLocalized(product.name, language)}
-            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103 rounded-2xl"
-          />
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103 rounded-2xl" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
         ) : (
           <span className="text-gray-300 font-serif text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
             {parseJsonArray(product.category).map(cat => getLocalized(cat, language)).join(', ')}
@@ -441,6 +439,9 @@ function ProductCard({
         })()}
 
         {/* Cart Button (Under the store name) */}
+
+
+        {/* Cart Button (Under the color swatches) */}
         <button
           type="button"
           onClick={(e) => {
@@ -564,8 +565,12 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       })
       .then((data) => {
         if (active) {
-          const sorted = [...data].sort((a, b) => Number(b.id) - Number(a.id));
-          setProducts(sorted);
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => Number(b.id) - Number(a.id));
+            setProducts(sorted);
+          } else {
+            setProducts(productsData);
+          }
           setLoading(false);
         }
       })
@@ -895,6 +900,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const handleResetFilters = () => {
     setLocalSearchTerm('');
     setSelectedCategories([]);
+    setActiveCategory('All');
     setOnlyDiscounted(false);
     setMaxPriceFilter(maxPriceOfProducts);
     setSelectedColors([]);
@@ -906,6 +912,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setSelectedBadges([]);
     setSelectedPromotions([]);
     setSelectedGender('');
+    if (onClearGlobalSearch) {
+      onClearGlobalSearch();
+    }
   };
 
   // Memoized Filtered & Sorted Products
@@ -1051,13 +1060,14 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       return;
     }
     // Validate style selection when multiple styles exist
-    const styleOptions = parseJsonArray(viewingProduct.style_length).filter(Boolean);
+    const styleOptions = parseJsonArray(viewingProduct.style_length).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale');
     if (styleOptions.length > 1 && !detailSelectedStyle) {
       setDetailValidationError('Please select a Style / Length first.');
       return;
     }
     // Validate size selection when sizes exist
-    const sizeOptions = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+    const parsedSizes = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
     if (sizeOptions.length > 0 && !detailSelectedSize) {
       setDetailValidationError('Please select a Size first.');
       return;
@@ -1066,7 +1076,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     const sizeColorMap = (() => { try { return JSON.parse(viewingProduct.size_colors || '{}'); } catch(e) { return {}; } })();
     const availableColorClasses = detailSelectedSize && sizeColorMap[detailSelectedSize] 
       ? sizeColorMap[detailSelectedSize] 
-      : (viewingProduct.colors || []);
+      : (viewingProduct.colors && viewingProduct.colors.length > 0 ? viewingProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
     if (availableColorClasses.length > 0 && !detailSelectedColor) {
       setDetailValidationError('Please select a Color first.');
       return;
@@ -1128,7 +1138,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                 {/* Title Row */}
                 <motion.div
                   initial={{ opacity: 0, y: -24 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: false, amount: 0.1 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                   className="flex flex-col md:flex-row md:items-end justify-between gap-2 md:gap-4 mb-4 md:mb-8"
                 >
@@ -1152,8 +1163,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                       />
                       {localSearchTerm && (
                         <button 
-                          onClick={() => setLocalSearchTerm('')}
-                          className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          type="button"
+                          onPointerDown={(e) => { e.preventDefault(); setLocalSearchTerm(''); }}
+                          className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer z-10"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -1169,104 +1181,27 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, delay: 0.2, ease: 'easeOut' }}
-                  className="flex flex-col md:flex-row justify-between gap-4 border-t border-b border-gray-100 py-3.5 items-start"
+                  className="flex flex-col gap-3 border-t border-b border-gray-100 py-3.5"
                 >
-                  {/* Left Side: Hide Filters Button + Active filter badges */}
-                  <div className="flex flex-col gap-3 flex-1">
-                    <div className="flex items-center space-x-4 rtl:space-x-reverse">
-                      {/* Hide Filters Button */}
-                      <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="px-5 py-2 border border-gray-200 hover:border-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white"
-                      >
-                        {showFilters 
-                          ? (language === 'ar' ? 'إخفاء الفلاتر' : language === 'ku' ? 'شاردنەوەی فلتەرەکان' : 'Hide filters')
-                          : (language === 'ar' ? 'عرض الفلاتر' : language === 'ku' ? 'پیشاندانی فلتەرەکان' : 'Show filters')}
-                      </button>
-                    </div>
+                  {/* Top Row: SHOW FILTERS (Left) + SORT BY (Right) in one row on mobile and desktop */}
+                  <div className="flex flex-row items-center justify-between w-full gap-2">
+                    {/* Hide / Show Filters Button */}
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="px-4 py-2 md:px-5 border border-gray-200 hover:border-gray-300 text-[10px] md:text-xs font-bold uppercase tracking-wider rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white shrink-0"
+                    >
+                      {showFilters 
+                        ? (language === 'ar' ? 'إخفاء الفلاتر' : language === 'ku' ? 'شاردنەوەی فلتەرەکان' : 'Hide filters')
+                        : (language === 'ar' ? 'عرض الفلاتر' : language === 'ku' ? 'پیشاندانی فلتەرەکان' : 'Show filters')}
+                    </button>
 
-                    <div className="flex flex-wrap gap-2 items-center">
-                    {selectedCategories.map(cat => (
-                      <span key={cat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}: {cat}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedCategories(prev => prev.filter(x => x !== cat))} />
-                      </span>
-                    ))}
-                    {onlyDiscounted && (
-                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'العروض: تخفيضات' : language === 'ku' ? 'پێشنیارەکان: داشکاندن' : 'Offers: Discount'}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setOnlyDiscounted(false)} />
-                      </span>
-                    )}
-                    {maxPriceFilter < maxPriceOfProducts && (
-                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? `أقل من ${maxPriceFilter.toLocaleString()} د.ع` : language === 'ku' ? `کەمتر لە ${maxPriceFilter.toLocaleString()} دینار` : `Under ${maxPriceFilter.toLocaleString()} IQD`}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setMaxPriceFilter(maxPriceOfProducts)} />
-                      </span>
-                    )}
-                    {selectedColors.length > 0 && (
-                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'} ({selectedColors.length})</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedColors([])} />
-                      </span>
-                    )}
-                    {localSearchTerm !== '' && (
-                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'البحث' : language === 'ku' ? 'گەڕان' : 'Search'}: "{localSearchTerm}"</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setLocalSearchTerm('')} />
-                      </span>
-                    )}
-                    {initialSearchTerm !== '' && (
-                      <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'البحث العام' : language === 'ku' ? 'گەڕانی گشتی' : 'Global Search'}: "{initialSearchTerm}"</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => onClearGlobalSearch && onClearGlobalSearch()} />
-                      </span>
-                    )}
-                    {selectedStyles.map(st => (
-                      <span key={st} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'الموديل' : language === 'ku' ? 'شێواز' : 'Style'}: {st}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedStyles(prev => prev.filter(x => x !== st))} />
-                      </span>
-                    ))}
-                    {selectedMaterials.map(mat => (
-                      <span key={mat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}: {mat}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedMaterials(prev => prev.filter(x => x !== mat))} />
-                      </span>
-                    ))}
-                    {selectedSeasons.map(seas => (
-                      <span key={seas} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'الموسم' : language === 'ku' ? 'وەرز' : 'Season'}: {seas}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSeasons(prev => prev.filter(x => x !== seas))} />
-                      </span>
-                    ))}
-                    {selectedSizes.map(sz => (
-                      <span key={sz} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                        <span>{language === 'ar' ? 'المقاس' : language === 'ku' ? 'قەبارە' : 'Size'}: {sz}</span>
-                        <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSizes(prev => prev.filter(x => x !== sz))} />
-                      </span>
-                    ))}
-                    {hasActiveFilters && (
-                      <button 
-                        onClick={handleResetFilters}
-                        className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer ml-1.5"
-                      >
-                        {t('product.clear_all')}
-                      </button>
-                    )}
-                  </div>
-                  </div>
-                  
-                  {/* Right Side: Local Products Search ABOVE Sort By */}
-                  <div className="flex flex-col items-end gap-2 shrink-0 w-full md:w-auto mt-2 md:mt-0">
-                    
                     {/* Sort By Dropdown */}
-                    <div className="flex items-center space-x-1.5 px-2 py-1.5 md:px-4 md:py-2 border border-gray-200 hover:border-gray-300 rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white rtl:space-x-reverse">
+                    <div className="flex items-center space-x-1 md:space-x-1.5 px-3 py-1.5 md:px-4 md:py-2 border border-gray-200 hover:border-gray-300 rounded-full hover:bg-gray-50 transition-all cursor-pointer shadow-xs text-[#36454F] bg-white rtl:space-x-reverse shrink-0">
                       <span className="shrink-0 text-gray-400 text-[10px] md:text-xs font-semibold select-none">{t('product.sort_title')}:</span>
                       <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
-                        className="bg-transparent border-0 py-0 pr-4 rtl:pl-4 rtl:pr-0 text-[10px] md:text-xs font-bold text-[#36454F] focus:outline-none cursor-pointer max-w-[90px] md:max-w-none"
+                        className="bg-transparent border-0 py-0 pr-2 rtl:pl-2 rtl:pr-0 text-[10px] md:text-xs font-bold text-[#36454F] focus:outline-none cursor-pointer"
                       >
                         <option value="Featured">{language === 'ar' ? 'المميز' : language === 'ku' ? 'تایبەتمەند' : 'Featured'}</option>
                         <option value="Newest Arrivals">{t('product.sort_newest')}</option>
@@ -1276,6 +1211,78 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                       </select>
                     </div>
                   </div>
+
+                  {/* Active Filter Badges */}
+                  {hasActiveFilters && (
+                    <div className="flex flex-wrap gap-2 items-center pt-1">
+                      {selectedCategories.map(cat => (
+                        <span key={cat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}: {cat}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedCategories(prev => prev.filter(x => x !== cat))} />
+                        </span>
+                      ))}
+                      {onlyDiscounted && (
+                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'العروض: تخفيضات' : language === 'ku' ? 'پێشنیارەکان: داشکاندن' : 'Offers: Discount'}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setOnlyDiscounted(false)} />
+                        </span>
+                      )}
+                      {maxPriceFilter < maxPriceOfProducts && (
+                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? `أقل من ${maxPriceFilter.toLocaleString()} د.ع` : language === 'ku' ? `کەمتر لە ${maxPriceFilter.toLocaleString()} دینار` : `Under ${maxPriceFilter.toLocaleString()} IQD`}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setMaxPriceFilter(maxPriceOfProducts)} />
+                        </span>
+                      )}
+                      {selectedColors.length > 0 && (
+                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'} ({selectedColors.length})</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedColors([])} />
+                        </span>
+                      )}
+                      {localSearchTerm !== '' && (
+                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'البحث' : language === 'ku' ? 'گەڕان' : 'Search'}: "{localSearchTerm}"</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setLocalSearchTerm('')} />
+                        </span>
+                      )}
+                      {initialSearchTerm !== '' && (
+                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'البحث العام' : language === 'ku' ? 'گەڕانی گشتی' : 'Global Search'}: "{initialSearchTerm}"</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => onClearGlobalSearch && onClearGlobalSearch()} />
+                        </span>
+                      )}
+                      {selectedStyles.map(st => (
+                        <span key={st} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'الموديل' : language === 'ku' ? 'شێواز' : 'Style'}: {st}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedStyles(prev => prev.filter(x => x !== st))} />
+                        </span>
+                      ))}
+                      {selectedMaterials.map(mat => (
+                        <span key={mat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}: {mat}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedMaterials(prev => prev.filter(x => x !== mat))} />
+                        </span>
+                      ))}
+                      {selectedSeasons.map(seas => (
+                        <span key={seas} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'الموسم' : language === 'ku' ? 'وەرز' : 'Season'}: {seas}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSeasons(prev => prev.filter(x => x !== seas))} />
+                        </span>
+                      ))}
+                      {selectedSizes.map(sz => (
+                        <span key={sz} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
+                          <span>{language === 'ar' ? 'المقاس' : language === 'ku' ? 'قەبارە' : 'Size'}: {sz}</span>
+                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSizes(prev => prev.filter(x => x !== sz))} />
+                        </span>
+                      ))}
+                      <button 
+                        onClick={handleResetFilters}
+                        className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer ml-1.5"
+                      >
+                        {t('product.clear_all')}
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               </div>
 
@@ -1909,24 +1916,31 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
 
                             {/* Dots */}
                             <div className="flex items-center space-x-2.5">
-                              {[...Array(pageCount)].map((_, i) => {
-                                const isActive = currentPage === i;
-                                return (
-                                  <button
-                                    key={i}
-                                    onClick={() => {
-                                      setCurrentPage(i);
-                                      window.scrollTo(0, 0);
-                                    }}
-                                    className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                      isActive 
-                                        ? 'bg-[#C08081] scale-110 shadow-xs' 
-                                        : 'border border-[#C08081] bg-transparent hover:bg-[#C08081]/15'
-                                    }`}
-                                    aria-label={`Go to page ${i + 1}`}
-                                  />
-                                );
-                              })}
+                              {(() => {
+                                let startIdx = Math.max(0, currentPage - 2);
+                                let endIdx = Math.min(pageCount - 1, startIdx + 4);
+                                if (endIdx - startIdx < 4) startIdx = Math.max(0, endIdx - 4);
+                                const idxs = [];
+                                for (let p = startIdx; p <= endIdx; p++) idxs.push(p);
+                                return idxs.map((i) => {
+                                  const isActive = currentPage === i;
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => {
+                                        setCurrentPage(i);
+                                        window.scrollTo(0, 0);
+                                      }}
+                                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                                        isActive 
+                                          ? 'bg-[#C08081] scale-110 shadow-xs' 
+                                          : 'border border-[#C08081] bg-transparent hover:bg-[#C08081]/15'
+                                      }`}
+                                      aria-label={`Go to page ${i + 1}`}
+                                    />
+                                  );
+                                });
+                              })()}
                             </div>
 
                             {/* Next Button */}
@@ -2018,11 +2032,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
 
                     {detailActiveImage ? (
                       <div className="w-full h-full relative">
-                        <img 
-                          src={getProductImage(detailActiveImage)} 
+                        <img src={getProductImage(detailActiveImage)} 
                           alt={getLocalized(viewingProduct.name, language)} 
-                          className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" 
-                        />
+                          className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                         {detailSelectedColor && (
                           <div 
                             className="absolute inset-0 pointer-events-none z-2 opacity-50"
@@ -2039,9 +2051,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                       </span>
                     )}
 
-                    {parseJsonArray(viewingProduct.badge).filter(Boolean).length > 0 && (
+                    {parseJsonArray(viewingProduct.badge).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale').length > 0 && (
                       <span className="absolute top-4 left-4 z-10 text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 bg-[#36454F] text-white rounded-full">
-                        {parseJsonArray(viewingProduct.badge).filter(Boolean).join(', ')}
+                        {parseJsonArray(viewingProduct.badge).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale').join(', ')}
                       </span>
                     )}
                   </motion.div>
@@ -2166,11 +2178,12 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                     {(() => {
                       const sizeColorMap = (() => { try { return JSON.parse(viewingProduct.size_colors || '{}'); } catch(e) { return {}; } })();
                       const hasSizeColors = Object.keys(sizeColorMap).length > 0;
-                      const sizeOptions = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+                      const parsedSizes = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
+const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
                       // Colors available for the selected size (or all product colors if no size selected)
                       const availableColorClasses = detailSelectedSize && sizeColorMap[detailSelectedSize]
                         ? sizeColorMap[detailSelectedSize]
-                        : (viewingProduct.colors || []);
+                        : (viewingProduct.colors && viewingProduct.colors.length > 0 ? viewingProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
                       // If a color is selected, show which sizes carry it
                       const sizesForSelectedColor = detailSelectedColor
                         ? sizeOptions.filter(size => (sizeColorMap[size] || []).includes(detailSelectedColor))
@@ -2429,22 +2442,22 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                               onMouseLeave={() => setHoveredRelatedId(null)}
                               initial={{ opacity: 0, y: 16 }}
                               animate={{
-                                opacity: someoneElseHovered ? 0.35 : 1,
+                                opacity: someoneElseHovered ? 0.6 : 1,
                                 y: 0,
                                 scale: isHovered ? 1.03 : 1,
                                 filter: someoneElseHovered ? 'blur(2px)' : 'blur(0px)',
                               }}
                               transition={{ duration: 0.25, delay: idx * 0.07 }}
                               className={`flex flex-col text-left cursor-pointer rounded-2xl overflow-hidden border-2 shadow-sm transition-shadow ${
-                                isHovered ? 'border-[#B2AC88] shadow-lg' : 'border-[#B2AC88]/30'
+                                isHovered ? 'border-[#B2AC88] shadow-md' : 'border-[#B2AC88]/30'
                               }`}
                             >
                               {/* Image */}
-                              <div className={`w-full aspect-square ${isHovered ? accent.bg : 'bg-gray-50'} transition-colors duration-300 overflow-hidden relative`}>
+                              <div className="w-full aspect-square bg-gray-50 transition-colors duration-300 overflow-hidden relative">
                                 {relatedImg ? (
                                   <img
                                     src={relatedImg.startsWith('/') || relatedImg.startsWith('data:') ? relatedImg : `/uploads/${relatedImg}`}
-                                    alt={p.name}
+                                    alt={getLocalized(p.name, language)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }}
                                     className="w-full h-full object-contain transition-transform duration-500"
                                     style={{ transform: isHovered ? 'scale(1.08)' : 'scale(1)' }}
                                   />
@@ -2455,7 +2468,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                 )}
                                 {/* Category badge */}
                                 <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B2AC88]/10 text-[#B2AC88] border border-[#B2AC88]/30`}>
-                                  {tCategory(parseJsonArray(p.category).filter(Boolean)[0]) || 'Socks'}
+                                  {tCategory(parseJsonArray(p.category).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale')[0]) || 'Socks'}
                                 </span>
                               </div>
                               {/* Info */}
@@ -2546,11 +2559,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                     <div className="w-full aspect-[3/4] bg-white rounded-2xl relative shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden mb-4">
                       {modalActiveImage ? (
                         <div className="w-full h-full relative">
-                          <img 
-                            src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
+                          <img src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
                             alt={getLocalized(optionsModalProduct.name, language)} 
-                            className="w-full h-full object-contain" 
-                          />
+                            className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                           {selectedColorClass && (
                             <div 
                               className="absolute inset-0 pointer-events-none z-2 opacity-50"
@@ -2604,10 +2615,11 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                       {(() => {
                         const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
                         const hasSizeColors = Object.keys(sizeColorMap).length > 0;
-                        const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                        const parsedSizes = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
                         const availableColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
                           ? sizeColorMap[modalSelectedSize]
-                          : (optionsModalProduct.colors || []);
+                          : (optionsModalProduct.colors && optionsModalProduct.colors.length > 0 ? optionsModalProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
                         const sizesForSelectedColor = modalColorIndex !== null
                           ? sizeOptions.filter(size => (sizeColorMap[size] || []).includes(optionsModalProduct.colors?.[modalColorIndex]))
                           : sizeOptions;
@@ -2623,7 +2635,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                                 <div className="flex flex-wrap gap-2">
                                   {sizeOptions.map((size) => {
                                     const selectedColorClass = modalColorIndex !== null ? optionsModalProduct.colors?.[modalColorIndex] : null;
-                                    const isAvailable = !selectedColorClass || sizesForSelectedColor.includes(size);
+                                    const isAvailable = !selectedColorClass || !hasSizeColors || sizesForSelectedColor.includes(size);
                                     return (
                                       <button
                                         key={size}
@@ -2734,12 +2746,13 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                         type="button"
                         onClick={() => {
                           // Validation
-                          const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean);
+                          const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale');
                           if (styleOptions.length > 1 && !modalSelectedStyle) {
                             setModalValidationError('Please select a Style / Length first.');
                             return;
                           }
-                          const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+                          const parsedSizes = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
+const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
                           if (sizeOptions.length > 0 && !modalSelectedSize) {
                             setModalValidationError('Please select a Size first.');
                             return;
@@ -2747,7 +2760,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
                           const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
                           const availColorClasses = modalSelectedSize && sizeColorMap[modalSelectedSize]
                             ? sizeColorMap[modalSelectedSize]
-                            : (optionsModalProduct.colors || []);
+                            : (optionsModalProduct.colors && optionsModalProduct.colors.length > 0 ? optionsModalProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
                           if (availColorClasses.length > 0 && modalColorIndex === null) {
                             setModalValidationError('Please select a Color first.');
                             return;

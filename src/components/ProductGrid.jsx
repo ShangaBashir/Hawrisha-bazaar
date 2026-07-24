@@ -201,7 +201,7 @@ export default function ProductGrid({ onAddToCart, onCategorySelect, wishlist = 
                   <div className="relative w-full aspect-square bg-[#ecebe0] rounded-3xl overflow-hidden transition-all duration-300 group-hover:shadow-lg">
                     <img 
                       src={getProductImage(product.image || product.image_url)} 
-                      alt={product.name} 
+                      alt={getLocalized(product.name, language)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                     />
 

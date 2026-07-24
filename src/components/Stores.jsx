@@ -137,29 +137,29 @@ function StoreProductCard({ product, likedProducts, onToggleWishlist, onAddToCar
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-      whileHover={{ y: -5, borderColor: 'rgba(178, 172, 136, 0.5)', backgroundColor: '#ffffff', boxShadow: '0 12px 30px rgba(178,172,136,0.08)' }}
+      whileHover={{ y: -5 }}
       onClick={() => onProductClick(product)}
-      className="group cursor-pointer flex flex-col bg-transparent border border-transparent p-4 rounded-[2rem] transition-all duration-300 relative text-start justify-between min-h-[430px]"
+      className="group cursor-pointer flex flex-col bg-transparent border border-transparent hover:border-[#B2AC88] p-0 rounded-2xl transition-all duration-300 relative text-start overflow-hidden"
     >
       <div className="flex flex-col flex-grow">
         {/* Product Image and badges */}
-        <div className="w-full aspect-square rounded-2xl mb-3 relative overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100/50">
+        <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center bg-[#f9fafb] border border-gray-100/50">
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
             {product.stock === 0 && (
-              <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-full shadow-xs">
+              <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-lg shadow-xs">
                 Out of Stock
               </div>
             )}
             {product.discount > 0 && (
-              <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-full shadow-xs">
+              <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-red-500 text-white rounded-lg shadow-xs">
                 {product.discount}% OFF
               </div>
             )}
-            {badges.map((b) => (
+            {badges.filter(b => String(b).toLowerCase() !== 'sale').map((b) => (
               <div 
                 key={b}
-                className={`text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs ${
+                className={`text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg shadow-xs ${
                   b === 'New' ? 'bg-[#B2AC88] text-white' :
                   b === 'Bestseller' ? 'bg-[#36454F] text-white' : 'bg-[#C08081] text-white'
                 }`}
@@ -185,43 +185,39 @@ function StoreProductCard({ product, likedProducts, onToggleWishlist, onAddToCar
             </button>
           </div>
 
-          <img 
-            src={imgSrc} 
+          <img src={imgSrc} 
             alt={getLocalized(product.name, language)} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103" 
-          />
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103 rounded-2xl" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
         </div>
 
-
-
         {/* Details */}
-        <div className="space-y-1 mt-1 mb-3">
+        <div className="flex flex-col flex-grow mt-3 px-3 pb-3">
           {/* Name */}
-          <h3 className="font-semibold text-gray-800 text-sm group-hover:text-[#B2AC88] transition-colors line-clamp-1 leading-snug">
+          <h3 className="font-extrabold text-[#36454F] text-[14px] sm:text-[16px] group-hover:text-[#B2AC88] transition-colors line-clamp-2 text-start leading-snug">
             {getLocalized(product.name, language)}
           </h3>
 
           {/* Price */}
-          <div className="text-base font-extrabold text-[#36454F] mt-1">
+          <div className="text-[16px] font-extrabold text-[#36454F] text-start flex items-center gap-2 flex-wrap mt-1">
             {product.discount > 0 ? (
-              <div className="flex items-center space-x-1.5 flex-wrap">
-                <span className="line-through text-xs text-gray-300 font-semibold">
-                  {product.price.toLocaleString()} IQD
-                </span>
-                <span>
+              <>
+                <span className="text-[#36454F] text-[15px] sm:text-base">
                   {finalPrice.toLocaleString()} IQD
                 </span>
-                <span className="text-red-500 text-[10px] font-bold">
+                <span className="text-[11px] sm:text-[12px] line-through text-gray-400 font-normal">
+                  {product.price.toLocaleString()} IQD
+                </span>
+                <span className="text-red-500 text-[10px] sm:text-[11px] font-bold">
                   {product.discount}% OFF
                 </span>
-              </div>
+              </>
             ) : (
-              <span>{product.price.toLocaleString()} IQD</span>
+              <span className="text-[#36454F] text-[15px] sm:text-base">{product.price.toLocaleString()} IQD</span>
             )}
           </div>
 
           {/* Store Name */}
-          <p className="text-[11px] font-semibold text-gray-400">
+          <p className="text-[11px] sm:text-[13px] text-gray-400 font-medium text-start mt-0.5">
             {getLocalized(vendorName, language)}
           </p>
 
@@ -237,28 +233,29 @@ function StoreProductCard({ product, likedProducts, onToggleWishlist, onAddToCar
             return (
               <div className="flex flex-wrap gap-1 mt-1">
                 {promos.map((promo, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[9px] font-bold text-[#B2AC88] uppercase tracking-wider">
-                    <span className="w-1 h-1 rounded-full bg-[#B2AC88] shrink-0" />
+                  <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[9px] sm:text-[10px] font-bold text-[#B2AC88] uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#B2AC88] shrink-0" />
                     {promo}
                   </span>
                 ))}
               </div>
             );
           })()}
+
+          {/* Add To Cart Button */}
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onProductClick(product);
+            }}
+            className="w-full py-3 bg-[#B2AC88] hover:bg-[#36454F] text-white text-xs sm:text-[13px] font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98 mt-3 border-0"
+          >
+            <ShoppingBag size={14} />
+            <span>{t('product.add_to_cart')}</span>
+          </button>
         </div>
       </div>
-
-      {/* Add To Cart Button */}
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          onProductClick(product);
-        }}
-        className="w-full py-3 bg-[#B2AC88] hover:bg-[#9C9672] text-white text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
-      >
-        <ShoppingBag size={14} />
-        <span>{t('product.add_to_cart')}</span>
-      </button>
     </motion.div>
   );
 }
@@ -288,21 +285,28 @@ const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => 
         </button>
         
         <div className="flex items-center space-x-2.5 mx-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => {
-                onPageChange(page);
-                window.scrollTo(0, 0);
-              }}
-              className={`rounded-full transition-all flex items-center justify-center cursor-pointer ${
-                currentPage === page 
-                  ? 'w-2.5 h-2.5 bg-[#C08081]'
-                  : 'w-2.5 h-2.5 border-[1.5px] border-[#C08081] bg-transparent hover:bg-[#C08081]/20'
-              }`}
-              aria-label={`Page ${page}`}
-            />
-          ))}
+          {(() => {
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+            const pages = [];
+            for (let p = startPage; p <= endPage; p++) pages.push(p);
+            return pages.map((page) => (
+              <button
+                key={page}
+                onClick={() => {
+                  onPageChange(page);
+                  window.scrollTo(0, 0);
+                }}
+                className={`rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                  currentPage === page 
+                    ? 'w-2.5 h-2.5 bg-[#C08081]'
+                    : 'w-2.5 h-2.5 border-[1.5px] border-[#C08081] bg-transparent hover:bg-[#C08081]/20'
+                }`}
+                aria-label={`Page ${page}`}
+              />
+            ));
+          })()}
         </div>
 
         <button
@@ -320,7 +324,38 @@ const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => 
   );
 };
 
-export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromCart, onToggleWishlist, onProductClick, isLoggedIn, onLoginRequired, resetTrigger, initialSearchTerm, initialStoreId }) {
+const fallbackVendors = [
+  {
+    id: 1,
+    name: JSON.stringify({ en: 'Cozy Socks Co.', ar: 'شركة الجوارب المريحة', ku: 'کۆمپانیای گۆرەوی کۆزی' }),
+    logo: '/categories/cat1.jpg',
+    banner: '/categories/cat2.jpg',
+    description: 'Comfortable and warm crew socks for the cozy winter seasons.',
+    owner_name: 'Alice Smith',
+    email: 'vendor1@gmail.com',
+    phone: '+964 770 123 4567',
+    city: JSON.stringify({ en: 'Sulaymaniyah', ar: 'السليمانية', ku: 'سلێمانی' }),
+    address: 'Sulaymaniyah, Iraq',
+    productCount: 15,
+    status: 'Active'
+  },
+  {
+    id: 2,
+    name: JSON.stringify({ en: 'Happy Feet', ar: 'الأقدام السعيدة', ku: 'پێی شاد' }),
+    logo: '/categories/cat3.jpg',
+    banner: '/categories/cat4.jpg',
+    description: 'Cute and colorful character socks to bring joy to every step.',
+    owner_name: 'Bob Jones',
+    email: 'vendor2@gmail.com',
+    phone: '+964 770 765 4321',
+    city: JSON.stringify({ en: 'Erbil', ar: 'أربيل', ku: 'هەولێر' }),
+    address: 'Erbil, Iraq',
+    productCount: 0,
+    status: 'Active'
+  }
+];
+
+export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromCart, onToggleWishlist, onProductClick, isLoggedIn, onLoginRequired, resetTrigger, initialSearchTerm, initialStoreId, onClearGlobalSearch }) {
   const { t, language } = useLanguage();
   const parseEn = (val) => getLocalized(val, language);
   const [vendors, setVendors] = useState([]);
@@ -372,14 +407,17 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
         return data;
       })
       .then((data) => {
-        if (data.success && data.vendors) {
+        if (data.success && data.vendors && data.vendors.length > 0) {
           const sorted = [...data.vendors].sort((a, b) => Number(b.id) - Number(a.id));
           setVendors(sorted);
+        } else {
+          setVendors(fallbackVendors);
         }
         setIsLoadingVendors(false);
       })
       .catch((err) => {
         console.error(err);
+        setVendors(fallbackVendors);
         setIsLoadingVendors(false);
       });
   }, []);
@@ -599,6 +637,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                       e.preventDefault();
                       e.stopPropagation();
                       setStoreSearchTerm('');
+                      if (onClearGlobalSearch) onClearGlobalSearch();
                     }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer flex items-center justify-center z-10"
                   >
@@ -620,8 +659,8 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                   </h4>
                   <button
                     type="button"
-                    onClick={() => { setStoreSearchTerm(''); setSelectedCity('All'); }}
-                    className="mt-3 text-xs font-extrabold uppercase tracking-widest text-[#B2AC88] hover:text-[#9C9672] transition-colors cursor-pointer"
+                    onClick={() => { setStoreSearchTerm(''); setSelectedCity('All'); if (onClearGlobalSearch) onClearGlobalSearch(); }}
+                    className="mt-3 text-xs font-extrabold uppercase tracking-widest text-[#B2AC88] hover:text-[#8E8866] transition-colors cursor-pointer"
                   >
                     Reset Filters
                   </button>
@@ -634,7 +673,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                 animate="show"
                 className="space-y-8"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
                 {(() => {
                   const storesPerPage = 15;
                   const indexOfLastStore = storePage * storesPerPage;
@@ -654,17 +693,15 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                       viewport={{ once: true, margin: "-40px" }}
                       transition={{ type: 'spring', stiffness: 180, damping: 20 }}
                       whileHover={{ y: -8, scale: 1.03, boxShadow: '0 25px 50px -12px rgba(178,172,136,0.12)' }}
-                      className="bg-white rounded-3xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[280px] transition-all duration-300 relative overflow-hidden text-start"
+                      className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[220px] sm:min-h-[280px] transition-all duration-300 relative overflow-hidden text-start"
                     >
                       <div>
                         {/* Miniature Banner Slice - Fully Covered Cover Image */}
-                        <div className="h-24 w-full relative overflow-hidden bg-gray-100 border-b border-gray-100/50">
+                        <div className="h-16 sm:h-24 w-full relative overflow-hidden bg-gray-100 border-b border-gray-100/50">
                           {cardBanner ? (
-                            <img 
-                              src={cardBanner} 
+                            <img src={cardBanner} 
                               alt="" 
-                              className="absolute inset-0 w-full h-full object-cover object-center brightness-95 select-none pointer-events-none" 
-                            />
+                              className="absolute inset-0 w-full h-full object-cover object-center brightness-95 select-none pointer-events-none" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-r from-[#B2AC88]/20 to-[#36454F]/20" />
                           )}
@@ -672,48 +709,46 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                         </div>
 
                         {/* Overlapping Logo */}
-                        <div className="flex justify-center -mt-10 relative z-10">
+                        <div className="flex justify-center -mt-7 sm:-mt-10 relative z-10">
                           {vendor.logo ? (
-                            <img 
-                              src={vendor.logo.startsWith('/') ? vendor.logo : `/uploads/${vendor.logo}`} 
+                            <img src={vendor.logo.startsWith('/') ? vendor.logo : `/uploads/${vendor.logo}`} 
                               alt={vendor.name} 
-                              className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md bg-white shrink-0"
-                            />
+                              className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl object-cover border-2 sm:border-4 border-white shadow-md bg-white shrink-0" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                           ) : (
-                            <div className="w-20 h-20 rounded-2xl bg-white text-[#B2AC88] flex items-center justify-center border-4 border-white shadow-md shrink-0">
-                              <Store size={32} />
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white text-[#B2AC88] flex items-center justify-center border-2 sm:border-4 border-white shadow-md shrink-0">
+                              <Store size={24} className="sm:w-8 sm:h-8" />
                             </div>
                           )}
                         </div>
 
                         {/* Store text info */}
-                        <div className="px-6 pt-3 text-center flex flex-col items-center">
-                          <h3 className="text-lg font-black text-[#36454F] uppercase tracking-wide">
+                        <div className="px-2 sm:px-6 pt-2 sm:pt-3 text-center flex flex-col items-center">
+                          <h3 className="text-[11px] sm:text-lg font-black text-[#36454F] uppercase tracking-wide truncate max-w-full">
                             {parseEn(vendor.name)}
                           </h3>
 
                           {/* City Location Badge */}
                           {vendor.city && (
-                            <div className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-gray-50 border border-gray-100 px-3 py-1 rounded-full mt-2">
-                              <MapPin size={10} className="text-[#B2AC88]" />
+                            <div className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-500 bg-gray-50 border border-gray-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full mt-1.5 sm:mt-2">
+                              <MapPin size={9} className="text-[#B2AC88]" />
                               <span>{parseEn(vendor.city)}</span>
                             </div>
                           )}
 
-                          <p className="text-xs font-bold text-[#B2AC88] mt-3.5 px-2 flex items-center justify-center gap-1.5">
-                            <ShoppingBag size={12} />
+                          <p className="text-[10px] sm:text-xs font-bold text-[#B2AC88] mt-2 sm:mt-3.5 px-1 flex items-center justify-center gap-1">
+                            <ShoppingBag size={10} className="sm:w-3 sm:h-3" />
                             {vendor.productCount || 0} {vendor.productCount === 1 ? 'Product' : 'Products'}
                           </p>
                         </div>
                       </div>
 
                       {/* Store CTA without number of products */}
-                      <div className="p-6 pt-0 text-center">
+                      <div className="p-2 sm:p-6 pt-0 text-center">
                         <button
                           onClick={() => handleVisitStore(vendor)}
-                          className="w-full py-3 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-md active:scale-98"
+                          className="w-full py-1.5 sm:py-3 bg-[#36454F] hover:bg-[#B2AC88] text-white text-[9px] sm:text-xs font-bold uppercase tracking-wider rounded-xl sm:rounded-2xl flex items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-md active:scale-98"
                         >
-                          <Store size={14} />
+                          <Store size={12} className="sm:w-3.5 sm:h-3.5" />
                           {t('stores_page.visit_store')}
                         </button>
                       </div>
@@ -755,11 +790,9 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
             {/* Storefront Banner with Cover Banner filling entire container (Bigger Rectangle) */}
             <div className="w-full h-64 sm:h-80 lg:h-96 rounded-3xl overflow-hidden relative border border-gray-100 bg-gray-50 mb-8 flex items-center justify-center">
               {/* Banner image as cover, showing it fully contained */}
-              <img 
-                src={selectedStore.banner ? (selectedStore.banner.startsWith('/') ? selectedStore.banner : `/uploads/${selectedStore.banner}`) : '/categories/cat2.jpg'} 
+              <img src={selectedStore.banner ? (selectedStore.banner.startsWith('/') ? selectedStore.banner : `/uploads/${selectedStore.banner}`) : '/categories/cat2.jpg'} 
                 alt={selectedStore.name} 
-                className="w-full h-full object-contain brightness-90 relative block select-none pointer-events-none z-2"
-              />
+                className="w-full h-full object-contain brightness-90 relative block select-none pointer-events-none z-2" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               <div className="absolute inset-0 bg-black/25 z-1" />
 
               {/* City Tag floating in the Right Corner */}
@@ -772,11 +805,9 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
 
               <div className="absolute bottom-6 start-6 flex items-center gap-4 text-white text-start z-10">
                 {selectedStore.logo ? (
-                  <img 
-                    src={selectedStore.logo.startsWith('/') ? selectedStore.logo : `/uploads/${selectedStore.logo}`} 
+                  <img src={selectedStore.logo.startsWith('/') ? selectedStore.logo : `/uploads/${selectedStore.logo}`} 
                     alt={selectedStore.name} 
-                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white shadow-lg bg-white shrink-0"
-                  />
+                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white shadow-lg bg-white shrink-0" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                 ) : (
                   <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl bg-white text-[#B2AC88] flex items-center justify-center border-4 border-white shadow-lg shrink-0">
                     <Store size={44} />
@@ -857,7 +888,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                   {(() => {
                     const productsPerPage = 16;
                     const indexOfLastProduct = productPage * productsPerPage;

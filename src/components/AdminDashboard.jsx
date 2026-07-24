@@ -36,12 +36,15 @@ import {
 } from "lucide-react";
 
 const getColorStyle = (colorClass) => {
-  if (!colorClass) return {};
+  if (!colorClass || typeof colorClass !== 'string') return {};
   if (colorClass.startsWith("bg-[#") && colorClass.endsWith("]")) {
     return { backgroundColor: colorClass.slice(4, -1) };
   }
   if (colorClass.startsWith("#")) {
     return { backgroundColor: colorClass };
+  }
+  if (colorClass.startsWith("bg-[")) {
+    return { backgroundColor: colorClass.slice(4, -1) };
   }
   return {};
 };
@@ -105,17 +108,20 @@ const BadgeIcon = ({ type }) => {
 };
 
 const MultiSelectDropdown = ({ 
-  options, 
-  selectedValues, 
+  options = [], 
+  selectedValues = [], 
   onChange, 
-  placeholder, 
-  error, 
-  renderOption = (opt) => opt.name || opt, 
+  placeholder = "Select...", 
+  error = false, 
+  renderOption = (opt) => (opt ? (getEnglishName ? getEnglishName(opt.name || opt) : String(opt.name || opt)) : ""), 
   valueKey = "name",
   icon: Icon
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const safeSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+  const safeOptions = Array.isArray(options) ? options : [];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -128,10 +134,10 @@ const MultiSelectDropdown = ({
   }, []);
 
   const toggleOption = (value) => {
-    if (selectedValues.includes(value)) {
-      onChange(selectedValues.filter(v => v !== value));
+    if (safeSelectedValues.includes(value)) {
+      onChange(safeSelectedValues.filter(v => v !== value));
     } else {
-      onChange([...selectedValues, value]);
+      onChange([...safeSelectedValues, value]);
     }
   };
 
@@ -146,7 +152,7 @@ const MultiSelectDropdown = ({
         <div className="flex items-center gap-2 truncate">
           {Icon && <Icon size={14} className="text-gray-400" />}
           <span className="truncate text-slate-700 font-medium">
-             {selectedValues.length > 0 ? `${selectedValues.length} selected` : placeholder}
+             {safeSelectedValues.length > 0 ? `${safeSelectedValues.length} selected` : placeholder}
           </span>
         </div>
         <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -161,9 +167,10 @@ const MultiSelectDropdown = ({
              transition={{ duration: 0.15 }}
              className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-60 overflow-y-auto"
            >
-             {options.map((opt, i) => {
-               const val = valueKey ? opt[valueKey] : opt;
-               const isSelected = selectedValues.includes(val);
+             {safeOptions.map((opt, i) => {
+               if (opt === null || opt === undefined) return null;
+               const val = valueKey && typeof opt === 'object' && opt[valueKey] !== undefined ? opt[valueKey] : (opt.name || opt);
+               const isSelected = safeSelectedValues.includes(val);
                return (
                  <div 
                    key={i} 
@@ -187,21 +194,29 @@ const MultiSelectDropdown = ({
 };
 
 const getEnglishName = (val) => {
-  if (!val) return "";
+  if (val === null || val === undefined || val === "") return "";
+  // Handle raw object (e.g. {en: "...", ku: "...", ar: "..."}) — prevents React "Objects are not valid" crash
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    return String(val.en || val.EN || val.ku || val.KU || val.ar || val.AR || "");
+  }
+  if (typeof val !== 'string') return String(val);
   let currentVal = val;
   for (let i = 0; i < 3; i++) {
     try {
-      if (typeof currentVal !== 'string') break;
       const parsed = JSON.parse(currentVal);
-      if (typeof parsed === 'object' && parsed !== null) {
-        return parsed.en || parsed.EN || parsed.ku || parsed.KU || parsed.ar || parsed.AR || val;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return String(parsed.en || parsed.EN || parsed.ku || parsed.KU || parsed.ar || parsed.AR || val);
       }
-      currentVal = parsed;
+      if (typeof parsed === 'string') {
+        currentVal = parsed;
+      } else {
+        break;
+      }
     } catch {
       break;
     }
   }
-  return currentVal;
+  return String(currentVal);
 };
 
 const sortNewestFirst = (arr) => {
@@ -543,19 +558,26 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <div className="flex items-center space-x-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setSettingsPage(page)}
-              className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center cursor-pointer transition-colors ${
-                settingsPage === page 
-                  ? 'bg-[#B2AC88] text-white' 
-                  : 'text-slate-500 hover:bg-slate-100'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+          {(() => {
+              let startPage = Math.max(1, settingsPage - 2);
+              let endPage = Math.min(totalPages, startPage + 4);
+              if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+              const pages = [];
+              for (let p = startPage; p <= endPage; p++) pages.push(p);
+              return pages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setSettingsPage(page)}
+                  className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center cursor-pointer transition-colors ${
+                    settingsPage === page 
+                      ? 'bg-[#B2AC88] text-white' 
+                      : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ));
+            })()}
         </div>
         <button
           onClick={() => setSettingsPage(prev => Math.min(totalPages, prev + 1))}
@@ -581,6 +603,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [sizeColors, setSizeColors] = useState({});
+  const [colorFamily, setColorFamily] = useState([]);
 
   const [styleLength, setStyleLength] = useState([]);
   const [stock, setStock] = useState(0);
@@ -902,7 +925,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localCats = localStorage.getItem("hawrisha_categories");
+      const localCats = localStorage.getItem("hhawrisha_categories");
       if (localCats) {
         setCategories(sortNewestFirst(JSON.parse(localCats)));
       } else {
@@ -913,7 +936,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "cozy_crew", name: "Cozy Crew" },
         ];
         setCategories(defaults);
-        localStorage.setItem("hawrisha_categories", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_categories", JSON.stringify(defaults));
       }
     }
 
@@ -927,7 +950,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localBadges = localStorage.getItem("hawrisha_badges");
+      const localBadges = localStorage.getItem("hhawrisha_badges");
       if (localBadges) {
         setBadges(sortNewestFirst(JSON.parse(localBadges)));
       } else {
@@ -937,7 +960,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "sale", name: "Sale" },
         ];
         setBadges(defaults);
-        localStorage.setItem("hawrisha_badges", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_badges", JSON.stringify(defaults));
       }
     }
 
@@ -946,12 +969,28 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const res = await fetch("/api/settings/colors");
       if (res.ok) {
         const data = await res.json();
-        setColorsList(sortNewestFirst(data));
+        // Normalize color names to strings to prevent React render crash
+        const normalized = Array.isArray(data) ? data.map(c => ({
+          ...c,
+          name: (() => {
+            if (!c.name) return "";
+            if (typeof c.name === "string") {
+              try {
+                const p = JSON.parse(c.name);
+                if (p && typeof p === "object") return p.en || p.EN || p.ku || p.ar || c.name;
+              } catch { return c.name; }
+              return c.name;
+            }
+            if (typeof c.name === "object") return c.name.en || c.name.EN || c.name.ku || c.name.ar || "";
+            return String(c.name);
+          })()
+        })) : data;
+        setColorsList(sortNewestFirst(normalized));
       } else {
         throw new Error();
       }
     } catch {
-      const localColors = localStorage.getItem("hawrisha_colors");
+      const localColors = localStorage.getItem("hhawrisha_colors");
       if (localColors) {
         setColorsList(sortNewestFirst(JSON.parse(localColors)));
       } else {
@@ -1006,7 +1045,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           },
         ];
         setColorsList(defaults);
-        localStorage.setItem("hawrisha_colors", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_colors", JSON.stringify(defaults));
       }
     }
 
@@ -1020,7 +1059,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localStyles = localStorage.getItem("hawrisha_styles");
+      const localStyles = localStorage.getItem("hhawrisha_styles");
       if (localStyles) {
         setStyles(sortNewestFirst(JSON.parse(localStyles)));
       } else {
@@ -1031,7 +1070,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "knee_high", name: "Knee High" },
         ];
         setStyles(defaults);
-        localStorage.setItem("hawrisha_styles", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_styles", JSON.stringify(defaults));
       }
     }
 
@@ -1045,7 +1084,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localMaterials = localStorage.getItem("hawrisha_materials");
+      const localMaterials = localStorage.getItem("hhawrisha_materials");
       if (localMaterials) {
         setMaterials(sortNewestFirst(JSON.parse(localMaterials)));
       } else {
@@ -1056,7 +1095,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "polyester", name: "Polyester" },
         ];
         setMaterials(defaults);
-        localStorage.setItem("hawrisha_materials", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_materials", JSON.stringify(defaults));
       }
     }
 
@@ -1070,7 +1109,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localSeasons = localStorage.getItem("hawrisha_seasons");
+      const localSeasons = localStorage.getItem("hhawrisha_seasons");
       if (localSeasons) {
         setSeasons(sortNewestFirst(JSON.parse(localSeasons)));
       } else {
@@ -1082,7 +1121,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "all_season", name: "All Season" },
         ];
         setSeasons(defaults);
-        localStorage.setItem("hawrisha_seasons", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_seasons", JSON.stringify(defaults));
       }
     }
 
@@ -1096,7 +1135,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localSizes = localStorage.getItem("hawrisha_sizes");
+      const localSizes = localStorage.getItem("hhawrisha_sizes");
       if (localSizes) {
         setSizes(sortNewestFirst(JSON.parse(localSizes)));
       } else {
@@ -1107,7 +1146,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "43-46", name: "43-46" },
         ];
         setSizes(defaults);
-        localStorage.setItem("hawrisha_sizes", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_sizes", JSON.stringify(defaults));
       }
     }
 
@@ -1121,7 +1160,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         throw new Error();
       }
     } catch {
-      const localPromos = localStorage.getItem("hawrisha_promotions");
+      const localPromos = localStorage.getItem("hhawrisha_promotions");
       if (localPromos) {
         setPromotions(sortNewestFirst(JSON.parse(localPromos)));
       } else {
@@ -1130,7 +1169,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           { id: "new_season_promo", name: "New Season Promo" },
         ];
         setPromotions(defaults);
-        localStorage.setItem("hawrisha_promotions", JSON.stringify(defaults));
+        localStorage.setItem("hhawrisha_promotions", JSON.stringify(defaults));
       }
     }
 
@@ -1661,7 +1700,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newCat = { id: Date.now().toString(), name: combinedVal };
       const updated = [...categories, newCat];
       setCategories(updated);
-      localStorage.setItem("hawrisha_categories", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
       showToast("Category added successfully (offline mode)");
     }
   };
@@ -1691,13 +1730,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = categories.filter((c) => c.id !== cat.id);
             setCategories(updated);
-            localStorage.setItem("hawrisha_categories", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
             showToast("Category deleted (offline fallback)");
           }
         } else {
           const updated = categories.filter((c) => c.id !== cat.id);
           setCategories(updated);
-          localStorage.setItem("hawrisha_categories", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
           showToast("Category deleted successfully");
         }
       },
@@ -1725,7 +1764,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newBadge = { id: Date.now().toString(), name: combinedVal };
       const updated = [...badges, newBadge];
       setBadges(updated);
-      localStorage.setItem("hawrisha_badges", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_badges", JSON.stringify(updated));
       showToast("Badge added successfully (offline mode)");
     }
   };
@@ -1755,13 +1794,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = badges.filter((x) => x.id !== b.id);
             setBadges(updated);
-            localStorage.setItem("hawrisha_badges", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_badges", JSON.stringify(updated));
             showToast("Badge deleted (offline fallback)");
           }
         } else {
           const updated = badges.filter((x) => x.id !== b.id);
           setBadges(updated);
-          localStorage.setItem("hawrisha_badges", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_badges", JSON.stringify(updated));
           showToast("Badge deleted successfully");
         }
       }
@@ -1806,7 +1845,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       };
       const updated = [...colorsList, newColor];
       setColorsList(updated);
-      localStorage.setItem("hawrisha_colors", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_colors", JSON.stringify(updated));
       showToast("Color swatch added successfully (offline mode)");
     }
   };
@@ -1834,7 +1873,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         } catch {
           const updated = colorsList.filter((x) => x.id !== color.id);
           setColorsList(updated);
-          localStorage.setItem("hawrisha_colors", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_colors", JSON.stringify(updated));
           showToast("Color swatch deleted (offline fallback)");
         }
       }
@@ -1861,7 +1900,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newStyle = { id: Date.now().toString(), name: combinedVal };
       const updated = [...styles, newStyle];
       setStyles(updated);
-      localStorage.setItem("hawrisha_styles", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_styles", JSON.stringify(updated));
       showToast("Style added successfully (offline mode)");
     }
   };
@@ -1891,13 +1930,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = styles.filter((s) => s.id !== st.id);
             setStyles(updated);
-            localStorage.setItem("hawrisha_styles", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_styles", JSON.stringify(updated));
             showToast("Style deleted (offline fallback)");
           }
         } else {
           const updated = styles.filter((s) => s.id !== st.id);
           setStyles(updated);
-          localStorage.setItem("hawrisha_styles", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_styles", JSON.stringify(updated));
           showToast("Style deleted successfully");
         }
       }
@@ -1924,7 +1963,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newMat = { id: Date.now().toString(), name: combinedVal };
       const updated = [...materials, newMat];
       setMaterials(updated);
-      localStorage.setItem("hawrisha_materials", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_materials", JSON.stringify(updated));
       showToast("Material added successfully (offline mode)");
     }
   };
@@ -1954,13 +1993,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = materials.filter((m) => m.id !== mat.id);
             setMaterials(updated);
-            localStorage.setItem("hawrisha_materials", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_materials", JSON.stringify(updated));
             showToast("Material deleted (offline fallback)");
           }
         } else {
           const updated = materials.filter((m) => m.id !== mat.id);
           setMaterials(updated);
-          localStorage.setItem("hawrisha_materials", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_materials", JSON.stringify(updated));
           showToast("Material deleted successfully");
         }
       }
@@ -1987,7 +2026,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newSeason = { id: Date.now().toString(), name: combinedVal };
       const updated = [...seasons, newSeason];
       setSeasons(updated);
-      localStorage.setItem("hawrisha_seasons", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_seasons", JSON.stringify(updated));
       showToast("Seasonal type added successfully (offline mode)");
     }
   };
@@ -2017,13 +2056,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = seasons.filter((s) => s.id !== seas.id);
             setSeasons(updated);
-            localStorage.setItem("hawrisha_seasons", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_seasons", JSON.stringify(updated));
             showToast("Seasonal type deleted (offline fallback)");
           }
         } else {
           const updated = seasons.filter((s) => s.id !== seas.id);
           setSeasons(updated);
-          localStorage.setItem("hawrisha_seasons", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_seasons", JSON.stringify(updated));
           showToast("Seasonal type deleted successfully");
         }
       }
@@ -2050,7 +2089,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newSize = { id: Date.now().toString(), name: combinedVal };
       const updated = [...sizes, newSize];
       setSizes(updated);
-      localStorage.setItem("hawrisha_sizes", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_sizes", JSON.stringify(updated));
       showToast("Size collection added successfully (offline mode)");
     }
   };
@@ -2080,13 +2119,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = sizes.filter((s) => s.id !== sz.id);
             setSizes(updated);
-            localStorage.setItem("hawrisha_sizes", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_sizes", JSON.stringify(updated));
             showToast("Size collection deleted (offline fallback)");
           }
         } else {
           const updated = sizes.filter((s) => s.id !== sz.id);
           setSizes(updated);
-          localStorage.setItem("hawrisha_sizes", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_sizes", JSON.stringify(updated));
           showToast("Size collection deleted successfully");
         }
       }
@@ -2113,7 +2152,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       const newPromo = { id: Date.now().toString(), name: combinedVal };
       const updated = [...promotions, newPromo];
       setPromotions(updated);
-      localStorage.setItem("hawrisha_promotions", JSON.stringify(updated));
+      localStorage.setItem("hhawrisha_promotions", JSON.stringify(updated));
       showToast("Promotion added successfully (offline mode)");
     }
   };
@@ -2143,13 +2182,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           } catch {
             const updated = promotions.filter((p) => p.id !== promo.id);
             setPromotions(updated);
-            localStorage.setItem("hawrisha_promotions", JSON.stringify(updated));
+            localStorage.setItem("hhawrisha_promotions", JSON.stringify(updated));
             showToast("Promotion deleted (offline fallback)");
           }
         } else {
           const updated = promotions.filter((p) => p.id !== promo.id);
           setPromotions(updated);
-          localStorage.setItem("hawrisha_promotions", JSON.stringify(updated));
+          localStorage.setItem("hhawrisha_promotions", JSON.stringify(updated));
           showToast("Promotion deleted successfully");
         }
       }
@@ -2173,6 +2212,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setImageFile(null);
     setImagePreview("");
     setSizeColors({});
+    setColorFamily([]);
 
     // Clear new attributes
     setStyleLength([]);
@@ -2246,6 +2286,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setSizeCollection(parseJsonArray(product.size_collection));
     setDiscount(product.discount || 0);
     setGender(product.gender || "");
+    setColorFamily(parseJsonArray(product.color_family || product.colors));
 
 
     setShowValidation(false);
@@ -2298,6 +2339,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         emptyFields.push("Assign at least one Color Style to each selected size");
       }
     }
+    if (colorFamily.length === 0) {
+      emptyFields.push("Product Colors (choose at least one)");
+    }
     if (category.length === 0) {
       emptyFields.push("Category (choose at least one)");
     }
@@ -2340,7 +2384,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     formData.append("name", trilingualName);
     formData.append("price", price);
     formData.append("category", JSON.stringify(category));
-    formData.append("colorFamily", finalColorFamily);
+    formData.append("colorFamily", JSON.stringify(colorFamily.length > 0 ? colorFamily : [finalColorFamily]));
     formData.append("badge", JSON.stringify(badge));
     formData.append("desc", trilingualDesc);
     formData.append("colors", JSON.stringify(finalColors));
@@ -3044,6 +3088,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                       ? product.image_url
                                       : `/uploads/${product.image_url}`
                                   }
+                                  onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }}
                                   alt=""
                                   className="w-12 h-16 object-cover rounded-xl border border-slate-100 bg-slate-50"
                                 />
@@ -3222,24 +3267,34 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           Prev
                         </button>
 
-                        {[...Array(totalPages)].map((_, i) => {
-                          const pageNum = i + 1;
-                          const isActive = safePage === pageNum;
-                          return (
-                            <button
-                              key={pageNum}
-                              type="button"
-                              onClick={() => setDashboardPage(pageNum)}
-                              className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all cursor-pointer border ${
-                                isActive
-                                  ? "bg-[#B2AC88] text-white border-[#B2AC88]"
-                                  : "border-slate-200 text-slate-500 hover:bg-slate-50/80"
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
+                        {(() => {
+                          let startPage = Math.max(1, safePage - 2);
+                          let endPage = Math.min(totalPages, startPage + 4);
+                          if (endPage - startPage < 4) {
+                            startPage = Math.max(1, endPage - 4);
+                          }
+                          const pageNumbers = [];
+                          for (let p = startPage; p <= endPage; p++) {
+                            pageNumbers.push(p);
+                          }
+                          return pageNumbers.map((pageNum) => {
+                            const isActive = safePage === pageNum;
+                            return (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setDashboardPage(pageNum)}
+                                className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all cursor-pointer border ${
+                                  isActive
+                                    ? "bg-[#B2AC88] text-white border-[#B2AC88]"
+                                    : "border-slate-200 text-slate-500 hover:bg-slate-50/80"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          });
+                        })()}
 
                         <button
                           type="button"
@@ -3257,12 +3312,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
             </>
           )}
 
-          {activeTab === "category" && (
-            /* Category Management Panel */
+          {(activeTab === "category" || activeTab === "settings") && (
+            /* Category & Settings Management Panel */
             <div className="space-y-8">
               <div className="border-b border-slate-200 pb-5">
                 <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic tracking-tight">
-                  Category Settings
+                  {activeTab === "settings" ? "System & Store Settings" : "Category & Store Settings"}
                 </h1>
                 <p className="text-xs text-slate-400 mt-1 max-w-lg font-sans">
                   Manage and configure every aspect of your store — from product
@@ -4131,7 +4186,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <td className="py-4 pr-4">
                               {store.logo ? (
                                 <img
-                                  src={store.logo.startsWith('/') ? store.logo : `/uploads/${store.logo}`}
+                                  src={store.logo.startsWith('data:') || store.logo.startsWith('/') || store.logo.startsWith('http') ? store.logo : `/uploads/${store.logo}`} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }}
                                   alt={getEnglishName(store.name)}
                                   className="w-10 h-10 object-cover rounded-xl border border-slate-100 bg-slate-50"
                                 />
@@ -4349,24 +4404,30 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           Prev
                         </button>
 
-                        {[...Array(storesTotalPages)].map((_, i) => {
-                          const pageNum = i + 1;
-                          const isActive = safestoresPage === pageNum;
-                          return (
-                            <button
-                              key={pageNum}
-                              type="button"
-                              onClick={() => setStoresPage(pageNum)}
-                              className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all cursor-pointer border ${
-                                isActive
-                                  ? 'bg-[#B2AC88] text-white border-[#B2AC88]'
-                                  : 'border-slate-200 text-slate-500 hover:bg-slate-50/80'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
+                        {(() => {
+                          let startPage = Math.max(1, safestoresPage - 2);
+                          let endPage = Math.min(storesTotalPages, startPage + 4);
+                          if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+                          const pages = [];
+                          for (let p = startPage; p <= endPage; p++) pages.push(p);
+                          return pages.map((pageNum) => {
+                            const isActive = safestoresPage === pageNum;
+                            return (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setStoresPage(pageNum)}
+                                className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all cursor-pointer border ${
+                                  isActive
+                                    ? 'bg-[#B2AC88] text-white border-[#B2AC88]'
+                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50/80'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          });
+                        })()}
 
                         <button
                           type="button"
@@ -4797,23 +4858,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             Prev
                           </button>
                           <div className="flex items-center space-x-1">
-                            {[...Array(ordersTotalPages)].map((_, i) => {
-                              const pageNum = i + 1;
-                              const isActive = safeOrdersPage === pageNum;
-                              return (
-                                <button
-                                  key={pageNum}
-                                  onClick={() => setOrdersPage(pageNum)}
-                                  className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
-                                    isActive
-                                      ? "bg-[#B2AC88] text-white"
-                                      : "text-slate-500 hover:bg-slate-100"
-                                  }`}
-                                >
-                                  {pageNum}
-                                </button>
-                              );
-                            })}
+                            {(() => {
+                              let startPage = Math.max(1, safeOrdersPage - 2);
+                              let endPage = Math.min(ordersTotalPages, startPage + 4);
+                              if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+                              const pages = [];
+                              for (let p = startPage; p <= endPage; p++) pages.push(p);
+                              return pages.map((pageNum) => {
+                                const isActive = safeOrdersPage === pageNum;
+                                return (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => setOrdersPage(pageNum)}
+                                    className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
+                                      isActive
+                                        ? "bg-[#B2AC88] text-white"
+                                        : "text-slate-500 hover:bg-slate-100"
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                );
+                              });
+                            })()}
                           </div>
                           <button
                             disabled={safeOrdersPage === ordersTotalPages}
@@ -4997,7 +5064,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
                         {storeLogoPreview ? (
-                          <img src={storeLogoPreview} alt="Logo" className="w-full h-full object-cover" />
+                          <img src={storeLogoPreview} alt="Logo" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                         ) : (
                           <Store size={24} className="text-slate-300" />
                         )}
@@ -5026,7 +5093,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     <div className="flex items-center space-x-4">
                       <div className="w-24 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
                         {storeBannerPreview ? (
-                          <img src={storeBannerPreview} alt="Banner" className="w-full h-full object-cover" />
+                          <img src={storeBannerPreview} alt="Banner" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                         ) : (
                           <ImageIcon size={24} className="text-slate-300" />
                         )}
@@ -5293,10 +5360,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     <div className="flex flex-col gap-2">
                       {storeLogoPreview ? (
                         <div className="relative group">
-                          <img
-                            src={storeLogoPreview}
+                          <img src={storeLogoPreview}
                             alt="Logo"
-                            onClick={() => setPreviewImage(storeLogoPreview)}
+                            onClick={() => setPreviewImage(storeLogoPreview)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }}
                             className="w-full h-36 object-contain bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:opacity-90 transition-opacity"
                           />
                           <div className="absolute top-1.5 right-1.5 flex gap-1">
@@ -5333,10 +5399,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     <div className="flex flex-col gap-2">
                       {storeBannerPreview ? (
                         <div className="relative group">
-                          <img
-                            src={storeBannerPreview}
+                          <img src={storeBannerPreview}
                             alt="Banner"
-                            onClick={() => setPreviewImage(storeBannerPreview)}
+                            onClick={() => setPreviewImage(storeBannerPreview)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }}
                             className="w-full h-36 object-contain bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:opacity-90 transition-opacity"
                           />
                           <div className="absolute top-1.5 right-1.5 flex gap-1">
@@ -5859,7 +5924,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     placeholder="Select Category"
                     error={showValidation && category.length === 0}
                     valueKey="name"
-                    renderOption={(opt) => getEnglishName(opt.name)}
+                    renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                   />
                   {showValidation && category.length === 0 && (
                     <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
@@ -5910,21 +5975,61 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   })()}
                 </div>
 
-                 {/* Gender Dropdown */}
-                 <div>
-                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                     <span>Gender</span>
-                   </label>
-                   <select
-                     value={gender}
-                     onChange={(e) => setGender(e.target.value)}
-                     className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black transition-all bg-white shadow-xs"
-                   >
-                     <option value="">Gender</option>
-                     <option value="Women">Women</option>
-                     <option value="Men">Men</option>
-                     <option value="Kids">Kids</option>
-                   </select>
+                 {/* Gender & Product Colors Grid */}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                   <div>
+                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                       <span>Gender</span>
+                     </label>
+                     <select
+                       value={gender}
+                       onChange={(e) => setGender(e.target.value)}
+                       className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black transition-all bg-white shadow-xs cursor-pointer"
+                     >
+                       <option value="">Gender</option>
+                       <option value="Women">Women</option>
+                       <option value="Men">Men</option>
+                       <option value="Kids">Kids</option>
+                     </select>
+                   </div>
+
+                   <div>
+                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                       <Palette size={13} className="inline mr-1" />
+                       <span>Product Colors *</span>
+                     </label>
+                     <MultiSelectDropdown
+                       options={colorsList}
+                       selectedValues={colorFamily}
+                       onChange={setColorFamily}
+                       placeholder="Select Colors"
+                       error={showValidation && colorFamily.length === 0}
+                       valueKey="class"
+                       renderOption={(opt) => {
+                        if (!opt) return "";
+                        const colorClass = typeof opt === 'object' ? (opt.class || "") : String(opt);
+                        const colorName = typeof opt === 'object' ? getEnglishName(opt.name) : String(opt);
+                        const isBgClass = typeof colorClass === 'string' && colorClass.startsWith('bg-') && !colorClass.includes('[');
+                        const hexStyle = (typeof colorClass === 'string' && (colorClass.startsWith('#') || colorClass.startsWith('bg-[')))
+                          ? { backgroundColor: colorClass.startsWith('bg-[') ? colorClass.slice(4, -1) : colorClass }
+                          : {};
+                        return (
+                          <div className="flex items-center space-x-2">
+                            <span 
+                              className={`w-4 h-4 rounded-full border border-gray-200 shrink-0 ${isBgClass ? colorClass : ''}`}
+                              style={hexStyle}
+                            />
+                            <span>{colorName}</span>
+                          </div>
+                        );
+                      }}
+                     />
+                     {showValidation && colorFamily.length === 0 && (
+                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
+                         Select at least one color
+                       </p>
+                     )}
+                   </div>
                  </div>
 
                 {/* Extended Product Attributes Grid */}
@@ -5940,7 +6045,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Style"
                       error={showValidation && styleLength.length === 0}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                     {showValidation && styleLength.length === 0 && (
                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
@@ -5959,7 +6064,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Sizes"
                       error={showValidation && sizeCollection.length === 0}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                     {showValidation && sizeCollection.length === 0 && (
                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
@@ -5981,7 +6086,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Material"
                       error={showValidation && material.length === 0}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                     {showValidation && material.length === 0 && (
                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
@@ -6000,7 +6105,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Seasons"
                       error={showValidation && seasonalType.length === 0}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                     {showValidation && seasonalType.length === 0 && (
                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
@@ -6052,7 +6157,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Label/Badge"
                       error={false}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                   </div>
                   <div>
@@ -6066,7 +6171,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       placeholder="Select Promotion"
                       error={false}
                       valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt.name)}
+                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                     />
                   </div>
                 </div>
@@ -6094,7 +6199,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                   const col = colorsList.find(c => c.id === colorId);
                                   if (!col) return null;
                                   return (
-                                    <span key={colorId} title={col.name} className={`w-4 h-4 rounded-full border border-gray-300 ${col.class && col.class.startsWith('bg-') ? col.class : ''}`} style={getColorStyle(col.class)} />
+                                    <span key={colorId} title={getEnglishName(col.name)} className={`w-4 h-4 rounded-full border border-gray-300 ${typeof col.class === 'string' && col.class.startsWith('bg-') ? col.class : ''}`} style={getColorStyle(col.class)} />
                                   );
                                 })}
                               </div>
@@ -6122,10 +6227,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                     }`}
                                   >
                                     <span
-                                      className={`w-3 h-3 rounded-full border border-gray-300 shrink-0 ${col.class && col.class.startsWith('bg-') ? col.class : ''}`}
+                                      className={`w-3 h-3 rounded-full border border-gray-300 shrink-0 ${typeof col.class === 'string' && col.class.startsWith('bg-') ? col.class : ''}`}
                                       style={getColorStyle(col.class)}
                                     />
-                                    {col.name}
+                                    {getEnglishName(col.name)}
                                   </button>
                                 );
                               })}
@@ -6186,11 +6291,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     {/* Preview Box */}
                     <div className="w-full sm:w-1/2 h-32 border border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden bg-gray-50/50">
                       {imagePreview ? (
-                        <img
-                          src={imagePreview}
+                        <img src={imagePreview}
                           alt="Product Preview"
-                          className="w-full h-full object-cover"
-                        />
+                          className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                       ) : (
                         <div className="flex flex-col items-center text-gray-300">
                           <ImageIcon size={28} />
@@ -6495,11 +6598,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       <div className="flex items-center gap-4">
                         <div className="relative shrink-0">
                           {item.image_url ? (
-                            <img
-                              src={getProductImage(item.image_url)}
+                            <img src={getProductImage(item.image_url)}
                               alt={getEnglishName(item.product_name)}
-                              className="w-14 h-14 rounded-xl object-cover border border-slate-100 shadow-sm"
-                            />
+                              className="w-14 h-14 rounded-xl object-cover border border-slate-100 shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                           ) : (
                             <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-[#B2AC88]">
                               <Package size={18} />
@@ -6581,3 +6682,25 @@ const SlidersHorizontal = ({ size = 16, className = "" }) => (
     <line x1="18" y1="16" x2="22" y2="16" />
   </svg>
 );
+
+const Palette = ({ size = 16, className = "" }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="13.5" cy="6.5" r=".5" />
+    <circle cx="17.5" cy="10.5" r=".5" />
+    <circle cx="8.5" cy="7.5" r=".5" />
+    <circle cx="6.5" cy="12.5" r=".5" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+  </svg>
+);
+

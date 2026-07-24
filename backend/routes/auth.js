@@ -511,31 +511,57 @@ router.post('/contact', async (req, res) => {
     );
 
     let emailSent = false;
-    // 2. Attempt to Send Email via FormSubmit
+
+    // 2. Attempt to Send Direct Email via Nodemailer (Gmail App Password)
     try {
-      const response = await fetch('https://formsubmit.co/ajax/hawrisha.socks@gmail.com', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          message,
-          _subject: `Hawrisha Bazaar - Contact Message from ${name}`
-        })
-      });
-      
-      const result = await response.json();
-      if (response.ok) {
-        console.log('✅ Contact email successfully forwarded via FormSubmit.');
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        await transporter.sendMail({
+          from: `"Hawrisha Contact" <${process.env.EMAIL_USER}>`,
+          to: 'hawrishaa@gmail.com',
+          replyTo: email,
+          subject: `Hawrisha Bazaar - Contact Message from ${name}`,
+          text: `You have received a new contact message from Hawrisha Bazaar:\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #36454F;">
+              <h2 style="color: #B2AC88; border-bottom: 2px solid #B2AC88; padding-bottom: 8px;">Hawrisha Bazaar - New Contact Message</h2>
+              <p><strong>From Name:</strong> ${name}</p>
+              <p><strong>Reply Email:</strong> <a href="mailto:${email}">${email}</a></p>
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 15px;">
+                <p style="white-space: pre-wrap; font-size: 14px; color: #1f2937; margin: 0;">${message}</p>
+              </div>
+            </div>
+          `
+        });
+        console.log('✅ Contact email successfully sent to hawrishaa@gmail.com via Nodemailer.');
         emailSent = true;
-      } else {
-        console.warn('⚠️ FormSubmit failed:', result);
       }
-    } catch (smtpErr) {
-      console.warn('⚠️ FormSubmit send failed:', smtpErr.message);
+    } catch (nodemailerErr) {
+      console.warn('⚠️ Nodemailer send failed, trying FormSubmit fallback:', nodemailerErr.message);
+    }
+
+    // 3. Fallback to FormSubmit if Nodemailer failed
+    if (!emailSent) {
+      try {
+        const response = await fetch('https://formsubmit.co/ajax/hawrishaa@gmail.com', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            message,
+            _subject: `Hawrisha Bazaar - Contact Message from ${name}`
+          })
+        });
+        if (response.ok) {
+          console.log('✅ Contact email successfully forwarded via FormSubmit.');
+          emailSent = true;
+        }
+      } catch (formSubmitErr) {
+        console.warn('⚠️ FormSubmit fallback send failed:', formSubmitErr.message);
+      }
     }
 
     return res.json({

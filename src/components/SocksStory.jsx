@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
+export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExploreStores }) {
   const { language } = useLanguage();
 
   return (
@@ -13,7 +13,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
           <motion.p 
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false, amount: 0.15 }}
             transition={{ duration: 0.5 }}
             className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-500 mb-2"
           >
@@ -22,7 +22,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false, amount: 0.15 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#36454F] tracking-tight max-w-2xl mx-auto leading-tight"
           >
@@ -40,51 +40,64 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
           {/* COLUMN 1: LEFT SIDE (Rows 1 & 2) */}
           <div className="lg:col-span-5 flex flex-col gap-8">
             
-            {/* Card 1: Connect, Create, Comfort */}
+            {/* Card 1: Explore Local Boutiques & Stores */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: false, amount: 0.15 }}
               transition={{ duration: 0.6 }}
               className="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100 flex flex-col justify-between relative overflow-hidden group"
             >
-              {/* Top Row: Play Video Pill */}
-              <div className="flex justify-between items-center mb-10 z-10">
-                <button className="flex items-center gap-2 px-4 py-1.5 bg-[#F5F5DC] hover:bg-[#B2AC88] hover:text-white rounded-full text-xs font-semibold text-[#36454F] transition-all cursor-pointer border-0">
-                  <span className="text-xs">▶</span> {language === 'ar' ? 'تشغيل الفيديو' : language === 'ku' ? 'لێدانی ڤیدیۆ' : 'Play Video'}
-                </button>
-              </div>
-
-              {/* Overlapping Cards Cluster */}
-              <div className="relative h-44 w-full flex items-center justify-center my-6">
-                <div className="absolute transform -rotate-12 -translate-x-12 translate-y-2 w-28 h-36 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-gray-50">
-                  <img src="/bestsellers/bs1.jpg" alt="Sock Design" className="w-full h-full object-cover" />
-                </div>
-                <div className="absolute transform rotate-6 translate-x-10 -translate-y-2 w-28 h-36 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-gray-50 z-10">
-                  <img src="/categories/cat3.jpg" alt="Sock Design" className="w-full h-full object-cover" />
-                </div>
-                <div className="absolute transform -rotate-2 w-28 h-36 rounded-2xl overflow-hidden border-2 border-white shadow-2xl bg-gray-50 z-20">
-                  <img src="/bestsellers/bs2.jpg" alt="Sock Design" className="w-full h-full object-cover" />
-                </div>
-                
-                {/* Bubble Tag */}
-                <span className="absolute top-2 right-[20%] bg-[#C08081] text-white text-[10px] font-bold py-1 px-3.5 rounded-full shadow-lg z-30 transform rotate-12">
-                  @Fashion
+              {/* Top Row: Stores Pill */}
+              <div className="flex justify-between items-center mb-6 z-10">
+                <span className="flex items-center gap-1.5 px-4 py-1.5 bg-[#F5F5DC] rounded-full text-[10px] font-bold tracking-wider uppercase text-[#36454F] select-none">
+                  ★ {language === 'ar' ? 'المتاجر المتميزة' : language === 'ku' ? 'متا نایابەکان' : 'Featured Boutiques'}
                 </span>
               </div>
 
-              {/* Bottom text & button */}
+              {/* Overlapping Stores Badges Cluster */}
+              <div className="relative h-44 w-full flex items-center justify-center my-4 select-none">
+                {/* Left Boutique Badge */}
+                <div className="absolute transform -translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#B2AC88] text-white flex flex-col items-center justify-center font-bold text-[10px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105">
+                  <span>SAGE</span>
+                  <span className="text-[6px] font-medium tracking-widest mt-0.5">GOLD</span>
+                </div>
+                
+                {/* Right Boutique Badge */}
+                <div className="absolute transform translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#C08081] text-white flex flex-col items-center justify-center font-bold text-[10px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105">
+                  <span>ROSE</span>
+                  <span className="text-[6px] font-medium tracking-widest mt-0.5">PINK</span>
+                </div>
+
+                {/* Center Boutique Badge */}
+                <div className="absolute w-20 h-20 rounded-full border-4 border-white shadow-xl bg-[#36454F] text-[#F5F5DC] flex flex-col items-center justify-center font-black text-xs tracking-wider leading-none z-20 transition-transform duration-500 group-hover:rotate-6">
+                  <span>HAWRISHA</span>
+                  <span className="text-[6px] font-bold tracking-widest text-[#B2AC88] mt-1">BAZAAR</span>
+                </div>
+                
+                {/* Bubble Tag */}
+                <span className="absolute top-2 right-[18%] bg-[#C08081] text-white text-[9px] font-black py-1 px-3 rounded-full shadow-lg z-30 transform rotate-12 group-hover:rotate-0 transition-transform duration-300">
+                  @Boutiques
+                </span>
+              </div>
+
+              {/* Bottom text & explore button */}
               <div className="mt-4 text-left">
-                <h3 className="text-xl font-bold text-[#36454F] mb-2">{language === 'ar' ? 'تواصل، ابتكر، راحة' : language === 'ku' ? 'پەیوەندی، دروستکردن، ئاسودەیی' : 'Connect, Create, Comfort'}</h3>
+                <h3 className="text-xl font-bold text-[#36454F] mb-2">
+                  {language === 'ar' ? 'اكتشف المتاجر المحلية' : language === 'ku' ? 'متاکانی هاوڕێشا بدۆزەرەوە' : 'Discover Local Boutiques'}
+                </h3>
                 <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-6">
                   {language === 'ar' 
-                    ? 'نمنح المشترين فرصة لارتداء جزء من تلك الرواية الفريدة من نوعها...' 
+                    ? 'تسوق من العلامات التجارية الفريدة والمتاجر الشريكة المستقلة في منصة واحدة...' 
                     : language === 'ku' 
-                    ? 'پێشکەشکردنی هەلێک بە کڕیاران بۆ پۆشینی بەشێک لەو چیرۆکە...' 
-                    : 'Offering buyers a chance to wear a piece of that narrative...'}
+                    ? 'لە مارکە ناوازەکان و فرۆشگاکانی هاوبەشمان لە یەک شوێندا بازاڕ بکە...' 
+                    : 'Shop from unique independent brand collections and our local boutique partners...'}
                 </p>
-                <button className="px-6 py-2 bg-[#F5F5DC] hover:bg-[#B2AC88] hover:text-white rounded-full text-xs font-bold text-[#36454F] transition-all cursor-pointer border-0">
-                  {language === 'ar' ? 'كيف يعمل؟' : language === 'ku' ? 'چۆن کار دەکات؟' : 'How it works?'}
+                <button 
+                  onClick={onExploreStores}
+                  className="px-6 py-2.5 bg-[#36454F] hover:bg-[#B2AC88] text-white hover:scale-105 active:scale-95 rounded-full text-xs font-bold transition-all cursor-pointer border-0 shadow-md flex items-center gap-1"
+                >
+                  {language === 'ar' ? 'زيارة المتاجر' : language === 'ku' ? 'سەردانی متاکان' : 'Explore Stores'} &rarr;
                 </button>
               </div>
             </motion.div>
@@ -93,12 +106,12 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: false, amount: 0.15 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="bg-white rounded-[2rem] p-6 shadow-xl border border-gray-100 overflow-hidden group flex flex-col justify-between"
             >
               <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 bg-slate-50">
-                <img src="/carousel/slide3.jpg" alt="Vibrant Socks Style" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src="/carousel/slide3.jpg" alt="Vibrant Socks Style" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               </div>
               <div className="text-left px-2 pb-2">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
@@ -130,18 +143,16 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: false, amount: 0.15 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100 flex flex-col gap-6"
             >
               {/* Accent colored image box (Using brand red #C08081 / or Charcoal #36454F) */}
               <div className="w-full aspect-[16/9] rounded-2xl bg-[#C08081] flex items-center justify-center overflow-hidden relative group">
                 <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent opacity-60"></div>
-                <img 
-                  src="/carousel/slide2.webp" 
+                <img src="/carousel/slide2.webp" 
                   alt="Artistic Socks Showcase" 
-                  className="w-[85%] h-[85%] object-cover rounded-xl shadow-2xl border-4 border-white group-hover:scale-105 transition-transform duration-500" 
-                />
+                  className="w-[85%] h-[85%] object-cover rounded-xl shadow-2xl border-4 border-white group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               </div>
               <div className="text-left">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
@@ -164,7 +175,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs }) {
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: false, amount: 0.15 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               className="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
             >

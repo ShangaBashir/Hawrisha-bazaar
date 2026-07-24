@@ -308,7 +308,20 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
       body: JSON.stringify(payload)
     })
       .then(async (res) => {
-        const data = await res.json();
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          if (!res.ok) {
+            throw new Error(
+              language === 'ar'
+                ? 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم الخلفي.'
+                : language === 'ku'
+                ? 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. تکایە دڵنیابەوە لە داگیرساندنی سێرڤەر.'
+                : 'Cannot connect to backend server. Make sure the backend server is running.'
+            );
+          }
+        }
         if (!res.ok) {
           throw new Error(data.message || 'Something went wrong.');
         }
@@ -534,7 +547,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
                       ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
                       : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
                   }`}
-                  placeholder="username@gmail.com"
+                  placeholder=""
                   disabled={authStep === 'verify' || authStep === 'reset'}
                 />
               </div>

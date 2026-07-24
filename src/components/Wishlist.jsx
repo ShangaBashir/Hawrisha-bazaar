@@ -82,6 +82,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState('');
+  const [itemToRemove, setItemToRemove] = useState(null);
 
   const isRTL = language === 'ar' || language === 'ku';
 
@@ -201,12 +202,12 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", damping: 18, stiffness: 120 }}
-          className="flex items-center justify-between border-b border-gray-100 pb-5 mb-8"
+          className="flex flex-col items-start border-b border-gray-100 pb-3 mb-5 gap-1 text-start"
         >
-          <h1 className="text-3xl md:text-4xl font-black text-[#36454F] tracking-tight uppercase leading-none">
+          <h1 className="text-3xl md:text-4xl font-black text-[#36454F] tracking-tight uppercase leading-none text-start">
             {t('wishlist_page.title')}
           </h1>
-          <span className="text-xs text-gray-400 font-semibold select-none font-sans">
+          <span className="text-xs sm:text-sm text-gray-400 font-bold select-none font-sans text-start">
             {favoriteProducts.length} {language === 'ar' ? 'عناصر محفوظة' : language === 'ku' ? 'بەرهەمی پاشەکەوتکراو' : 'saved items'}
           </span>
         </motion.div>
@@ -245,7 +246,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-14"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8 w-full"
           >
             <AnimatePresence mode="popLayout">
               {favoriteProducts.map((product) => {
@@ -262,36 +263,44 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                     layout
                     variants={cardVariants}
                     exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                    whileHover={{ y: -8, scale: 1.02, transition: { type: 'spring', damping: 15, stiffness: 150 } }}
+                    whileHover={{ y: -4 }}
                     onClick={() => onProductClick(product)}
-                    className="group cursor-pointer flex flex-col bg-white border border-gray-100 p-2 sm:p-3 rounded-2xl hover:shadow-lg transition-all duration-300 relative overflow-hidden"
+                    className="group cursor-pointer flex flex-col bg-transparent border border-transparent hover:border-[#B2AC88] p-0 rounded-2xl transition-all duration-300 relative text-start overflow-hidden"
                   >
-                    <motion.button 
+                    {/* Delete / Remove from Wishlist button (opens confirmation modal) */}
+                    <button 
+                      type="button"
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        onToggleWishlist(product.id); 
+                        setItemToRemove(product); 
                       }}
-                      whileHover={{ scale: 1.15, rotate: 90, backgroundColor: '#FEF2F2', color: '#EF4444' }}
-                      whileTap={{ scale: 0.9 }}
-                      className="absolute top-2.5 end-2.5 sm:top-5 sm:end-5 z-10 w-6 h-6 sm:w-8 sm:h-8 bg-white text-[#C08081] rounded-full flex items-center justify-center shadow-xs border border-gray-50 transition-all cursor-pointer"
+                      className="absolute top-2.5 right-2.5 z-10 w-7 h-7 sm:w-8 sm:h-8 bg-white text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-md border border-gray-100 transition-all hover:scale-110 cursor-pointer"
+                      title={language === 'ar' ? 'إزالة' : language === 'ku' ? 'سڕینەوە' : 'Remove'}
                     >
-                      <X size={12} className="sm:hidden" />
-                      <X size={14} className="hidden sm:block" />
-                    </motion.button>
+                      <X size={14} />
+                    </button>
 
-                    <div className="w-full aspect-[4/5] sm:aspect-square rounded-xl sm:rounded-2xl mb-3 sm:mb-4 relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb] border border-gray-100/50">
+                    {/* Image box */}
+                    <div className="w-full aspect-square rounded-2xl relative overflow-hidden flex items-center justify-center transition-all bg-[#f9fafb] border border-gray-100/50">
                       {product.stock === 0 && (
-                        <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
-                          <div className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-gray-800 text-white rounded-md shadow-xs">
+                        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col items-start gap-1">
+                          <div className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 bg-gray-800 text-white rounded-lg shadow-xs">
                             Out of Stock
+                          </div>
+                        </div>
+                      )}
+                      {product.discount > 0 && (
+                        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col items-start gap-1">
+                          <div className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 bg-red-500 text-white rounded-lg shadow-xs">
+                            {product.discount}% OFF
                           </div>
                         </div>
                       )}
                       {finalImg ? (
                         <img 
                           src={finalImg} 
-                          alt={product.name} 
-                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103" 
+                          alt={getLocalized(product.name, language)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} 
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-103 rounded-2xl" 
                         />
                       ) : (
                         <span className="text-gray-300 font-serif text-[10px] sm:text-md tracking-widest uppercase rotate-[-25deg] select-none opacity-80 font-bold">
@@ -300,35 +309,36 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                       )}
                     </div>
 
-                    <div className="space-y-1 text-center pb-2">
-                      <h3 className="font-bold text-[#36454F] text-[12px] sm:text-[15px] group-hover:text-[#B2AC88] transition-colors line-clamp-2">
+                    {/* Details */}
+                    <div className="flex flex-col flex-grow mt-2.5 px-2 pb-2 text-start">
+                      <h3 className="font-extrabold text-[#36454F] text-[13px] sm:text-[15px] group-hover:text-[#B2AC88] transition-colors line-clamp-2 text-start leading-snug">
                         {getLocalized(product.name, language)}
                       </h3>
-                      <div className="text-[11px] sm:text-xs font-semibold text-[#36454F] font-sans flex justify-center">
+                      <div className="text-[14px] sm:text-[15px] font-extrabold text-[#36454F] text-start flex items-center gap-1.5 flex-wrap mt-1">
                         {product.discount > 0 ? (
-                          <div className="flex items-center justify-center space-x-1.5 flex-wrap">
-                            <span className="line-through text-[10px] text-gray-300">
-                              {product.price.toLocaleString()} IQD
-                            </span>
-                            <span>
+                          <>
+                            <span className="text-[#36454F] text-[13px] sm:text-[14px]">
                               {Math.round(product.price * (1 - product.discount / 100)).toLocaleString()} IQD
                             </span>
-                            <span className="text-red-500 text-[9px] font-bold">
+                            <span className="text-[10px] sm:text-[11px] line-through text-gray-400 font-normal">
+                              {product.price.toLocaleString()} IQD
+                            </span>
+                            <span className="text-red-500 text-[9px] sm:text-[10px] font-bold">
                               {product.discount}% OFF
                             </span>
-                          </div>
+                          </>
                         ) : (
-                          <span>{product.price.toLocaleString()} IQD</span>
+                          <span className="text-[#36454F] text-[13px] sm:text-[14px]">{product.price.toLocaleString()} IQD</span>
                         )}
                       </div>
-                      <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium mt-0.5">
+                      <p className="text-[10px] sm:text-[12px] text-gray-400 font-medium text-start mt-0.5">
                         {getLocalized(product.vendor_name, language) || t('vendor_dashboard.platform_store')}
                       </p>
                       {(() => {
                         const promos = parseJsonArray(product.promotion).filter(p => p && p !== 'None' && p !== '');
                         if (promos.length === 0) return null;
                         return (
-                          <div className="flex flex-wrap justify-center gap-1 mt-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {promos.map((promo, idx) => (
                               <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#B2AC88]/10 border border-[#B2AC88]/20 rounded-full text-[8px] sm:text-[9px] font-bold text-[#B2AC88] uppercase tracking-wider">
                                 <span className="w-1 h-1 rounded-full bg-[#B2AC88] shrink-0" />
@@ -338,19 +348,19 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           </div>
                         );
                       })()}
-                    </div>
 
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCartClick(product, e);
-                      }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="mt-2 py-2.5 px-4 text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center justify-center space-x-1.5 rtl:space-x-reverse select-none cursor-pointer border-0 bg-[#36454F] hover:bg-[#C08081]"
-                    >
-                      <span>{t('product.add_to_cart')}</span>
-                    </motion.button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCartClick(product, e);
+                        }}
+                        className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#36454F] text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98 mt-2.5 border-0"
+                      >
+                        <ShoppingBag size={13} />
+                        <span>{t('product.add_to_cart')}</span>
+                      </button>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -358,6 +368,65 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
           </motion.div>
         )}
       </div>
+
+      {/* Wishlist Item Removal Confirmation Modal */}
+      <AnimatePresence>
+        {itemToRemove && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setItemToRemove(null)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs cursor-pointer"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 220 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl border border-gray-100 relative z-10 space-y-4 font-sans"
+            >
+              <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto border border-red-100">
+                <Heart className="fill-red-500" size={24} />
+              </div>
+
+              <div>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#36454F] uppercase tracking-wider">
+                  {language === 'ar' ? 'إزالة من المفضلة؟' : language === 'ku' ? 'سڕینەوە لە دڵخوازەکان؟' : 'Remove from Wishlist?'}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium mt-1.5 leading-relaxed">
+                  {language === 'ar'
+                    ? `هل أنت تأكد من إزالة "${getLocalized(itemToRemove.name, language)}" من قائمة المفضلة؟`
+                    : language === 'ku'
+                    ? `دڵنیایت لە سڕینەوەی "${getLocalized(itemToRemove.name, language)}" لە لیستی دڵخوازەکانت؟`
+                    : `Are you sure you want to remove "${getLocalized(itemToRemove.name, language)}" from your wishlist?`}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setItemToRemove(null)}
+                  className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs uppercase tracking-wider rounded-full transition-colors cursor-pointer border-0"
+                >
+                  {language === 'ar' ? 'إلغاء' : language === 'ku' ? 'پەشیمانبوونەوە' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onToggleWishlist(itemToRemove.id);
+                    setItemToRemove(null);
+                  }}
+                  className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider rounded-full transition-colors cursor-pointer border-0 shadow-sm active:scale-95"
+                >
+                  {language === 'ar' ? 'إزالة' : language === 'ku' ? 'سڕینەوە' : 'Remove'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Choose Options Modal */}
       <AnimatePresence>
@@ -393,11 +462,9 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                 <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center bg-gray-50 border-r border-gray-100 shrink-0 rounded-t-3xl md:rounded-t-none md:rounded-l-3xl overflow-hidden">
                   <div className="w-full aspect-[3/4] bg-white rounded-2xl relative shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden mb-4">
                     {modalActiveImage ? (
-                      <img 
-                        src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
+                      <img src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
                         alt={getLocalized(optionsModalProduct.name, language)} 
-                        className="w-full h-full object-contain" 
-                      />
+                        className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                     ) : (
                       <span className="text-[#36454F]/20 font-serif text-2xl font-bold uppercase rotate-[-20deg]">
                         {parseJsonArray(optionsModalProduct.category).join(', ')}

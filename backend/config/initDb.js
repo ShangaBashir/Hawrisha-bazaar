@@ -458,8 +458,35 @@ async function initializeDatabase() {
       console.log('Seeded default users.');
     }
 
-    // Default products and orders seeding disabled to keep database clean
-    console.log('Skipped seeding default mock products & orders.');
+    // Seed default products if database products table is empty
+    const [productsCount] = await db.query('SELECT COUNT(*) as count FROM products');
+    if (productsCount[0].count === 0) {
+      const defaultProducts = [
+        { name: 'Pet Lovers', price: 6250, category: 'Animals', color_family: 'slate', badge: 'Bestseller', description: 'Express your passion for pets in cozy fashion. Knit with durable premium combed cotton, these socks deliver all-day comfort and a breathable stretch ideal for everyday walks.', image_url: '/categories/cat1.jpg' },
+        { name: 'Tabby Cat', price: 6250, category: 'Animals', color_family: 'orange', badge: 'New', description: 'Brighten your day with these lovable tabby kitten designs. Perfect for cat enthusiasts, utilizing soft combed cotton for a premium lightweight and sweat-wicking texture.', image_url: '/categories/cat2.jpg' },
+        { name: 'Kangaroo Crew', price: 5000, category: 'Animals', color_family: 'beige', badge: 'Sale', description: 'Jump into premium comfort with our dynamic Kangaroo socks. Double-looped heel cushion supports high impact steps, keeping your feet padded and comfortable.', image_url: '/categories/cat3.jpg' },
+        { name: 'Sweet Ribbons', price: 6250, category: 'Patterns', color_family: 'sage', badge: '', description: 'Delicate pattern styling that adds a sweet touch to any aesthetic. Designed with standard rib arches to sit comfortably around the calf without binding.', image_url: '/categories/cat2.jpg' },
+        { name: 'Abstract Faces', price: 6250, category: 'Patterns', color_family: 'rose', badge: 'Bestseller', description: 'Make a bold statement with artist-inspired abstract faces. Knitted with combed yarns for high detailed resolution and rich, long-lasting wash durability.', image_url: '/categories/cat4.jpg' },
+        { name: 'Cat Patterns', price: 6250, category: 'Animals', color_family: 'beige', badge: 'New', description: 'A delightful assortment of repeating kitten patterns. Standard crew length looks fantastic paired with casual sneakers or boots.', image_url: '/categories/cat1.jpg' },
+        { name: 'Tropical Flamingo', price: 7000, category: 'Patterns', color_family: 'rose', badge: 'Bestseller', description: 'Evoke year-round vacation vibes with our tropical flamingo graphics. Offers supportive seamless toes and high elastic ankle bands.', image_url: '/categories/cat3.jpg' },
+        { name: 'Sunny Lemon', price: 5500, category: 'Fruits', color_family: 'yellow', badge: 'Sale', description: 'A splash of sunshine for your wardrobe! Designed with seamless toe closures to eliminate pressure seams and keep active steps cheerful.', image_url: '/categories/cat2.jpg' },
+        { name: 'Comfy Lavender', price: 4500, category: 'Cozy Crew', color_family: 'purple', badge: '', description: 'Sink into luxurious relaxation with our extra-cushion lavender collection. Designed with organic wool blending to provide breathable warming wraps.', image_url: '/categories/cat4.jpg' },
+        { name: 'Winter Snowflake', price: 8000, category: 'Cozy Crew', color_family: 'sky', badge: 'New', description: 'Stay warm even in sub-zero climates with extra brushed-nap loops. Excellent thermoregulatory layers featuring festive holiday patterns.', image_url: '/categories/cat3.jpg' },
+        { name: 'Retro Stripes', price: 6000, category: 'Patterns', color_family: 'red', badge: '', description: 'Vintage varsity stripes that pair beautifully with athleisure wear. Offers medium arch compressions to reduce foot fatigue.', image_url: '/categories/cat2.jpg' },
+        { name: 'Avocado Smile', price: 5500, category: 'Fruits', color_family: 'green', badge: 'Bestseller', description: 'Fun avocado prints that guarantee smiles with every step. Made with organic cotton blend.', image_url: '/categories/cat1.jpg' },
+        { name: 'Cozy Fleece', price: 7500, category: 'Cozy Crew', color_family: 'slate', badge: 'Bestseller', description: 'Ultra thick thermal fleece layer for cold winter nights.', image_url: '/categories/cat4.jpg' },
+        { name: 'Geometric Wave', price: 6500, category: 'Patterns', color_family: 'rose', badge: 'New', description: 'Modern retro geometric wave designs in vibrant tones.', image_url: '/categories/cat3.jpg' },
+        { name: 'Daisy Delight', price: 5500, category: 'Patterns', color_family: 'yellow', badge: 'Sale', description: 'Charming floral daisy patterns knitted into soft cotton.', image_url: '/categories/cat2.jpg' },
+        { name: 'Midnight Velvet', price: 8500, category: 'Cozy Crew', color_family: 'slate', badge: 'Bestseller', description: 'Deep velvet feel crew socks for maximal comfort.', image_url: '/categories/cat1.jpg' }
+      ];
+      for (const prod of defaultProducts) {
+        await db.query(
+          `INSERT INTO products (name, price, category, color_family, badge, description, image_url, stock) VALUES (?, ?, ?, ?, ?, ?, ?, 50)`,
+          [prod.name, prod.price, prod.category, prod.color_family, prod.badge, prod.description, prod.image_url]
+        );
+      }
+      console.log('Seeded default catalog products into database.');
+    }
 
     console.log('Database initialization completed successfully.');
   } catch (error) {

@@ -713,9 +713,10 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           type="text"
                           name="firstName"
                           value={formData.firstName}
-                          onChange={handleInputChange}
+                          readOnly
+                          disabled
                           placeholder={language === 'ar' ? 'الاسم الأول' : language === 'ku' ? 'ناوی یەکەم' : 'First name'}
-                          className={`w-full px-4 py-3 bg-gray-50/50 border ${errors.firstName ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-200 focus:border-[#B2AC88] focus:ring-[#B2AC88]/15'} rounded-xl focus:outline-none focus:ring-3 text-xs text-[#36454F] font-semibold transition-all`}
+                          className="w-full px-4 py-3 bg-gray-100/80 border border-gray-200 rounded-xl text-xs text-[#36454F] font-bold cursor-not-allowed select-none opacity-80"
                         />
                         {errors.firstName && <p className="text-[10px] text-red-500 font-bold">{errors.firstName}</p>}
                       </div>
@@ -725,9 +726,10 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           type="text"
                           name="lastName"
                           value={formData.lastName}
-                          onChange={handleInputChange}
+                          readOnly
+                          disabled
                           placeholder={language === 'ar' ? 'الاسم الأخير' : language === 'ku' ? 'ناوی کۆتایی' : 'Last name'}
-                          className={`w-full px-4 py-3 bg-gray-50/50 border ${errors.lastName ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-200 focus:border-[#B2AC88] focus:ring-[#B2AC88]/15'} rounded-xl focus:outline-none focus:ring-3 text-xs text-[#36454F] font-semibold transition-all`}
+                          className="w-full px-4 py-3 bg-gray-100/80 border border-gray-200 rounded-xl text-xs text-[#36454F] font-bold cursor-not-allowed select-none opacity-80"
                         />
                         {errors.lastName && <p className="text-[10px] text-red-500 font-bold">{errors.lastName}</p>}
                       </div>
@@ -741,8 +743,9 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           type="text"
                           name="phone"
                           value={formData.phone}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 bg-gray-50/50 border ${errors.phone ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-200 focus:border-[#B2AC88] focus:ring-[#B2AC88]/15'} rounded-xl focus:outline-none focus:ring-3 text-xs text-[#36454F] font-semibold transition-all`}
+                          readOnly
+                          disabled
+                          className="w-full px-4 py-3 bg-gray-100/80 border border-gray-200 rounded-xl text-xs text-[#36454F] font-bold cursor-not-allowed select-none opacity-80"
                         />
                         {errors.phone && <p className="text-[10px] text-red-500 font-bold">{errors.phone}</p>}
                       </div>
@@ -923,7 +926,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                     return (
                       <div key={item.cartItemId || item.id} className="flex space-x-4 rtl:space-x-reverse border border-gray-100 rounded-2xl p-3.5 bg-white text-start shadow-xs">
                         <div className="w-16 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0 flex items-center justify-center">
-                          <img src={finalImg} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={finalImg} alt={getLocalized ? getLocalized(item.name, language) : item.name} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
                           <div>

@@ -26,7 +26,7 @@ export default function Footer({ onViewChange }) {
           >
             <HawrishaH size={32} className="text-white shrink-0" />
             <div className="flex flex-col items-start leading-[0.9] text-start">
-              <span className="text-[18px] font-black tracking-[0.06em] uppercase font-sans text-white">AWRISHA</span>
+              <span className="text-[18px] font-black tracking-[0.06em] uppercase font-sans text-white">HAWRISHA</span>
               <span className="text-[8px] font-extrabold tracking-[0.35em] uppercase font-sans text-[#B2AC88] mt-1">BAZAAR</span>
             </div>
           </div>

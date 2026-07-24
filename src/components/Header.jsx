@@ -1008,14 +1008,14 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               animate={{ x: 0 }}
               exit={{ x: isRTL ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className={`fixed top-0 bottom-0 ${isRTL ? 'right-0 border-l' : 'left-0 border-r'} w-80 max-w-[80vw] bg-white shadow-2xl z-50 flex flex-col font-sans p-6 text-brand-charcoal border-gray-150`}
+              className={`fixed top-0 bottom-0 ${isRTL ? 'right-0 border-l' : 'left-0 border-r'} w-80 max-w-[80vw] bg-white shadow-2xl z-50 flex flex-col font-sans p-5 text-brand-charcoal border-gray-150`}
             >
               {/* Header of Mobile Menu */}
               <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
                 <div className="flex items-center gap-1 select-none text-start font-sans text-[#36454F] leading-none">
                   <HawrishaH size={28} className="text-[#36454F] shrink-0 w-[20px] h-[22px]" />
                   <div className="flex flex-col items-start leading-[0.9]">
-                    <span className="text-[13px] font-black tracking-[0.06em] uppercase">AWRISHA</span>
+                    <span className="text-[13px] font-black tracking-[0.06em] uppercase">HAWRISHA</span>
                     <span className="text-[6.5px] font-extrabold tracking-[0.22em] uppercase text-[#B2AC88] mt-0.5">BAZAAR</span>
                   </div>
                 </div>
@@ -1175,8 +1175,8 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                 
                 <div className="h-px bg-gray-100 my-6" />
 
-                {/* Profile & Search in Mobile Menu */}
-                <div className="space-y-4 pt-1">
+                {/* Profile & Links in Mobile Menu */}
+                <div className="space-y-2.5 pt-2">
                   <button 
                     type="button"
                     onClick={() => {
@@ -1187,9 +1187,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         onLoginClick();
                       }
                     }}
-                    className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                    className="flex items-center space-x-3 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold py-0.5 transition-colors cursor-pointer border-0 w-full text-start"
                   >
-                    <User size={18} />
+                    <User size={16} />
                     <span>{language === 'en' ? 'Account' : t('account_page.title')}</span>
                   </button>
                   
@@ -1199,9 +1199,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                       setIsMobileMenuOpen(false);
                       onCartClick();
                     }}
-                    className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                    className="flex items-center space-x-3 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold py-0.5 transition-colors cursor-pointer border-0 w-full text-start"
                   >
-                    <ShoppingCart size={18} />
+                    <ShoppingCart size={16} />
                     <span>{language === 'en' ? 'Your Basket' : t('nav.cart')}</span>
                   </button>
 
@@ -1211,39 +1211,34 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                       setIsMobileMenuOpen(false);
                       onWishlistClick();
                     }}
-                    className="flex items-center space-x-3.5 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold transition-colors cursor-pointer border-0 w-full text-start"
+                    className="flex items-center space-x-3 rtl:space-x-reverse text-brand-charcoal hover:text-[#B2AC88] text-sm font-semibold py-0.5 transition-colors cursor-pointer border-0 w-full text-start"
                   >
-                    <Heart size={18} />
+                    <Heart size={16} />
                     <span>{t('nav.wishlist')}</span>
                   </button>
-
-
                 </div>
               </div>
 
-              {/* Footer of Mobile Menu */}
-              <div className="border-t border-gray-300 pt-6 mt-6">
-                <div className="flex flex-col space-y-2.5">
-                  <span className="text-xs font-semibold text-gray-400">{t('nav.language')}:</span>
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    {languages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => {
-                          setLanguage(lang.code);
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className={`text-xs font-bold py-1.5 px-1 rounded-full border transition-colors cursor-pointer w-full text-center ${
-                          language === lang.code
-                            ? 'bg-[#B2AC88] text-white border-[#B2AC88]'
-                            : 'bg-transparent text-brand-charcoal border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
+              {/* Footer of Mobile Menu (Pinned at the Very Bottom of Sidebar Screen with zero extra bottom space) */}
+              <div className="shrink-0 pt-4 pb-3 border-t border-gray-100 mt-3">
+                <div className="grid grid-cols-3 gap-2 w-full">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`text-xs font-bold py-1.5 px-1 rounded-full border transition-colors cursor-pointer w-full text-center ${
+                        language === lang.code
+                          ? 'bg-[#B2AC88] text-white border-[#B2AC88]'
+                          : 'bg-transparent text-brand-charcoal border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
                 </div>
               </div>
             </motion.div>
@@ -1268,66 +1263,42 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
               animate={{ y: 0 }}
               exit={{ y: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed top-0 left-0 right-0 h-auto pb-6 bg-white z-[100] flex flex-col font-sans lg:hidden rounded-b-3xl shadow-xl overflow-y-auto"
+              className="fixed top-0 left-0 right-0 h-auto py-5 bg-white z-[100] flex flex-col font-sans lg:hidden rounded-b-3xl shadow-xl"
             >
-              <div className="p-4 flex flex-col mt-2">
-                {/* Search Header - Pill container & X button to the right */}
-                <div className="flex items-center justify-center gap-2 w-full max-w-[260px] mx-auto">
-                  <div className="flex-1 flex items-center bg-[#F8F9FA] border border-gray-250/80 rounded-full px-3 py-1.5 shadow-3xs">
-                    <form 
-                      className="flex-grow flex items-center"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (headerSearchTerm.trim() && onSearch) {
-                          onSearch(headerSearchTerm.trim());
-                          setIsMobileSearchOpen(false);
-                        }
-                      }}
-                    >
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={headerSearchTerm}
-                        onChange={(e) => {
-                          setHeaderSearchTerm(e.target.value);
-                        }}
-                        className="w-full text-[13px] bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-medium"
-                        autoFocus
-                      />
-                    </form>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileSearchOpen(false)}
-                    className="text-gray-900 hover:text-[#B2AC88] active:text-[#B2AC88] transition-colors p-1"
+              <div className="px-4 flex items-center justify-between gap-3 w-full max-w-xl mx-auto">
+                {/* Full Width Search Bar with #B2AC88 Border */}
+                <div className="flex-1 flex items-center bg-[#F8F9FA] border border-[#B2AC88] rounded-full px-4 py-2 shadow-xs">
+                  <form 
+                    className="flex-grow flex items-center"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (headerSearchTerm.trim() && onSearch) {
+                        onSearch(headerSearchTerm.trim());
+                        setIsMobileSearchOpen(false);
+                      }
+                    }}
                   >
-                    <X size={20} strokeWidth={2} />
-                  </button>
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={headerSearchTerm}
+                      onChange={(e) => {
+                        setHeaderSearchTerm(e.target.value);
+                      }}
+                      className="w-full text-sm bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-semibold"
+                      autoFocus
+                    />
+                  </form>
                 </div>
-
-                {/* Popular Searches */}
-                <div className="mt-5 flex-1 max-w-[260px] mx-auto w-full">
-                  <h3 className="text-[9px] font-extrabold tracking-[0.15em] text-slate-400 uppercase mb-3 text-center sm:text-start">
-                    {language === 'ar' ? 'عمليات البحث الشائعة' : language === 'ku' ? 'گەڕانە باوەکان' : 'Popular Searches'}
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
-                    {[
-                      "ANKLE SOCKS", "CREW SOCKS", "NO SHOW SOCKS", "WINTER SOCKS", "SUMMER SOCKS", "SPORTS SOCKS", "KIDS SOCKS"
-                    ].map(term => (
-                      <button
-                        key={term}
-                        onClick={() => {
-                          setHeaderSearchTerm(term);
-                          if (onSearch) onSearch(term);
-                          setIsMobileSearchOpen(false);
-                        }}
-                        className="px-3.5 py-1.5 rounded-full border border-gray-150 text-[9px] font-bold text-[#36454F] bg-gray-50/50 shadow-3xs hover:border-[#B2AC88] hover:text-[#B2AC88] active:bg-gray-100 transition-colors uppercase tracking-[0.03em]"
-                      >
-                        {term}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* X Button in #B2AC88 */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSearchOpen(false)}
+                  className="text-[#B2AC88] hover:text-[#8E8866] transition-colors p-1.5 shrink-0 cursor-pointer"
+                  title="Close search"
+                >
+                  <X size={22} strokeWidth={2.5} className="text-[#B2AC88]" />
+                </button>
               </div>
             </motion.div>
           </>

@@ -15,6 +15,22 @@ export default defineConfig({
       '/uploads': {
         target: 'http://localhost:5001',
         changeOrigin: true,
+      },
+      '/categories': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+      '/bestsellers': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+      '/carousel': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+      '/products': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
       }
     }
   }

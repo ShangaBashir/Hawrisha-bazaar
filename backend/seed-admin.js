@@ -4,7 +4,7 @@
  *
  * This creates the admin account in the database.
  * Admin credentials:
- *   Email:    admin@hawrisha.com
+ *   Email:    admin@hhawrisha.com
  *   Password: Hawrisha@2024
  */
 
@@ -16,7 +16,7 @@ function hashPassword(password) {
 }
 
 async function seedAdmin() {
-  const adminEmail    = 'admin@hawrisha.com';
+  const adminEmail    = 'admin@hhawrisha.com';
   const adminPassword = 'Hawrisha@2024';
   const hashedPw      = hashPassword(adminPassword);
 
@@ -40,7 +40,7 @@ async function seedAdmin() {
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('  Dashboard URL : http://localhost:5173/dashboard');
-    console.log('  Email         : admin@hawrisha.com');
+    console.log('  Email         : admin@hhawrisha.com');
     console.log('  Password      : Hawrisha@2024');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 

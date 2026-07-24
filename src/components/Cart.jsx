@@ -148,7 +148,7 @@ export default function Cart({ cart, onUpdateQuantity, onRemoveItem, onExplore, 
                         className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl overflow-hidden bg-[#F8F9FA] border border-[#E9ECEF] shrink-0 flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
                         onClick={() => onProductClick && onProductClick(item)}
                       >
-                        <img src={finalImg} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={finalImg} alt={getLocalized ? getLocalized(item.name, language) : item.name} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} className="w-full h-full object-cover" />
                       </div>
 
                       {/* Content Wrapper */}

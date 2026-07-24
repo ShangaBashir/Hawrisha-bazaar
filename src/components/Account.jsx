@@ -121,9 +121,13 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
     if (showLoading) setOrdersLoading(true);
     fetch(`/api/orders/customer?email=${encodeURIComponent(email)}&_t=${Date.now()}`)
       .then(async (res) => {
-        const data = await res.json();
-        if (data.success) {
-          setOrders(data.orders || []);
+        if (!res.ok) return;
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data.success) {
+            setOrders(data.orders || []);
+          }
         }
       })
       .catch(() => {})
@@ -141,7 +145,10 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
       const res = await fetch(`/api/orders/${orderId}/customer-cancel`, {
         method: 'POST',
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {}
       if (res.ok && data.success) {
         setAlertModal({
           isOpen: true,
@@ -178,7 +185,20 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
 
     fetch(`/api/auth/profile?email=${encodeURIComponent(email)}`)
       .then(async (res) => {
-        const data = await res.json();
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          if (!res.ok) {
+            throw new Error(
+              language === 'ar'
+                ? 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم الخلفي.'
+                : language === 'ku'
+                ? 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. تکایە دڵنیابەوە لە داگیرساندنی سێرڤەر.'
+                : 'Cannot connect to backend server. Make sure the backend server is running.'
+            );
+          }
+        }
         if (!res.ok) {
           throw new Error(data.message || 'Failed to load profile.');
         }
@@ -188,7 +208,9 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
         if (data.success && data.profile) {
           setProfile(data.profile);
         } else {
-          throw new Error('Failed to parse profile data.');
+          throw new Error(
+            language === 'ar' ? 'فشل تحميل بيانات الملف الشخصي.' : language === 'ku' ? 'زانیارییەکانی حیسابەکە بارنەکران.' : 'Failed to parse profile data.'
+          );
         }
         setIsLoading(false);
       })
@@ -338,6 +360,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
   }
 
   if (error || !profile) {
+    const isProfileNotFound = error === 'User profile not found.' || (typeof error === 'string' && error.includes('profile'));
     return (
       <div className="min-h-[60vh] max-w-md mx-auto px-4 flex flex-col items-center justify-center text-center space-y-6">
         <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
@@ -348,15 +371,25 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
             {language === 'ar' ? 'فشل تحميل الحساب' : language === 'ku' ? 'شکستهێنان لە بارکردنی حیساب' : 'Failed to Load Account'}
           </h3>
           <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-            {error || (language === 'ar' ? 'تعذر جلب تفاصيل ملفك الشخصي.' : language === 'ku' ? 'زانیارییەکانی حیسابەکەت دەستنەکەوت.' : 'Could not retrieve your profile details.')}
+            {isProfileNotFound 
+              ? (language === 'ar' ? 'لم يتم العثور على ملفك الشخصي. يرجى تسجيل الدخول أو إنشاء حساب جديد.' : language === 'ku' ? 'زانیارییەکانی حیسابەکەت دەستنەکەوت. تکایە بچۆ ژوورەوە یاخود حیسابێکی نوێ دروست بکە.' : 'User profile not found. Please log in or sign up for a new account.')
+              : (error || (language === 'ar' ? 'تعذر جلب تفاصيل ملفك الشخصي.' : language === 'ku' ? 'زانیارییەکانی حیسابەکەت دەستنەکەوت.' : 'Could not retrieve your profile details.'))}
           </p>
         </div>
-        <button
-          onClick={onBackToHome}
-          className="px-6 py-2.5 bg-[#36454F] hover:bg-[#B2AC88] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
-        >
-          {t('wishlist_page.back_shop')}
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={onBackToHome}
+            className="px-6 py-2.5 bg-[#36454F] hover:bg-[#B2AC88] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
+          >
+            {t('wishlist_page.back_shop')}
+          </button>
+          <button
+            onClick={onLogoutClick}
+            className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#36454F] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
+          >
+            {language === 'ar' ? 'تسجيل الدخول / إنشاء حساب' : language === 'ku' ? 'چوونە ژوورەوە / دروستکردنی حیساب' : 'Log In / Sign Up'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -641,11 +674,9 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                                   <div className="flex items-center gap-3.5 flex-1 min-w-0">
                                     {/* Item Image */}
                                     {item.image_url ? (
-                                      <img
-                                        src={getProductImage(item.image_url)}
+                                      <img src={getProductImage(item.image_url)}
                                         alt={getLocalized(item.product_name, language)}
-                                        className="w-16 h-16 rounded-xl object-cover border border-gray-100 shrink-0 shadow-sm"
-                                      />
+                                        className="w-16 h-16 rounded-xl object-cover border border-gray-100 shrink-0 shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                                     ) : (
                                       <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0 text-gray-400">
                                         <Package size={20} />

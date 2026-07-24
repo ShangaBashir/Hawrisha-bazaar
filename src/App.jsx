@@ -358,6 +358,14 @@ function App() {
       return;
     }
 
+    // Require Color and Size selection first across all pages
+    if (!product.selectedColor || !product.selectedSize) {
+      setSelectedProductForDetail(product);
+      handleViewChange('all_products', true);
+      showToast('Please select your preferred Color and Size first.');
+      return;
+    }
+
     // Check if user is trying to add a product from a different store
     if (cart.length > 0) {
       const currentStoreId = cart[0].store_id;
@@ -500,6 +508,7 @@ function App() {
               isLoggedIn={isLoggedIn}
               onReadStory={() => handleViewChange('story')}
               onJoinUs={() => handleViewChange('auth')}
+              onExploreStores={() => handleViewChange('stores')}
             />
             <StoreMarquee />
           </>
@@ -516,7 +525,22 @@ function App() {
             onToggleWishlist={handleToggleWishlist}
             initialViewingProduct={selectedProductForDetail}
             initialSearchTerm={globalSearchTerm}
-            onClearGlobalSearch={() => setGlobalSearchTerm('')}
+            onClearGlobalSearch={() => {
+              setGlobalSearchTerm('');
+              setSelectedCategory('All');
+              setGlobalFilters({
+                categories: [],
+                colors: [],
+                styles: [],
+                materials: [],
+                seasons: [],
+                sizes: [],
+                badges: [],
+                promotions: [],
+                onlyDiscounted: false,
+                gender: ''
+              });
+            }}
             previousView={previousView}
             isLoggedIn={isLoggedIn}
             onLoginRequired={() => handleViewChange('auth')}
@@ -570,6 +594,7 @@ function App() {
             }}
             isLoggedIn={isLoggedIn}
             onLoginRequired={() => handleViewChange('auth')}
+            onClearGlobalSearch={() => setGlobalSearchTerm('')}
           />
         )}
 
@@ -738,7 +763,7 @@ function App() {
                       <div key={item.cartItemId || item.id} className="flex space-x-4 border border-gray-100 rounded-2xl p-3 bg-white hover:shadow-xs transition-shadow">
                         {/* Thumbnail */}
                         <div className="w-16 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0 flex items-center justify-center">
-                          <img src={finalImg} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={finalImg} alt={item.name && item.name.startsWith('{') ? (JSON.parse(item.name).en || item.name) : item.name} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} className="w-full h-full object-cover" />
                         </div>
                         {/* Details */}
                         <div className="flex-1 flex flex-col justify-between py-0.5">

@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "node backend/server.js",
+    "backend": "node hawrisha-backend/server.js",
+    "frontend": "npm --prefix hawrisha-frontend run dev",
+    "dashboard": "npm --prefix hawrisha-dashboard run dev",
+    "server": "node hawrisha-backend/server.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

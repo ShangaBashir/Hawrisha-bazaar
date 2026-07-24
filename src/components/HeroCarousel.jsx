@@ -8,7 +8,7 @@ export default function HeroCarousel({ onShopNow }) {
 
   useEffect(() => {
     const handleResize = () => {
-      setSpread(window.innerWidth < 768 ? 65 : 115);
+      setSpread(window.innerWidth < 768 ? 48 : 115);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -35,7 +35,7 @@ export default function HeroCarousel({ onShopNow }) {
         type: "spring",
         damping: 22,
         stiffness: 75,
-        delay: custom.isFirst ? 0 : 0.5 // Red one first, others together at 0.5s
+        delay: custom.isFirst ? 0 : 0.2
       }
     }),
   };
@@ -49,15 +49,14 @@ export default function HeroCarousel({ onShopNow }) {
   };
 
   return (
-    <div className="relative w-full min-h-[75vh] bg-[#F5F5DC] flex flex-col items-center justify-center pt-16 pb-12 overflow-hidden">
+    <div className="relative w-full min-h-[65vh] sm:min-h-[75vh] bg-[#F5F5DC] flex flex-col items-center justify-center pt-12 sm:pt-16 pb-8 sm:pb-12 overflow-hidden">
       
       {/* Title */}
       <motion.h1 
         initial={{ opacity: 0, y: -20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: false, amount: 0.1 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="text-4xl md:text-5xl font-bold text-[#36454F] text-center max-w-3xl px-4 z-10 tracking-tight"
+        className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#36454F] text-center max-w-3xl px-4 z-10 tracking-tight"
         style={{ fontFamily: 'Inter, sans-serif' }}
       >
         {language === 'ar' 
@@ -68,18 +67,26 @@ export default function HeroCarousel({ onShopNow }) {
       </motion.h1>
 
       {/* Cards Container */}
-      <motion.div 
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: false, amount: 0.1 }}
-        className="relative flex items-center justify-center w-full h-[220px] md:h-[280px] mt-8 mb-6 z-20"
-      >
+      <div className="relative flex items-center justify-center w-full h-[180px] sm:h-[220px] md:h-[280px] mt-6 sm:mt-8 mb-4 sm:mb-6 z-20">
         {cards.map((card, index) => {
           return (
             <motion.div
               key={card.id}
-              custom={card}
-              variants={cardVariants}
+              initial={{ opacity: 0, y: 30, x: 0, scale: 0.8, rotate: 0 }}
+              whileInView={{
+                opacity: 1,
+                y: card.yOffset,
+                x: card.xOffset,
+                scale: 1,
+                rotate: card.rotation,
+              }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{
+                type: "spring",
+                damping: 20,
+                stiffness: 75,
+                delay: index * 0.1
+              }}
               whileHover={{ 
                 scale: 1.05, 
                 rotate: 0, 
@@ -88,27 +95,25 @@ export default function HeroCarousel({ onShopNow }) {
                 transition: { duration: 0.3 }
               }}
               style={{ zIndex: card.zIndex }}
-              className="absolute w-28 h-36 md:w-36 md:h-44 rounded-2xl shadow-xl overflow-hidden border-[3px] border-white cursor-pointer bg-white"
+              className="absolute w-20 h-28 sm:w-28 sm:h-36 md:w-36 md:h-44 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border-[2px] sm:border-[3px] border-white cursor-pointer bg-white"
             >
               <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{
-                  duration: 3 + index * 0.4, // Stagger continuous float speed so they look natural
+                  duration: 3 + index * 0.4,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
                 className="w-full h-full"
               >
-                <img 
-                  src={card.image} 
+                <img src={card.image} 
                   alt={`Hawrisha Bazaar ${card.id}`} 
-                  className="w-full h-full object-cover"
-                />
+                  className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               </motion.div>
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
 
       {/* Subtitle */}
       <motion.p 

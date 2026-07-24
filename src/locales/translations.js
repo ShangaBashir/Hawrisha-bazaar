@@ -42,7 +42,7 @@ export const translations = {
       newsletter_desc: "Subscribe to receive updates, access to exclusive deals, and more.",
       email_placeholder: "Enter your email",
       subscribe: "Subscribe",
-      copyright: "HAWRISHA BAZAAR. All rights reserved."
+      copyright: "HHAWRISHA BAZAAR. All rights reserved."
     },
     categories_sect: {
       title: "Shop by Category",
@@ -141,13 +141,13 @@ export const translations = {
       faq1_a: "We primary use high-grade Combed Cotton blended with premium spandex and elastane to ensure maximum softness, durability, and a stretch that holds up all day.",
       faq2_q: "How long does delivery take within Iraq?",
       faq2_a: "Delivery usually takes 1-3 business days depending on your city. We offer flat-rate delivery with cash on delivery options.",
-      faq3_q: "How should I wash my Hawrisha bazaar?",
+      faq3_q: "How should I wash my Hhhawrisha bazaar?",
       faq3_a: "To keep your character designs vibrant, we recommend machine washing in cold water (max 30°C) with similar colors, inside out. Avoid bleaching or ironing.",
       faq4_q: "Do you offer bulk packs or gift options?",
       faq4_a: "Yes! We offer pre-curated sets of 3, 5, or 10 pairs. We also provide gift wrapping services at checkout."
     },
     story_page: {
-      tagline: "About Our Brand",
+      tagline: "About Our Bazaar",
       title: "We weave happiness into every inch",
       subtitle: "Welcome to Hawrisha Bazaar. We believe that a great outfit starts with your socks. Here is our story, what we make our socks from, and why people love them.",
       philosophy: "Our Philosophy",
@@ -309,7 +309,7 @@ export const translations = {
       newsletter_desc: "اشترك معنا لتصلك آخر التحديثات، العروض الحصرية، والمزيد.",
       email_placeholder: "أدخل بريدك الإلكتروني",
       subscribe: "اشترك الآن",
-      copyright: "HAWRISHA BAZAAR. جميع الحقوق محفوظة."
+      copyright: "HHAWRISHA BAZAAR. جميع الحقوق محفوظة."
     },
     categories_sect: {
       title: "تسوق حسب الفئة",
@@ -414,7 +414,7 @@ export const translations = {
       faq4_a: "نعم! نوفر مجموعات منسقة مسبقاً مكونة من 3 أو 5 أو 10 أزواج. كما نوفر خدمة تغليف الهدايا عند إتمام الشراء."
     },
     story_page: {
-      tagline: "نبذة عن علامتنا التجارية",
+      tagline: "نبذة عن بازارنا",
       title: "نحن ننسج السعادة في كل خيط",
       subtitle: "مرحباً بكم في جوارب هاوريشة. نحن نؤمن بأن الأناقة تبدأ من جواربك. إليك قصتنا، ومما نصنع جواربنا، ولماذا يفضلها الجميع.",
       philosophy: "فلسفتنا",
@@ -576,7 +576,7 @@ export const translations = {
       newsletter_desc: "ببە بە ئەندام بۆ وەرگرتنی نوێکارییەکان، ئۆفەرە تایبەتەکان، و زیاتر.",
       email_placeholder: "ئیمەیڵەکەت بنووسە",
       subscribe: "ئەندام بە",
-      copyright: "HAWRISHA BAZAAR. هەموو مافەکان پارێزراون."
+      copyright: "HHAWRISHA BAZAAR. هەموو مافەکان پارێزراون."
     },
     categories_sect: {
       title: "کڕین بەپێی پۆلەکان",
@@ -681,7 +681,7 @@ export const translations = {
       faq4_a: "بەڵێ! ئێمە سێتەکانی ٣، ٥، یان ١٠ جووتە پێشکەش دەکەین. هەروەها خزمەتگوزاری پێچانەوەی دیاری لە کاتی کۆتاییهێنان بە کڕین پێشکەش دەکەن."
     },
     story_page: {
-      tagline: "دەربارەی براندەکەمان",
+      tagline: "دەربارەی بازارەکەمان",
       title: "خۆشی لە هەموو سانتیمەترێکدا دەچێنین",
       subtitle: "بەخێر بێیت بۆ گۆرەوی هاوڕێشە. ئێمە باوەڕمان وایە کە پۆشاکێکی نایاب لە گۆرەوییەکانتەوە دەست پێدەکات. ئەمە چیرۆکی ئێمەیە، گۆرەوییەکانمان لە چی دروست دەکەین، و بۆچی خەڵک خۆشیان دەوێن.",
       philosophy: "فەلسەفەی ئێمە",

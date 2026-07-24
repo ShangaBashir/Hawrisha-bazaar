@@ -59,7 +59,7 @@ export default function CenteredShowcase() {
           transition={{ type: "spring", delay: 0.8 }}
           className="absolute -top-10 left-[10%] bg-[#1a1a1a] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg"
         >
-          @hawrisha
+          @hhawrisha
         </motion.div>
         
         <motion.div
@@ -98,11 +98,9 @@ export default function CenteredShowcase() {
             className="absolute top-1/2 left-1/2 w-full h-full rounded-2xl shadow-2xl overflow-hidden border-2 border-white bg-white pointer-events-auto cursor-pointer"
             whileHover={{ scale: 1.1, zIndex: 40, transition: { duration: 0.2 } }}
           >
-            <img 
-              src={card.image} 
+            <img src={card.image} 
               alt={`Sock Deck ${card.id}`} 
-              className="w-full h-full object-cover"
-            />
+              className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
           </motion.div>
         ))}
       </motion.div>

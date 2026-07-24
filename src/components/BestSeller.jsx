@@ -156,7 +156,7 @@ export default function BestSeller({ onViewAll, onAddToCart }) {
               
               <img 
                 src={getProductImage(product.image || product.image_url)} 
-                alt={product.name} 
+                alt={getLocalized(product.name, language)} onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
               />
               

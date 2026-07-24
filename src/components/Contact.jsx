@@ -11,6 +11,27 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
+function InstagramIcon({ size = 12, className = '' }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
 export default function Contact() {
   const { t, language } = useLanguage();
   const isRTL = language === 'ar' || language === 'ku';
@@ -80,7 +101,7 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setShowConfirmModal(true);
+    handleConfirmSend();
   };
 
   const handleConfirmSend = () => {
@@ -104,7 +125,7 @@ export default function Contact() {
         if (data.emailSent === false) {
           const emailSubject = encodeURIComponent(`Hawrisha Bazaar - Contact Message from ${formData.name}`);
           const emailBody = encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`);
-          window.location.href = `mailto:hawrisha.socks@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+          window.location.href = `mailto:hawrishaa@gmail.com?subject=${emailSubject}&body=${emailBody}`;
         }
 
         setIsSuccess(true);
@@ -128,7 +149,7 @@ export default function Contact() {
         const emailBody = encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`);
         
         // Open mail client
-        window.location.href = `mailto:hawrisha.socks@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+        window.location.href = `mailto:hawrishaa@gmail.com?subject=${emailSubject}&body=${emailBody}`;
 
         // Treat as success since mailto client handles final transmission
         setIsSuccess(true);
@@ -207,19 +228,34 @@ export default function Contact() {
           {/* Info cards (Col spans 5) */}
           <motion.div 
             variants={itemVariants} 
-            className="lg:col-span-5"
+            className="lg:col-span-5 flex flex-col gap-4"
           >
             {/* Email Card */}
-            <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse">
+            <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse shadow-2xs hover:border-[#C08081]/30 transition-all">
               <div className="w-12 h-12 rounded-2xl bg-[#C08081]/10 flex items-center justify-center text-[#C08081] shrink-0">
                 <Mail size={20} />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#36454F] uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-bold text-[#36454F] uppercase tracking-wider mb-1.5">
                   {language === 'ar' ? 'أرسل لنا بريداً إلكترونياً' : language === 'ku' ? 'ئیمەیڵمان بۆ بنێرە' : 'Email Us'}
                 </h4>
                 <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
-                  <a href="mailto:hawrisha.socks@gmail.com">hawrisha.socks@gmail.com</a>
+                  <a href="mailto:hawrishaa@gmail.com">hawrishaa@gmail.com</a>
+                </p>
+              </div>
+            </div>
+
+            {/* Instagram Card */}
+            <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse shadow-2xs hover:border-[#C08081]/30 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-[#C08081]/10 flex items-center justify-center text-[#C08081] shrink-0">
+                <InstagramIcon size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#36454F] uppercase tracking-wider mb-1.5">
+                  {language === 'ar' ? 'إنستغرام' : language === 'ku' ? 'ئینستاگرام' : 'Instagram'}
+                </h4>
+                <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
+                  <a href="https://www.instagram.com/hawrisha_bazaar" target="_blank" rel="noopener noreferrer">@hawrisha_bazaar</a>
                 </p>
               </div>
             </div>
@@ -442,10 +478,10 @@ export default function Contact() {
               </h3>
               <p className="text-xs text-gray-500 mb-6 leading-relaxed">
                 {language === 'ar' 
-                  ? 'هل تريد إرسال هذه الرسالة إلى hawrisha.socks@gmail.com؟' 
+                  ? 'هل تريد إرسال هذه الرسالة إلى hawrishaa@gmail.com؟' 
                   : language === 'ku' 
-                    ? 'دەتەوێت ئەم پەیامە بنێریت بۆ hawrisha.socks@gmail.com؟' 
-                    : 'Do you want to send this message to hawrisha.socks@gmail.com?'}
+                    ? 'دەتەوێت ئەم پەیامە بنێریت بۆ hawrishaa@gmail.com؟' 
+                    : 'Do you want to send this message to hawrishaa@gmail.com?'}
               </p>
               
               <div className="flex gap-3">
