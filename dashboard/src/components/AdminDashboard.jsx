@@ -537,17 +537,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [catModalEn, setCatModalEn] = useState("");
   const [catModalKu, setCatModalKu] = useState("");
   const [catModalAr, setCatModalAr] = useState("");
-  const [colorClassModal, setColorClassModal] = useState("#36454F");
-  const [colorFamilyModal, setColorFamilyModal] = useState("black");
-
-  // Confirm Modal state
-  const [confirmModal, setConfirmModal] = useState({
-    open: false,
-    title: "",
-    message: "",
-    onConfirm: null
-  });
-
   // Header Tab Customization state
   const [customTabLabels, setCustomTabLabels] = useState(() => {
     try {
@@ -683,7 +672,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   // Product deletion confirm state
   const [productToDelete, setProductToDelete] = useState(null);
   // Generic settings confirm modal
-  const [confirmModal, setConfirmModal] = useState({ open: false, message: '', onConfirm: null });
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', onConfirm: null });
   const [showUnsavedChangesConfirm, setShowUnsavedChangesConfirm] = useState({ open: false, onConfirm: null });
   const [inUseModal, setInUseModal] = useState({ open: false, itemName: '', usedIn: [] });
 
