@@ -528,6 +528,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [citiesPage, setCitiesPage] = useState(1);
   const [deliveryPage, setDeliveryPage] = useState(1);
 
+  // Product Color Variants state
+  const [colorVariants, setColorVariants] = useState([]);
+
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
   const [newCatKu, setNewCatKu] = useState("");
@@ -2432,6 +2435,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setSizeCollection([]);
     setDiscount(0);
     setGender("");
+    setColorVariants([]);
     setShowValidation(false);
 
     setIsModalOpen(true);
@@ -2497,9 +2501,93 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setGender(product.gender || "");
     setColorFamily(parseJsonArray(product.color_family || product.colors));
 
+    // Populate colorVariants if available
+    try {
+      let parsedVariants = [];
+      if (typeof product.color_variants === 'string') {
+        parsedVariants = JSON.parse(product.color_variants || '[]');
+      } else if (Array.isArray(product.color_variants)) {
+        parsedVariants = product.color_variants;
+      }
+
+      if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+        const mapped = parsedVariants.map(v => {
+          const matchedColor = colorsList.find(c => c.class === v.color?.class || c.id === v.color?.id);
+          return {
+            colorId: matchedColor ? matchedColor.id : (v.color?.id || (colorsList[0] && colorsList[0].id) || ""),
+            imageFile: null,
+            imagePreview: v.image || "",
+            stockMap: v.stock || {}
+          };
+        });
+        setColorVariants(mapped);
+      } else {
+        setColorVariants([]);
+      }
+    } catch(e) {
+      setColorVariants([]);
+    }
 
     setShowValidation(false);
     setIsModalOpen(true);
+  };
+
+  // Color Variant Handler Functions
+  const handleAddColorVariant = () => {
+    const defaultColorId = colorsList[0]?.id || "";
+    setColorVariants(prev => [
+      ...prev,
+      { colorId: defaultColorId, imageFile: null, imagePreview: "", stockMap: {} }
+    ]);
+  };
+
+  const handleRemoveColorVariant = (index) => {
+    setColorVariants(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleVariantColorChange = (index, colorId) => {
+    setColorVariants(prev => prev.map((v, i) => i === index ? { ...v, colorId } : v));
+  };
+
+  const handleVariantImageChange = (index, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setColorVariants(prev => prev.map((v, i) => i === index ? { ...v, imageFile: file, imagePreview: reader.result } : v));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddSizeToVariant = (variantIndex, sizeName) => {
+    if (!sizeName) return;
+    setColorVariants(prev => prev.map((v, i) => {
+      if (i !== variantIndex) return v;
+      if (v.stockMap[sizeName] !== undefined) return v;
+      return {
+        ...v,
+        stockMap: { ...v.stockMap, [sizeName]: 0 }
+      };
+    }));
+  };
+
+  const handleRemoveSizeFromVariant = (variantIndex, sizeName) => {
+    setColorVariants(prev => prev.map((v, i) => {
+      if (i !== variantIndex) return v;
+      const newStockMap = { ...v.stockMap };
+      delete newStockMap[sizeName];
+      return { ...v, stockMap: newStockMap };
+    }));
+  };
+
+  const handleVariantStockChange = (variantIndex, sizeName, qty) => {
+    const numQty = Math.max(0, parseInt(qty, 10) || 0);
+    setColorVariants(prev => prev.map((v, i) => {
+      if (i !== variantIndex) return v;
+      return {
+        ...v,
+        stockMap: { ...v.stockMap, [sizeName]: numQty }
+      };
+    }));
   };
 
   // Handle Image Selection
@@ -2568,6 +2656,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       emptyFields.push("Store (choose one)");
     }
 
+    if (colorVariants.length > 0) {
+      const invalidVariantImage = colorVariants.some(v => !v.imageFile && !v.imagePreview);
+      if (invalidVariantImage) {
+        emptyFields.push("Each added color variant must have a required image");
+      }
+      const invalidVariantSize = colorVariants.some(v => Object.keys(v.stockMap || {}).length === 0);
+      if (invalidVariantSize) {
+        emptyFields.push("Each added color variant must have at least one size and stock quantity specified");
+      }
+    }
+
     if (emptyFields.length > 0) {
       setShowValidation(true);
       return;
@@ -2601,13 +2700,43 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
     // Append new fields to form payload
     formData.append("styleLength", JSON.stringify(styleLength));
-    formData.append("stock", stock);
     formData.append("promotion", JSON.stringify(promotion));
     formData.append("material", JSON.stringify(material));
     formData.append("seasonalType", JSON.stringify(seasonalType));
     formData.append("sizeCollection", JSON.stringify(sizeCollection));
     formData.append("discount", discount);
     formData.append("gender", gender || "");
+    
+    // Format and append colorVariants metadata & image binary files
+    let calculatedStock = Number(stock) || 0;
+    if (colorVariants.length > 0) {
+      const formattedColorVariants = colorVariants.map((v) => {
+        const colObj = colorsList.find((c) => c.id === v.colorId) || colorsList[0];
+        return {
+          color: colObj
+            ? { id: colObj.id, class: colObj.class, name: colObj.name, family: colObj.family }
+            : { id: v.colorId, class: v.colorId, name: v.colorId, family: "beige" },
+          image: v.imagePreview && !v.imageFile ? v.imagePreview : "",
+          stock: v.stockMap || {}
+        };
+      });
+
+      formData.append("colorVariants", JSON.stringify(formattedColorVariants));
+
+      colorVariants.forEach((v, index) => {
+        if (v.imageFile) {
+          formData.append(`variant_image_${index}`, v.imageFile);
+        }
+      });
+
+      // Sum total stock from color variants
+      calculatedStock = colorVariants.reduce((total, v) => {
+        const vSum = Object.values(v.stockMap || {}).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+        return total + vSum;
+      }, 0);
+    }
+
+    formData.append("stock", calculatedStock);
     
     if (currentUserRole === "admin") {
       formData.append("storeId", productStoreId || "");
@@ -6693,8 +6822,187 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   </div>
                 </div>
 
-                {/* 3. Per-Size Color Picker */}
-                {sizeCollection.length > 0 && (
+                {/* Product Color Variants & Per-Size Stock Section */}
+                <div className="p-6 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
+                        <Palette size={16} className="text-[#B2AC88]" />
+                        <span>Product Color Variants</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Create color variants with individual images, available sizes, and distinct stock quantities per size.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddColorVariant}
+                      className="px-4 py-2 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-1.5 shadow-xs transition-colors cursor-pointer active:scale-95"
+                    >
+                      <Plus size={14} />
+                      <span>Add Color</span>
+                    </button>
+                  </div>
+
+                  {colorVariants.length === 0 ? (
+                    <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
+                      <Palette size={32} className="mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-semibold text-slate-500">No color variants added yet.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Click "Add Color" above to define color variants, custom variant images, sizes, and stock per size.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {colorVariants.map((variant, index) => {
+                        const selectedColorObj = colorsList.find((c) => c.id === variant.colorId) || colorsList[0];
+                        const assignedSizes = Object.keys(variant.stockMap || {});
+                        const availableToAddSizes = sizes.map(s => getEnglishName(s.name)).filter(s => !assignedSizes.includes(s));
+
+                        return (
+                          <div key={index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4 relative">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                              <div className="flex items-center space-x-2">
+                                <span className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs inline-block" style={getColorStyle(selectedColorObj?.class)} />
+                                <span className="text-xs font-bold text-[#36454F] uppercase tracking-wider">
+                                  Variant #{index + 1}: {getEnglishName(selectedColorObj?.name || "Color")}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveColorVariant(index)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Remove Color Variant"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              {/* Color Selector */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                  Select Color *
+                                </label>
+                                <select
+                                  value={variant.colorId}
+                                  onChange={(e) => handleVariantColorChange(index, e.target.value)}
+                                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
+                                >
+                                  {colorsList.map((col) => (
+                                    <option key={col.id} value={col.id}>
+                                      {getEnglishName(col.name)} ({col.family})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Variant Image Upload */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                  Variant Image (Required) *
+                                </label>
+                                <div className="flex items-center space-x-3">
+                                  {variant.imagePreview ? (
+                                    <div className="relative w-14 h-14 rounded-xl border border-slate-200 overflow-hidden shrink-0 group">
+                                      <img src={variant.imagePreview} alt="Variant" className="w-full h-full object-cover" />
+                                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
+                                        <Upload size={14} />
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
+                                        />
+                                      </label>
+                                    </div>
+                                  ) : (
+                                    <label className="flex items-center justify-center px-4 py-2.5 border border-dashed border-slate-300 hover:border-[#B2AC88] rounded-xl text-xs font-bold text-slate-500 hover:text-[#B2AC88] bg-slate-50/50 cursor-pointer transition-colors space-x-2">
+                                      <Upload size={14} />
+                                      <span>Upload Image</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
+                                      />
+                                    </label>
+                                  )}
+                                  {variant.imagePreview && (
+                                    <span className="text-[11px] font-semibold text-slate-400 truncate max-w-[150px]">
+                                      Image attached
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Size & Stock Management for this Color */}
+                            <div className="pt-3 border-t border-slate-100 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                  Available Sizes & Stock Quantities *
+                                </label>
+                                {availableToAddSizes.length > 0 && (
+                                  <select
+                                    defaultValue=""
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        handleAddSizeToVariant(index, e.target.value);
+                                        e.target.value = "";
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                                  >
+                                    <option value="" disabled>+ Add Size</option>
+                                    {availableToAddSizes.map((sz) => (
+                                      <option key={sz} value={sz}>
+                                        + Add {sz}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+
+                              {assignedSizes.length === 0 ? (
+                                <p className="text-[11px] text-amber-600 font-medium italic">
+                                  No sizes assigned yet for this color. Use "+ Add Size" dropdown to specify sizes and stock quantities.
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                  {assignedSizes.map((sz) => (
+                                    <div key={sz} className="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                      <span className="w-10 font-bold text-xs text-[#36454F] shrink-0 text-center bg-white py-1 rounded-lg border border-slate-200">
+                                        {sz}
+                                      </span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="Qty"
+                                        value={variant.stockMap[sz]}
+                                        onChange={(e) => handleVariantStockChange(index, sz, e.target.value)}
+                                        className="w-full border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#B2AC88]"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveSizeFromVariant(index, sz)}
+                                        className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors shrink-0 cursor-pointer"
+                                        title="Remove Size"
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Per-Size Color Picker (Legacy fallback if colorVariants empty) */}
+                {colorVariants.length === 0 && sizeCollection.length > 0 && (
                   <div className="space-y-4">
                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400">
                       <span>Colors per Size *</span>
