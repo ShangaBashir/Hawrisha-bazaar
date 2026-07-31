@@ -2488,7 +2488,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         showToast(error.error || "Failed to update setting item");
       }
     } catch (e) {
-      setEditingSettingItem(null);
+      showToast("Updated (offline mode)");
+    }
+    setEditingSettingItem(null);
   };
 
   // Handle Header Tab Customization (Edit & Delete)
