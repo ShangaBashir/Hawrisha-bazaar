@@ -531,11 +531,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   // Product Color Variants state
   const [colorVariants, setColorVariants] = useState([]);
 
-  // Category Modal state
+  // Setting Modal state (Universal for Categories, Badges, Colors, Sizes, etc.)
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [settingTypeInModal, setSettingTypeInModal] = useState("categories");
   const [catModalEn, setCatModalEn] = useState("");
   const [catModalKu, setCatModalKu] = useState("");
   const [catModalAr, setCatModalAr] = useState("");
+  const [colorClassModal, setColorClassModal] = useState("#36454F");
+  const [colorFamilyModal, setColorFamilyModal] = useState("black");
 
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
@@ -3721,11 +3724,23 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsAddCategoryModalOpen(true)}
+                  onClick={() => {
+                    setSettingTypeInModal(settingsSubTab || "categories");
+                    setIsAddCategoryModalOpen(true);
+                  }}
                   className="px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
                 >
                   <Plus size={16} />
-                  <span>Add New Category</span>
+                  <span>
+                    {settingsSubTab === "badges" ? "Add New Badge / Label" :
+                     settingsSubTab === "colors" ? "Add New Color Swatch" :
+                     settingsSubTab === "styles" ? "Add New Style / Length" :
+                     settingsSubTab === "materials" ? "Add New Material" :
+                     settingsSubTab === "seasons" ? "Add New Seasonal Type" :
+                     settingsSubTab === "sizes" ? "Add New Size Collection" :
+                     settingsSubTab === "promotions" ? "Add New Promotion" :
+                     "Add New Category"}
+                  </span>
                 </button>
               </div>
 
@@ -6431,7 +6446,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         )}
       </AnimatePresence>
 
-      {/* Add New Category Title Modal */}
+      {/* Universal Add Setting Item Modal */}
       <AnimatePresence>
         {isAddCategoryModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -6462,10 +6477,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#36454F] font-sans">
-                    Add New Category Title
+                    Add New Setting Title
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Define a new product category title in English, Kurdish, and Arabic.
+                    Add categories, colors, sizes, badges, materials, seasonal types, or promotions.
                   </p>
                 </div>
               </div>
@@ -6474,17 +6489,64 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()) return;
-                  handleAddCategory(catModalEn, catModalKu, catModalAr);
+
+                  if (settingTypeInModal === "categories") {
+                    handleAddCategory(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "badges") {
+                    handleAddBadge(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "colors") {
+                    if (!colorClassModal.trim() || !colorFamilyModal.trim()) return;
+                    const finalCls = colorClassModal.startsWith('#') ? `bg-[${colorClassModal}]` : colorClassModal;
+                    handleAddColor({
+                      nameEn: catModalEn,
+                      nameKu: catModalKu,
+                      nameAr: catModalAr,
+                      class: finalCls,
+                      family: colorFamilyModal
+                    });
+                  } else if (settingTypeInModal === "styles") {
+                    handleAddStyle(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "materials") {
+                    handleAddMaterial(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "seasons") {
+                    handleAddSeason(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "sizes") {
+                    handleAddSize(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "promotions") {
+                    handleAddPromotion(catModalEn, catModalKu, catModalAr);
+                  }
+
                   setCatModalEn("");
                   setCatModalKu("");
                   setCatModalAr("");
                   setIsAddCategoryModalOpen(false);
-                  setSettingsSubTab("categories");
+                  setSettingsSubTab(settingTypeInModal);
                 }}
                 className="space-y-5"
               >
+                {/* Setting Category Type Selector */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+                    Setting Type *
+                  </label>
+                  <select
+                    value={settingTypeInModal}
+                    onChange={(e) => setSettingTypeInModal(e.target.value)}
+                    className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
+                  >
+                    <option value="categories">Product Category</option>
+                    <option value="badges">Label / Badge</option>
+                    <option value="colors">Color Swatch</option>
+                    <option value="styles">Style / Length</option>
+                    <option value="materials">Material</option>
+                    <option value="seasons">Seasonal Type</option>
+                    <option value="sizes">Size Collection</option>
+                    <option value="promotions">Active Promotion</option>
+                  </select>
+                </div>
+
                 <LangTextInput
-                  label="Category Title"
+                  label="Title Name"
                   required
                   valueEn={catModalEn}
                   valueKu={catModalKu}
@@ -6492,8 +6554,56 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   onChangeEn={setCatModalEn}
                   onChangeKu={setCatModalKu}
                   onChangeAr={setCatModalAr}
-                  placeholder="Enter Category Title..."
+                  placeholder="Enter Title Name..."
                 />
+
+                {settingTypeInModal === "colors" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Color Swatch (Hex / Class) *
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          value={colorClassModal.startsWith('#') ? colorClassModal : '#36454F'}
+                          onChange={(e) => setColorClassModal(e.target.value)}
+                          className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={colorClassModal}
+                          onChange={(e) => setColorClassModal(e.target.value)}
+                          placeholder="#36454F or bg-[#...]"
+                          className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Color Family *
+                      </label>
+                      <select
+                        value={colorFamilyModal}
+                        onChange={(e) => setColorFamilyModal(e.target.value)}
+                        className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 bg-white"
+                      >
+                        <option value="black">Black</option>
+                        <option value="white">White</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="purple">Purple</option>
+                        <option value="pink">Pink</option>
+                        <option value="beige">Beige</option>
+                        <option value="brown">Brown</option>
+                        <option value="grey">Grey</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <button
@@ -6508,7 +6618,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     disabled={!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()}
                     className="py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
                   >
-                    Add Category
+                    Add {settingTypeInModal === "badges" ? "Badge / Label" :
+                         settingTypeInModal === "colors" ? "Color" :
+                         settingTypeInModal === "styles" ? "Style" :
+                         settingTypeInModal === "materials" ? "Material" :
+                         settingTypeInModal === "seasons" ? "Seasonal Type" :
+                         settingTypeInModal === "sizes" ? "Size" :
+                         settingTypeInModal === "promotions" ? "Promotion" :
+                         "Category"}
                   </button>
                 </div>
               </form>
