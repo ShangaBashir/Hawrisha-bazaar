@@ -603,6 +603,39 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [newPromoKu, setNewPromoKu] = useState("");
   const [newPromoAr, setNewPromoAr] = useState("");
 
+  const matchesSearch = (val, q) => {
+    if (!q || !q.trim()) return true;
+    if (!val) return false;
+    const term = q.trim().toLowerCase();
+    
+    if (typeof val === 'string') {
+      try {
+        if (val.startsWith('{')) {
+          const parsed = JSON.parse(val);
+          const combined = `${parsed.en || ''} ${parsed.ku || ''} ${parsed.ar || ''}`.toLowerCase();
+          return combined.includes(term);
+        }
+      } catch (e) {}
+      return val.toLowerCase().includes(term);
+    }
+    
+    if (typeof val === 'object') {
+      const combined = `${val.en || ''} ${val.ku || ''} ${val.ar || ''} ${val.name || ''} ${val.title || ''}`.toLowerCase();
+      return combined.includes(term);
+    }
+    
+    return String(val).toLowerCase().includes(term);
+  };
+
+  useEffect(() => {
+    setDashboardPage(1);
+    setStoresPage(1);
+    setOrdersPage(1);
+    setSettingsPage(1);
+    setCitiesPage(1);
+    setDeliveryPage(1);
+  }, [searchQuery]);
+
   useEffect(() => {
     setSettingsPage(1);
   }, [settingsSubTab]);
@@ -3109,7 +3142,22 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       });
   };
 
-  const filteredProducts = storeFilter ? products.filter(p => p.store_id === storeFilter) : products;
+  const filteredProducts = products.filter((p) => {
+    const matchesStore = !storeFilter || p.store_id === storeFilter;
+    if (!matchesStore) return false;
+    if (!searchQuery || !searchQuery.trim()) return true;
+    
+    const term = searchQuery.trim().toLowerCase();
+    const nameMatch = matchesSearch(p.name, searchQuery);
+    const descMatch = matchesSearch(p.description, searchQuery);
+    const catMatch = parseJsonArray(p.category).some((c) => matchesSearch(c, searchQuery));
+    const badgeMatch = parseJsonArray(p.badge).some((b) => matchesSearch(b, searchQuery));
+    const priceMatch = String(p.price || '').includes(term);
+    const prodStore = stores.find((s) => s.id === p.store_id);
+    const storeNameMatch = prodStore ? matchesSearch(prodStore.name, searchQuery) : false;
+    
+    return nameMatch || descMatch || catMatch || badgeMatch || priceMatch || storeNameMatch;
+  });
 
   const totalItems = filteredProducts.length;
 
@@ -3144,20 +3192,47 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     safePage * itemsPerPage,
   );
 
-  const storesTotalPages = Math.ceil(stores.length / itemsPerPage) || 1;
+  const filteredStores = stores.filter((s) => {
+    if (!searchQuery || !searchQuery.trim()) return true;
+    const term = searchQuery.trim().toLowerCase();
+    const nameMatch = matchesSearch(s.name, searchQuery);
+    const descMatch = matchesSearch(s.description, searchQuery);
+    const cityMatch = matchesSearch(s.city, searchQuery);
+    const ownerMatch = matchesSearch(s.owner_name, searchQuery);
+    const emailMatch = matchesSearch(s.email, searchQuery);
+    const phoneMatch = matchesSearch(s.phone, searchQuery);
+    return nameMatch || descMatch || cityMatch || ownerMatch || emailMatch || phoneMatch;
+  });
+
+  const storesTotalPages = Math.ceil(filteredStores.length / itemsPerPage) || 1;
   const safestoresPage = Math.min(storesPage, storesTotalPages);
-  const paginatedStores = stores.slice(
+  const paginatedStores = filteredStores.slice(
     (safestoresPage - 1) * itemsPerPage,
     safestoresPage * itemsPerPage,
   );
 
-  const displayedOrders = ((currentUserRole === "vendor" || currentUserRole === "admin")
+  const baseOrders = (currentUserRole === "vendor" || currentUserRole === "admin")
     ? (vendorOrderTab === "All" ? [...orders] : orders.filter(o => o.status === vendorOrderTab))
-    : [...orders]).sort((a, b) => {
-      if (a.payment_status === 'Unpaid' && b.payment_status === 'Paid') return -1;
-      if (a.payment_status === 'Paid' && b.payment_status === 'Unpaid') return 1;
-      return 0;
-    });
+    : [...orders];
+
+  const filteredOrders = baseOrders.filter((o) => {
+    if (!searchQuery || !searchQuery.trim()) return true;
+    const term = searchQuery.trim().toLowerCase();
+    const orderNumMatch = String(o.order_number || o.id || '').toLowerCase().includes(term);
+    const customerMatch = matchesSearch(o.customer_name || o.full_name, searchQuery);
+    const phoneMatch = String(o.customer_phone || o.phone || '').toLowerCase().includes(term);
+    const cityMatch = matchesSearch(o.city, searchQuery);
+    const statusMatch = String(o.status || '').toLowerCase().includes(term);
+    const paymentMatch = String(o.payment_status || '').toLowerCase().includes(term);
+    const itemsMatch = Array.isArray(o.items) && o.items.some((item) => matchesSearch(item.name || item.product_name, searchQuery));
+    return orderNumMatch || customerMatch || phoneMatch || cityMatch || statusMatch || paymentMatch || itemsMatch;
+  });
+
+  const displayedOrders = filteredOrders.sort((a, b) => {
+    if (a.payment_status === 'Unpaid' && b.payment_status === 'Paid') return -1;
+    if (a.payment_status === 'Paid' && b.payment_status === 'Unpaid') return 1;
+    return 0;
+  });
 
   const ordersTotalPages = Math.ceil(displayedOrders.length / itemsPerPage) || 1;
   const safeOrdersPage = Math.min(ordersPage, ordersTotalPages);
@@ -3165,6 +3240,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     (safeOrdersPage - 1) * itemsPerPage,
     safeOrdersPage * itemsPerPage,
   );
+
+  const filteredCategories = categories.filter((c) => matchesSearch(c.name, searchQuery));
+  const filteredBadges = badges.filter((b) => matchesSearch(b.name, searchQuery));
+  const filteredColors = colorsList.filter((c) => matchesSearch(c.name, searchQuery) || matchesSearch(c.family, searchQuery) || matchesSearch(c.class, searchQuery));
+  const filteredStyles = styles.filter((s) => matchesSearch(s.name, searchQuery));
+  const filteredMaterials = materials.filter((m) => matchesSearch(m.name, searchQuery));
+  const filteredSeasons = seasons.filter((s) => matchesSearch(s.name, searchQuery));
+  const filteredSizes = sizes.filter((sz) => matchesSearch(sz.name, searchQuery));
+  const filteredPromotions = promotions.filter((p) => matchesSearch(p.name, searchQuery));
+  const filteredCities = citiesList.filter((c) => matchesSearch(c.name, searchQuery));
+  const filteredDeliveryCities = deliveryCities.filter((d) => matchesSearch(d.city || d.city_name, searchQuery));
 
   const handleSidebarTabClick = (tab) => {
     const formOpen = isModalOpen || isStoreModalOpen;
@@ -3993,7 +4079,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {categories.slice((settingsPage - 1) * 10, settingsPage * 10).map((cat) => {
+                      {filteredCategories.slice((settingsPage - 1) * 10, settingsPage * 10).map((cat) => {
                         let displayName = cat.name;
                         try {
                           if (cat.name && cat.name.startsWith("{")) {
@@ -4031,7 +4117,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(categories.length)}
+                    {renderSettingsPagination(filteredCategories.length)}
                   </div>
                 )}
 
@@ -4073,7 +4159,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {badges.slice((settingsPage - 1) * 10, settingsPage * 10).map((b) => {
+                      {filteredBadges.slice((settingsPage - 1) * 10, settingsPage * 10).map((b) => {
                         let displayName = b.name;
                         try {
                           if (b.name && b.name.startsWith("{")) {
@@ -4111,7 +4197,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(badges.length)}
+                    {renderSettingsPagination(filteredBadges.length)}
                   </div>
                 )}
 
@@ -4195,7 +4281,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
                     <div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {colorsList.slice((settingsPage - 1) * 10, settingsPage * 10).map((color) => {
+                        {filteredColors.slice((settingsPage - 1) * 10, settingsPage * 10).map((color) => {
                           let displayName = color.name;
                           try {
                             if (color.name && color.name.startsWith("{")) {
@@ -4242,7 +4328,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         })}
                       </div>
                     </div>
-                    {renderSettingsPagination(colorsList.length)}
+                    {renderSettingsPagination(filteredColors.length)}
                   </div>
                 )}
 
@@ -4284,7 +4370,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {styles.slice((settingsPage - 1) * 10, settingsPage * 10).map((style) => {
+                      {filteredStyles.slice((settingsPage - 1) * 10, settingsPage * 10).map((style) => {
                         let displayName = style.name;
                         try {
                           if (style.name && style.name.startsWith("{")) {
@@ -4322,7 +4408,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(styles.length)}
+                    {renderSettingsPagination(filteredStyles.length)}
                   </div>
                 )}
 
@@ -4364,7 +4450,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {materials.slice((settingsPage - 1) * 10, settingsPage * 10).map((mat) => {
+                      {filteredMaterials.slice((settingsPage - 1) * 10, settingsPage * 10).map((mat) => {
                         let displayName = mat.name;
                         try {
                           if (mat.name && mat.name.startsWith("{")) {
@@ -4402,7 +4488,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(materials.length)}
+                    {renderSettingsPagination(filteredMaterials.length)}
                   </div>
                 )}
 
@@ -4444,7 +4530,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {seasons.slice((settingsPage - 1) * 10, settingsPage * 10).map((sea) => {
+                      {filteredSeasons.slice((settingsPage - 1) * 10, settingsPage * 10).map((sea) => {
                         let displayName = sea.name;
                         try {
                           if (sea.name && sea.name.startsWith("{")) {
@@ -4482,7 +4568,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(seasons.length)}
+                    {renderSettingsPagination(filteredSeasons.length)}
                   </div>
                 )}
 
@@ -4524,7 +4610,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {sizes.slice((settingsPage - 1) * 10, settingsPage * 10).map((sz) => {
+                      {filteredSizes.slice((settingsPage - 1) * 10, settingsPage * 10).map((sz) => {
                         let displayName = sz.name;
                         try {
                           if (sz.name && sz.name.startsWith("{")) {
@@ -4562,7 +4648,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(sizes.length)}
+                    {renderSettingsPagination(filteredSizes.length)}
                   </div>
                 )}
 
@@ -4604,7 +4690,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </form>
 
                     <div className="divide-y divide-slate-100">
-                      {promotions.slice((settingsPage - 1) * 10, settingsPage * 10).map((promo) => {
+                      {filteredPromotions.slice((settingsPage - 1) * 10, settingsPage * 10).map((promo) => {
                         let displayName = promo.name;
                         try {
                           if (promo.name && promo.name.startsWith("{")) {
@@ -4642,7 +4728,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         );
                       })}
                     </div>
-                    {renderSettingsPagination(promotions.length)}
+                    {renderSettingsPagination(filteredPromotions.length)}
                   </div>
                 )}
 
@@ -4742,7 +4828,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   <div className="overflow-x-auto space-y-4">
                     {(() => {
                       const itemsPerPage = 10;
-                      const sorted = [...citiesList].sort((a, b) => b.id - a.id);
+                      const sorted = [...filteredCities].sort((a, b) => b.id - a.id);
                       const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
                       const safePage = Math.min(citiesPage, totalPages);
                       const startIdx = (safePage - 1) * itemsPerPage;
