@@ -36,17 +36,18 @@ import {
   Search,
 } from "lucide-react";
 
+const extractHexColor = (cls) => {
+  if (!cls || typeof cls !== 'string') return '#36454F';
+  if (cls.startsWith('#')) return cls.slice(0, 7);
+  const match = cls.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/);
+  if (match) return `#${match[1]}`;
+  return '#36454F';
+};
+
 const getColorStyle = (colorClass) => {
   if (!colorClass || typeof colorClass !== 'string') return {};
-  if (colorClass.startsWith("bg-[#") && colorClass.endsWith("]")) {
-    return { backgroundColor: colorClass.slice(4, -1) };
-  }
-  if (colorClass.startsWith("#")) {
-    return { backgroundColor: colorClass };
-  }
-  if (colorClass.startsWith("bg-[")) {
-    return { backgroundColor: colorClass.slice(4, -1) };
-  }
+  const hex = extractHexColor(colorClass);
+  if (hex) return { backgroundColor: hex };
   return {};
 };
 
@@ -194,30 +195,48 @@ const MultiSelectDropdown = ({
   );
 };
 
-const getEnglishName = (val) => {
-  if (val === null || val === undefined || val === "") return "";
-  // Handle raw object (e.g. {en: "...", ku: "...", ar: "..."}) — prevents React "Objects are not valid" crash
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    return String(val.en || val.EN || val.ku || val.KU || val.ar || val.AR || "");
+const parseLangObj = (val) => {
+  if (!val) return { en: "", ku: "", ar: "" };
+  if (typeof val === "object" && !Array.isArray(val)) {
+    return {
+      en: String(val.en || val.EN || ""),
+      ku: String(val.ku || val.KU || ""),
+      ar: String(val.ar || val.AR || ""),
+    };
   }
-  if (typeof val !== 'string') return String(val);
-  let currentVal = val;
-  for (let i = 0; i < 3; i++) {
-    try {
-      const parsed = JSON.parse(currentVal);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return String(parsed.en || parsed.EN || parsed.ku || parsed.KU || parsed.ar || parsed.AR || val);
-      }
-      if (typeof parsed === 'string') {
-        currentVal = parsed;
+  if (typeof val === "string") {
+    let curr = val.trim();
+    for (let i = 0; i < 3; i++) {
+      if (curr.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(curr);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            return {
+              en: String(parsed.en || parsed.EN || ""),
+              ku: String(parsed.ku || parsed.KU || ""),
+              ar: String(parsed.ar || parsed.AR || ""),
+            };
+          }
+          if (typeof parsed === "string") {
+            curr = parsed.trim();
+          } else {
+            break;
+          }
+        } catch {
+          break;
+        }
       } else {
         break;
       }
-    } catch {
-      break;
     }
+    return { en: curr, ku: "", ar: "" };
   }
-  return String(currentVal);
+  return { en: String(val), ku: "", ar: "" };
+};
+
+const getEnglishName = (val) => {
+  const parsed = parseLangObj(val);
+  return parsed.en || parsed.ku || parsed.ar || "";
 };
 
 const sortNewestFirst = (arr) => {
@@ -2507,20 +2526,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
   // Handle Edit Setting Items
   const handleStartEditSettingItem = (type, item) => {
-    let parsed = { en: "", ku: "", ar: "" };
-    try {
-      if (item.name && item.name.startsWith("{")) {
-        parsed = JSON.parse(item.name);
-      } else {
-        parsed.en = item.name || "";
-      }
-    } catch (e) {
-      parsed.en = item.name || "";
-    }
-
-    setEditItemEn(parsed.en || "");
-    setEditItemKu(parsed.ku || "");
-    setEditItemAr(parsed.ar || "");
+    const parsed = parseLangObj(item.name);
+    setEditItemEn(parsed.en);
+    setEditItemKu(parsed.ku);
+    setEditItemAr(parsed.ar);
     setEditItemClass(item.class || "#36454F");
     setEditItemFamily(item.family || "black");
     setEditingSettingItem({ type, item });
@@ -6984,9 +6993,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       Color Swatch (Hex / Class) *
                     </label>
                     <div className="flex items-center space-x-2">
+                      <div
+                        className="w-9 h-9 rounded-xl border border-slate-200 shrink-0 shadow-xs"
+                        style={{ backgroundColor: extractHexColor(colorClassModal) }}
+                      />
                       <input
                         type="color"
-                        value={colorClassModal.startsWith('#') ? colorClassModal : '#36454F'}
+                        value={extractHexColor(colorClassModal)}
                         onChange={(e) => setColorClassModal(e.target.value)}
                         className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
                       />
@@ -6994,7 +7007,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         type="text"
                         value={colorClassModal}
                         onChange={(e) => setColorClassModal(e.target.value)}
-                        placeholder="#36454F or bg-[#...]"
+                        placeholder="#FF0000 or bg-[#FF0000]"
                         className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
                       />
                     </div>
@@ -7095,9 +7108,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       Color Swatch (Hex / Class) *
                     </label>
                     <div className="flex items-center space-x-2">
+                      <div
+                        className="w-9 h-9 rounded-xl border border-slate-200 shrink-0 shadow-xs"
+                        style={{ backgroundColor: extractHexColor(editItemClass) }}
+                      />
                       <input
                         type="color"
-                        value={editItemClass.startsWith('#') ? editItemClass : '#36454F'}
+                        value={extractHexColor(editItemClass)}
                         onChange={(e) => setEditItemClass(e.target.value)}
                         className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
                       />
@@ -7105,7 +7122,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         type="text"
                         value={editItemClass}
                         onChange={(e) => setEditItemClass(e.target.value)}
-                        placeholder="#36454F or bg-[#...]"
+                        placeholder="#FF0000 or bg-[#FF0000]"
                         className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
                       />
                     </div>
