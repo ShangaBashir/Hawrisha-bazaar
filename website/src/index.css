@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-rose: #C08081;
+  --color-brand-sage: #B2AC88;
+  --color-brand-beige: #F5F5DC;
+  --color-brand-charcoal: #36454F;
+  --font-sans: "Inter", "Roboto", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-beige text-brand-charcoal font-sans;
+  }
+
+  /* Ensure SVG icons from lucide-react always render and don't collapse */
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  button svg, a svg, div svg, span svg {
+    pointer-events: none;
+  }
+}

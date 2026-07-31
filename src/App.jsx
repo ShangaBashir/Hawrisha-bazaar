@@ -509,6 +509,7 @@ function App() {
               onReadStory={() => handleViewChange('story')}
               onJoinUs={() => handleViewChange('auth')}
               onExploreStores={() => handleViewChange('stores')}
+              onContactClick={() => handleViewChange('contact')}
             />
             <StoreMarquee />
           </>

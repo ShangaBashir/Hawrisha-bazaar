@@ -533,6 +533,27 @@ router.post('/contact', async (req, res) => {
           `
         });
         console.log('✅ Contact email successfully sent to hawrishaa@gmail.com via Nodemailer.');
+
+        // Send confirmation receipt email copy to the customer as well
+        await transporter.sendMail({
+          from: `"Hawrisha Bazaar Support" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: `Thank you for contacting Hawrisha Bazaar`,
+          text: `Hello ${name},\n\nThank you for reaching out to Hawrisha Bazaar! We have received your message and our team will get back to you shortly.\n\nYour message:\n"${message}"\n\nBest regards,\nHawrisha Bazaar Team`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #36454F;">
+              <h2 style="color: #B2AC88; border-bottom: 2px solid #B2AC88; padding-bottom: 8px;">Hawrisha Bazaar - Message Received</h2>
+              <p>Hello <strong>${name}</strong>,</p>
+              <p>Thank you for contacting us! We have received your message and will respond as soon as possible.</p>
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 15px;">
+                <p style="font-size: 12px; color: #6b7280; margin-bottom: 5px;">Your message summary:</p>
+                <p style="white-space: pre-wrap; font-size: 14px; color: #1f2937; margin: 0;">${message}</p>
+              </div>
+              <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">Warm regards,<br/>Hawrisha Bazaar Team</p>
+            </div>
+          `
+        }).catch(err => console.warn('Customer confirmation email copy failed:', err.message));
+
         emailSent = true;
       }
     } catch (nodemailerErr) {

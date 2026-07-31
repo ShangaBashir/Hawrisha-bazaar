@@ -64,11 +64,30 @@ async function initializeDatabase() {
     await addColumnSafely('products', 'store_id', 'INT DEFAULT NULL');
     await addColumnSafely('products', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
     await addColumnSafely('products', 'gender', 'VARCHAR(50) DEFAULT NULL');
+    await addColumnSafely('products', 'color_variants', 'LONGTEXT DEFAULT NULL');
     
     // Commission system
     await addColumnSafely('stores', 'commission_percentage', 'INT DEFAULT 0');
     await addColumnSafely('products', 'admin_share', 'INT DEFAULT 0');
     await addColumnSafely('products', 'store_share', 'INT DEFAULT 0');
+
+    // Expand product column types to TEXT to support JSON arrays without truncation
+    const modifyColumnType = async (tableName, columnName, definition) => {
+      try {
+        await db.query(`ALTER TABLE ${tableName} MODIFY COLUMN ${columnName} ${definition}`);
+      } catch (e) {
+        console.warn(`Could not modify ${columnName} on ${tableName}:`, e.message);
+      }
+    };
+
+    await modifyColumnType('products', 'category', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'color_family', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'badge', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'style_length', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'promotion', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'material', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'seasonal_type', 'TEXT DEFAULT NULL');
+    await modifyColumnType('products', 'size_collection', 'TEXT DEFAULT NULL');
 
     // 3. Create product_colors table
     await db.query(`
@@ -309,6 +328,21 @@ async function initializeDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    // 22. Create store_earnings table (tracks per-order money split when order is Paid)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS store_earnings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        store_id INT NOT NULL,
+        order_items_total INT NOT NULL COMMENT 'Sum of item price * qty for this store in this order',
+        commission_percentage DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+        admin_commission INT NOT NULL DEFAULT 0,
+        store_payout INT NOT NULL DEFAULT 0,
+        paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Seed default cancellation limit (15 minutes) if empty
     await db.query(`
       INSERT IGNORE INTO system_settings (setting_key, setting_value) 
@@ -333,109 +367,9 @@ async function initializeDatabase() {
       console.log('Seeded default cities.');
     }
 
-    // Seed default categories if empty
-    const [categories] = await db.query('SELECT COUNT(*) as count FROM categories');
-    if (categories[0].count === 0) {
-      const defaultCategories = ['Animals', 'Fruits', 'Patterns', 'Cozy Crew'];
-      for (const cat of defaultCategories) {
-        await db.query('INSERT IGNORE INTO categories (name) VALUES (?)', [cat]);
-      }
-      console.log('Seeded default categories.');
-    }
 
-    // Seed default badges if empty
-    const [badges] = await db.query('SELECT COUNT(*) as count FROM badges');
-    if (badges[0].count === 0) {
-      const defaultBadges = ['Bestseller', 'New', 'Sale'];
-      for (const badge of defaultBadges) {
-        await db.query('INSERT IGNORE INTO badges (name) VALUES (?)', [badge]);
-      }
-      console.log('Seeded default badges.');
-    }
 
-    // Seed default colors if empty
-    const [colors] = await db.query('SELECT COUNT(*) as count FROM colors');
-    if (colors[0].count === 0) {
-      const defaultColors = [
-        { id: 'beige', class: 'bg-[#F5F5DC]', name: 'Classic Beige', family: 'beige' },
-        { id: 'sage', class: 'bg-[#B2AC88]', name: 'Sage Green', family: 'sage' },
-        { id: 'slate', class: 'bg-[#36454F]', name: 'Charcoal Slate', family: 'slate' },
-        { id: 'rose', class: 'bg-[#C08081]', name: 'Dusk Rose', family: 'rose' },
-        { id: 'yellow', class: 'bg-yellow-400', name: 'Lemon Yellow', family: 'yellow' },
-        { id: 'green', class: 'bg-emerald-600', name: 'Avocado Green', family: 'green' },
-        { id: 'purple', class: 'bg-purple-400', name: 'Soft Lavender', family: 'purple' },
-        { id: 'orange', class: 'bg-orange-500', name: 'Citrus Orange', family: 'orange' }
-      ];
-      for (const color of defaultColors) {
-        await db.query(
-          'INSERT IGNORE INTO colors (id, class, name, family) VALUES (?, ?, ?, ?)',
-          [color.id, color.class, color.name, color.family]
-        );
-      }
-      console.log('Seeded default colors.');
-    }
 
-    // Seed default styles if empty
-    const [styles] = await db.query('SELECT COUNT(*) as count FROM styles');
-    if (styles[0].count === 0) {
-      const defaultStyles = ['Crew', 'Ankle', 'No Show', 'Knee High'];
-      for (const st of defaultStyles) {
-        await db.query('INSERT IGNORE INTO styles (name) VALUES (?)', [st]);
-      }
-      console.log('Seeded default styles.');
-    }
-
-    // Seed default materials if empty
-    const [materials] = await db.query('SELECT COUNT(*) as count FROM materials');
-    if (materials[0].count === 0) {
-      const defaultMaterials = ['Cotton', 'Bamboo', 'Wool', 'Polyester'];
-      for (const mat of defaultMaterials) {
-        await db.query('INSERT IGNORE INTO materials (name) VALUES (?)', [mat]);
-      }
-      console.log('Seeded default materials.');
-    }
-
-    // Seed default seasons if empty
-    const [seasons] = await db.query('SELECT COUNT(*) as count FROM seasons');
-    if (seasons[0].count === 0) {
-      const defaultSeasons = ['Winter', 'Summer', 'Spring', 'Autumn', 'All Season'];
-      for (const seas of defaultSeasons) {
-        await db.query('INSERT IGNORE INTO seasons (name) VALUES (?)', [seas]);
-      }
-      console.log('Seeded default seasons.');
-    }
-
-    // Seed default sizes if empty
-    const [sizes] = await db.query('SELECT COUNT(*) as count FROM sizes');
-    if (sizes[0].count === 0) {
-      const defaultSizes = ['One Size', '35-38', '39-42', '43-46'];
-      for (const sz of defaultSizes) {
-        await db.query('INSERT IGNORE INTO sizes (name) VALUES (?)', [sz]);
-      }
-      console.log('Seeded default sizes.');
-    }
-
-    // Seed default promotions if empty
-    const [promotions] = await db.query('SELECT COUNT(*) as count FROM promotions');
-    if (promotions[0].count === 0) {
-      const defaultPromotions = ['Buy 2 Get 1 Free', 'New Season Promo'];
-      for (const promo of defaultPromotions) {
-        await db.query('INSERT IGNORE INTO promotions (name) VALUES (?)', [promo]);
-      }
-      console.log('Seeded default promotions.');
-    }
-
-    // Seed default stores if empty
-    const [storesCount] = await db.query('SELECT COUNT(*) as count FROM stores');
-    if (storesCount[0].count === 0) {
-      await db.query(`
-        INSERT INTO stores (name, logo, banner, description, owner_name, email, phone, address, social_links, status)
-        VALUES 
-        ('Cozy Socks Co.', '/categories/cat1.jpg', '/categories/cat2.jpg', 'Comfortable and warm crew socks for the cozy winter seasons.', 'Alice Smith', 'vendor1@gmail.com', '+964 770 123 4567', 'Sulaymaniyah, Iraq', '{"facebook": "#", "instagram": "#"}', 'Active'),
-        ('Happy Feet', '/categories/cat3.jpg', '/categories/cat4.jpg', 'Cute and colorful character socks to bring joy to every step.', 'Bob Jones', 'vendor2@gmail.com', '+964 770 765 4321', 'Erbil, Iraq', '{"facebook": "#", "instagram": "#"}', 'Active')
-      `);
-      console.log('Seeded default stores.');
-    }
 
     // Seed default users if empty
     const [usersCount] = await db.query('SELECT COUNT(*) as count FROM users');
@@ -444,49 +378,15 @@ async function initializeDatabase() {
       const hashPassword = (password) => crypto.createHash('sha256').update(password).digest('hex');
       const hashedPass = hashPassword('12345678');
       
-      const [dbStores] = await db.query('SELECT id, name FROM stores');
-      const cozyStoreId = dbStores.find(s => s.name === 'Cozy Socks Co.')?.id || null;
-      const happyStoreId = dbStores.find(s => s.name === 'Happy Feet')?.id || null;
-
       await db.query(`
         INSERT INTO users (first_name, last_name, phone, email, password, role, store_name, store_id)
         VALUES 
-        ('Admin', 'User', '+964 770 000 0000', 'admin@gmail.com', ?, 'admin', NULL, NULL),
-        ('Alice', 'Smith', '+964 770 123 4567', 'vendor1@gmail.com', ?, 'vendor', 'Cozy Socks Co.', ?),
-        ('Bob', 'Jones', '+964 770 765 4321', 'vendor2@gmail.com', ?, 'vendor', 'Happy Feet', ?)
-      `, [hashedPass, hashedPass, cozyStoreId, hashedPass, happyStoreId]);
-      console.log('Seeded default users.');
+        ('Admin', 'User', '+964 770 000 0000', 'admin@gmail.com', ?, 'admin', NULL, NULL)
+      `, [hashedPass]);
+      console.log('Seeded default Admin user.');
     }
 
-    // Seed default products if database products table is empty
-    const [productsCount] = await db.query('SELECT COUNT(*) as count FROM products');
-    if (productsCount[0].count === 0) {
-      const defaultProducts = [
-        { name: 'Pet Lovers', price: 6250, category: 'Animals', color_family: 'slate', badge: 'Bestseller', description: 'Express your passion for pets in cozy fashion. Knit with durable premium combed cotton, these socks deliver all-day comfort and a breathable stretch ideal for everyday walks.', image_url: '/categories/cat1.jpg' },
-        { name: 'Tabby Cat', price: 6250, category: 'Animals', color_family: 'orange', badge: 'New', description: 'Brighten your day with these lovable tabby kitten designs. Perfect for cat enthusiasts, utilizing soft combed cotton for a premium lightweight and sweat-wicking texture.', image_url: '/categories/cat2.jpg' },
-        { name: 'Kangaroo Crew', price: 5000, category: 'Animals', color_family: 'beige', badge: 'Sale', description: 'Jump into premium comfort with our dynamic Kangaroo socks. Double-looped heel cushion supports high impact steps, keeping your feet padded and comfortable.', image_url: '/categories/cat3.jpg' },
-        { name: 'Sweet Ribbons', price: 6250, category: 'Patterns', color_family: 'sage', badge: '', description: 'Delicate pattern styling that adds a sweet touch to any aesthetic. Designed with standard rib arches to sit comfortably around the calf without binding.', image_url: '/categories/cat2.jpg' },
-        { name: 'Abstract Faces', price: 6250, category: 'Patterns', color_family: 'rose', badge: 'Bestseller', description: 'Make a bold statement with artist-inspired abstract faces. Knitted with combed yarns for high detailed resolution and rich, long-lasting wash durability.', image_url: '/categories/cat4.jpg' },
-        { name: 'Cat Patterns', price: 6250, category: 'Animals', color_family: 'beige', badge: 'New', description: 'A delightful assortment of repeating kitten patterns. Standard crew length looks fantastic paired with casual sneakers or boots.', image_url: '/categories/cat1.jpg' },
-        { name: 'Tropical Flamingo', price: 7000, category: 'Patterns', color_family: 'rose', badge: 'Bestseller', description: 'Evoke year-round vacation vibes with our tropical flamingo graphics. Offers supportive seamless toes and high elastic ankle bands.', image_url: '/categories/cat3.jpg' },
-        { name: 'Sunny Lemon', price: 5500, category: 'Fruits', color_family: 'yellow', badge: 'Sale', description: 'A splash of sunshine for your wardrobe! Designed with seamless toe closures to eliminate pressure seams and keep active steps cheerful.', image_url: '/categories/cat2.jpg' },
-        { name: 'Comfy Lavender', price: 4500, category: 'Cozy Crew', color_family: 'purple', badge: '', description: 'Sink into luxurious relaxation with our extra-cushion lavender collection. Designed with organic wool blending to provide breathable warming wraps.', image_url: '/categories/cat4.jpg' },
-        { name: 'Winter Snowflake', price: 8000, category: 'Cozy Crew', color_family: 'sky', badge: 'New', description: 'Stay warm even in sub-zero climates with extra brushed-nap loops. Excellent thermoregulatory layers featuring festive holiday patterns.', image_url: '/categories/cat3.jpg' },
-        { name: 'Retro Stripes', price: 6000, category: 'Patterns', color_family: 'red', badge: '', description: 'Vintage varsity stripes that pair beautifully with athleisure wear. Offers medium arch compressions to reduce foot fatigue.', image_url: '/categories/cat2.jpg' },
-        { name: 'Avocado Smile', price: 5500, category: 'Fruits', color_family: 'green', badge: 'Bestseller', description: 'Fun avocado prints that guarantee smiles with every step. Made with organic cotton blend.', image_url: '/categories/cat1.jpg' },
-        { name: 'Cozy Fleece', price: 7500, category: 'Cozy Crew', color_family: 'slate', badge: 'Bestseller', description: 'Ultra thick thermal fleece layer for cold winter nights.', image_url: '/categories/cat4.jpg' },
-        { name: 'Geometric Wave', price: 6500, category: 'Patterns', color_family: 'rose', badge: 'New', description: 'Modern retro geometric wave designs in vibrant tones.', image_url: '/categories/cat3.jpg' },
-        { name: 'Daisy Delight', price: 5500, category: 'Patterns', color_family: 'yellow', badge: 'Sale', description: 'Charming floral daisy patterns knitted into soft cotton.', image_url: '/categories/cat2.jpg' },
-        { name: 'Midnight Velvet', price: 8500, category: 'Cozy Crew', color_family: 'slate', badge: 'Bestseller', description: 'Deep velvet feel crew socks for maximal comfort.', image_url: '/categories/cat1.jpg' }
-      ];
-      for (const prod of defaultProducts) {
-        await db.query(
-          `INSERT INTO products (name, price, category, color_family, badge, description, image_url, stock) VALUES (?, ?, ?, ?, ?, ?, ?, 50)`,
-          [prod.name, prod.price, prod.category, prod.color_family, prod.badge, prod.description, prod.image_url]
-        );
-      }
-      console.log('Seeded default catalog products into database.');
-    }
+
 
     console.log('Database initialization completed successfully.');
   } catch (error) {

@@ -165,7 +165,7 @@ router.get('/vendor', async (req, res) => {
 
     // Select all items belonging to this vendor's store, joining order info
     const [items] = await db.query(`
-      SELECT oi.*, o.order_number, o.full_name, o.phone, o.province, o.address, o.notes, o.status AS order_status, o.created_at AS order_date, o.total AS order_total, o.payment_status AS payment_status, p.image_url, s.name AS store_name, c.name AS selected_color_name
+      SELECT oi.*, o.order_number, o.full_name, o.phone, o.province, o.address, o.notes, o.status AS order_status, o.created_at AS order_date, o.total AS order_total, o.payment_status AS payment_status, p.image_url, s.name AS store_name, s.commission_percentage, c.name AS selected_color_name
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       LEFT JOIN products p ON oi.product_id = p.id
@@ -327,8 +327,43 @@ router.put('/:id/status', async (req, res) => {
       );
       await connection.query('UPDATE order_items SET status = ? WHERE order_id = ?', [status, id]);
 
+      // --- Compute and record earnings breakdown per store ---
+      try {
+        // Get all items in this order grouped by store
+        const [itemsByStore] = await connection.query(`
+          SELECT 
+            oi.store_id,
+            SUM(oi.price * oi.quantity) AS store_total,
+            COALESCE(NULLIF(s.commission_percentage, 0), 10) AS commission_pct
+          FROM order_items oi
+          LEFT JOIN stores s ON s.id = oi.store_id
+          WHERE oi.order_id = ? AND oi.store_id IS NOT NULL AND oi.store_id > 0
+          GROUP BY oi.store_id, s.commission_percentage
+        `, [id]);
+
+        // Clear any previous earnings for this order (idempotent re-run safety)
+        await connection.query('DELETE FROM store_earnings WHERE order_id = ?', [id]);
+
+        for (const row of itemsByStore) {
+          const storeTotal = Math.round(Number(row.store_total)) || 0;
+          const commPct = Number(row.commission_pct) || 10;
+          const adminCommission = Math.round(storeTotal * commPct / 100);
+          const storePayout = storeTotal - adminCommission;
+
+          await connection.query(
+            `INSERT INTO store_earnings (order_id, store_id, order_items_total, commission_percentage, admin_commission, store_payout)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [id, row.store_id, storeTotal, commPct, adminCommission, storePayout]
+          );
+        }
+      } catch (earnErr) {
+        // Non-fatal — log but don't fail the whole transaction
+        console.error('Error recording store earnings:', earnErr.message);
+      }
+
     } else if (status === 'Returned') {
       // Returned — restore stock, payment stays unpaid
+      await connection.query('DELETE FROM store_earnings WHERE order_id = ?', [id]);
       const [itemsToRestore] = await connection.query(
         'SELECT product_id, quantity FROM order_items WHERE order_id = ? AND status != "Cancelled"', [id]
       );
@@ -341,6 +376,7 @@ router.put('/:id/status', async (req, res) => {
       await connection.query('UPDATE order_items SET status = ? WHERE order_id = ?', [status, id]);
 
     } else {
+      await connection.query('DELETE FROM store_earnings WHERE order_id = ?', [id]);
       await connection.query('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
       await connection.query('UPDATE order_items SET status = ? WHERE order_id = ?', [status, id]);
     }
@@ -349,12 +385,12 @@ router.put('/:id/status', async (req, res) => {
     res.json({ success: true, message: `Order status updated to ${status} successfully` });
   } catch (error) {
     await connection.rollback();
+    console.error('Error updating order status:', error);
     res.status(500).json({ success: false, message: error.message });
   } finally {
     connection.release();
   }
 });
-
 
 
 // 4.5 UPDATE ORDER PAYMENT STATUS
@@ -373,12 +409,139 @@ router.put('/:id/payment-status', async (req, res) => {
   }
 });
 
+// 4.6 GET EARNINGS BREAKDOWN FOR A SPECIFIC ORDER
+router.get('/:id/earnings', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [earnings] = await db.query(`
+      SELECT 
+        se.*,
+        s.name AS store_name
+      FROM store_earnings se
+      LEFT JOIN stores s ON s.id = se.store_id
+      WHERE se.order_id = ?
+    `, [id]);
+
+    if (earnings.length === 0) {
+      // Calculate dynamic breakdown from order_items for non-paid / unrecorded orders
+      const [items] = await db.query(`
+        SELECT 
+          oi.store_id,
+          s.name AS store_name,
+          SUM(oi.price * oi.quantity) AS store_total,
+          COALESCE(NULLIF(s.commission_percentage, 0), 10) AS commission_pct
+        FROM order_items oi
+        LEFT JOIN stores s ON s.id = oi.store_id
+        WHERE oi.order_id = ?
+        GROUP BY oi.store_id, s.name, s.commission_percentage
+      `, [id]);
+
+      const calculatedEarnings = items.map(row => {
+        const storeTotal = Math.round(Number(row.store_total)) || 0;
+        const commPct = Number(row.commission_pct) || 10;
+        const adminCommission = Math.round(storeTotal * commPct / 100);
+        const storePayout = storeTotal - adminCommission;
+        return {
+          order_id: Number(id),
+          store_id: row.store_id,
+          store_name: row.store_name,
+          order_items_total: storeTotal,
+          commission_percentage: commPct,
+          admin_commission: adminCommission,
+          store_payout: storePayout,
+        };
+      });
+
+      const totals = calculatedEarnings.reduce((acc, row) => ({
+        totalItems: acc.totalItems + Number(row.order_items_total),
+        totalAdminCommission: acc.totalAdminCommission + Number(row.admin_commission),
+        totalStorePayout: acc.totalStorePayout + Number(row.store_payout),
+      }), { totalItems: 0, totalAdminCommission: 0, totalStorePayout: 0 });
+
+      return res.json({ success: true, earnings: calculatedEarnings, totals });
+    }
+
+    // Aggregate totals
+    const totals = earnings.reduce((acc, row) => ({
+      totalItems: acc.totalItems + Number(row.order_items_total),
+      totalAdminCommission: acc.totalAdminCommission + Number(row.admin_commission),
+      totalStorePayout: acc.totalStorePayout + Number(row.store_payout),
+    }), { totalItems: 0, totalAdminCommission: 0, totalStorePayout: 0 });
+
+    res.json({ success: true, earnings, totals });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // 5. GET STATS FOR ADMIN
+
 router.get('/stats/admin', async (req, res) => {
   try {
-    const [totalSalesRows] = await db.query('SELECT SUM(total) AS total_sales FROM orders WHERE status = "Paid"');
-    const [totalOrdersRows] = await db.query('SELECT COUNT(*) AS total_orders FROM orders');
+    const { month } = req.query; // e.g. "2026-07"
+    let monthFilterOrders = '';
+    let monthFilterO = '';
+    let monthParams = [];
+
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      monthFilterOrders = ' AND DATE_FORMAT(created_at, \'%Y-%m\') = ?';
+      monthFilterO = ' AND DATE_FORMAT(o.created_at, \'%Y-%m\') = ?';
+      monthParams = [month];
+    }
+
+    // Total sales (only the store payout money, excluding admin commission and delivery fees)
+    let totalSales = 0;
+    try {
+      const [payoutRows] = await db.query(
+        month && /^\d{4}-\d{2}$/.test(month)
+          ? `SELECT SUM(se.vendor_payout) AS payout_total FROM store_earnings se JOIN orders o ON o.id = se.order_id WHERE DATE_FORMAT(se.paid_at, '%Y-%m') = ?`
+          : `SELECT SUM(vendor_payout) AS payout_total FROM store_earnings`,
+        month && /^\d{4}-\d{2}$/.test(month) ? [month] : []
+      );
+      totalSales = Number(payoutRows[0]?.payout_total) || 0;
+    } catch (e) {}
+
+    // Fallback if store_earnings is empty
+    if (totalSales === 0) {
+      const [payoutFallback] = await db.query(
+        `SELECT SUM(oi.price * oi.quantity * (1 - (COALESCE(NULLIF(s.commission_percentage, 0), 10) / 100))) AS payout_total
+         FROM order_items oi
+         JOIN orders o ON oi.order_id = o.id
+         LEFT JOIN stores s ON s.id = oi.store_id
+         WHERE o.status != 'Cancelled'${monthFilterO}`,
+        monthParams
+      );
+      totalSales = Math.round(Number(payoutFallback[0]?.payout_total) || 0);
+    }
+
+    // Commission earnings from store_earnings table (accurate — based on actually Paid orders)
+    let commEarnings = 0;
+    try {
+      const [commFromEarnings] = await db.query(
+        month && /^\d{4}-\d{2}$/.test(month)
+          ? `SELECT SUM(se.admin_commission) AS commission_total FROM store_earnings se JOIN orders o ON o.id = se.order_id WHERE DATE_FORMAT(se.paid_at, '%Y-%m') = ?`
+          : `SELECT SUM(admin_commission) AS commission_total FROM store_earnings`,
+        month && /^\d{4}-\d{2}$/.test(month) ? [month] : []
+      );
+      commEarnings = Number(commFromEarnings[0]?.commission_total) || 0;
+    } catch (e) {}
+    // Fallback to estimated commission if store_earnings table is empty / not yet created
+    if (commEarnings === 0) {
+      const [commissionSimple] = await db.query(
+        `SELECT SUM(oi.price * oi.quantity * (COALESCE(NULLIF(s.commission_percentage, 0), 10) / 100)) AS commission_total
+         FROM order_items oi
+         JOIN orders o ON oi.order_id = o.id
+         LEFT JOIN stores s ON s.id = oi.store_id
+         WHERE o.status = 'Paid'${monthFilterO}`,
+        monthParams
+      );
+      commEarnings = Math.round(Number(commissionSimple[0]?.commission_total) || 0);
+    }
+
+    const [totalOrdersRows] = await db.query(
+      `SELECT COUNT(*) AS total_orders FROM orders WHERE 1=1${monthFilterOrders}`,
+      monthParams
+    );
     const [totalProductsRows] = await db.query('SELECT COUNT(*) AS total_products FROM products');
     const [storesCountRows] = await db.query(`
       SELECT 
@@ -389,16 +552,31 @@ router.get('/stats/admin', async (req, res) => {
       FROM stores
     `);
 
+    // Monthly breakdown for chart (last 12 months)
+    const [monthlyRows] = await db.query(`
+      SELECT 
+        DATE_FORMAT(created_at, '%Y-%m') AS month,
+        SUM(total) AS monthly_sales,
+        COUNT(*) AS monthly_orders
+      FROM orders
+      WHERE status = 'Paid'
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      ORDER BY month DESC
+      LIMIT 12
+    `);
+
     res.json({
       success: true,
       stats: {
-        totalSales: totalSalesRows[0].total_sales || 0,
-        totalOrders: totalOrdersRows[0].total_orders || 0,
-        totalProducts: totalProductsRows[0].total_products || 0,
-        totalStores: storesCountRows[0].total_stores || 0,
-        activeStores: storesCountRows[0].active_stores || 0,
-        pendingStores: storesCountRows[0].pending_stores || 0,
-        suspendedStores: storesCountRows[0].suspended_stores || 0
+        totalSales: totalSales,
+        commissionEarnings: Math.round(commEarnings),
+        totalOrders: totalOrdersRows[0]?.total_orders || 0,
+        totalProducts: totalProductsRows[0]?.total_products || 0,
+        totalStores: storesCountRows[0]?.total_stores || 0,
+        activeStores: storesCountRows[0]?.active_stores || 0,
+        pendingStores: storesCountRows[0]?.pending_stores || 0,
+        suspendedStores: storesCountRows[0]?.suspended_stores || 0,
+        monthlySales: monthlyRows
       }
     });
   } catch (error) {
@@ -409,7 +587,7 @@ router.get('/stats/admin', async (req, res) => {
 // 6. GET STATS FOR VENDOR
 router.get('/stats/vendor', async (req, res) => {
   try {
-    const { email } = req.query;
+    const { email, month } = req.query;
     if (!email) {
       return res.status(400).json({ success: false, message: 'Vendor email required.' });
     }
@@ -420,20 +598,46 @@ router.get('/stats/vendor', async (req, res) => {
     }
     const storeId = users[0].store_id;
 
+    // Month filter
+    let monthFilter = '';
+    let monthParams = [storeId];
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      monthFilter = " AND DATE_FORMAT(o.created_at, '%Y-%m') = ?";
+      monthParams = [storeId, month];
+    }
+
     // Vendor sales sum — count Paid
     const [salesRow] = await db.query(`
       SELECT SUM(oi.price * oi.quantity) AS total_sales, SUM(oi.quantity) AS items_sold
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
-      WHERE oi.store_id = ? AND o.status = 'Paid'
-    `, [storeId]);
+      WHERE oi.store_id = ? AND o.status = 'Paid'${monthFilter}
+    `, monthParams);
+
+    // Vendor actual payout from store_earnings (after commission deduction)
+    let vendorPayout = 0;
+    let vendorAdminCommission = 0;
+    try {
+      const earningsMonthFilter = month && /^\d{4}-\d{2}$/.test(month)
+        ? ` AND DATE_FORMAT(se.paid_at, '%Y-%m') = '${month}'`
+        : '';
+      const [earningsRow] = await db.query(
+        `SELECT SUM(se.store_payout) AS payout, SUM(se.admin_commission) AS commission
+         FROM store_earnings se
+         WHERE se.store_id = ?${earningsMonthFilter}`,
+        [storeId]
+      );
+      vendorPayout = Number(earningsRow[0]?.payout) || 0;
+      vendorAdminCommission = Number(earningsRow[0]?.commission) || 0;
+    } catch (e) {}
 
     // Unique orders count
     const [ordersRow] = await db.query(`
       SELECT COUNT(DISTINCT oi.order_id) AS total_orders
       FROM order_items oi
-      WHERE oi.store_id = ?
-    `, [storeId]);
+      JOIN orders o ON oi.order_id = o.id
+      WHERE oi.store_id = ?${monthFilter}
+    `, monthParams);
 
     // Products count
     const [productsRow] = await db.query(`
@@ -447,19 +651,38 @@ router.get('/stats/vendor', async (req, res) => {
       SELECT oi.product_name, SUM(oi.price * oi.quantity) AS sales, SUM(oi.quantity) AS quantity
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
-      WHERE oi.store_id = ? AND o.status = 'Paid'
+      WHERE oi.store_id = ? AND o.status = 'Paid'${monthFilter}
       GROUP BY oi.product_id, oi.product_name
       ORDER BY sales DESC
+    `, monthParams);
+
+    // Monthly breakdown (last 12 months for this vendor)
+    const [monthlyRows] = await db.query(`
+      SELECT 
+        DATE_FORMAT(o.created_at, '%Y-%m') AS month,
+        SUM(oi.price * oi.quantity) AS monthly_sales,
+        COUNT(DISTINCT oi.order_id) AS monthly_orders
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE oi.store_id = ? AND o.status = 'Paid'
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
+      ORDER BY month DESC
+      LIMIT 12
     `, [storeId]);
+
+    const rawTotal = Number(salesRow[0]?.total_sales) || 0;
 
     res.json({
       success: true,
       stats: {
-        totalSales: salesRow[0].total_sales || 0,
+        totalSales: vendorPayout > 0 ? vendorPayout : (rawTotal > 0 ? Math.round(rawTotal * 0.9) : 0), // only store payout
+        rawItemsTotal: rawTotal,                                  // gross before commission
+        adminCommission: vendorAdminCommission,
         itemsSold: salesRow[0].items_sold || 0,
         totalOrders: ordersRow[0].total_orders || 0,
         totalProducts: productsRow[0].total_products || 0,
-        productSales: productSales
+        productSales: productSales,
+        monthlySales: monthlyRows
       }
     });
   } catch (error) {

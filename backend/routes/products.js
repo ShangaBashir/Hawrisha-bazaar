@@ -20,10 +20,28 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-const upload = multer({ storage });
-const uploadFields = upload.fields([
-  { name: 'image', maxCount: 1 }
-]);
+const upload = multer({ 
+  storage,
+  limits: {
+    fieldNameSize: 200,
+    fieldSize: 25 * 1024 * 1024, // 25MB per field
+    fields: 100,       // up to 100 non-file fields
+    fileSize: 25 * 1024 * 1024, // 25MB per file
+    files: 20,         // up to 20 files
+    parts: 200         // total parts (files + fields)
+  }
+});
+
+// Middleware that handles multer upload with any fields + error catching
+const uploadFields = (req, res, next) => {
+  upload.any()(req, res, (err) => {
+    if (err) {
+      console.error('Multer upload error:', err.message, err.code);
+      return res.status(400).json({ error: `Upload error: ${err.message}`, code: err.code });
+    }
+    next();
+  });
+};
 
 // 1. GET ALL PRODUCTS
 router.get('/', async (req, res) => {
@@ -102,7 +120,7 @@ router.post('/', uploadFields, async (req, res) => {
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
       styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
-      vendorEmail, storeId, gender
+      vendorEmail, storeId, gender, colorVariants
     } = req.body;
     
     console.log("POST /api/products - req.body:", { name, price, category, vendorEmail, storeId });
@@ -111,7 +129,28 @@ router.post('/', uploadFields, async (req, res) => {
       return res.status(400).json({ error: 'Price must be a valid Iraqi Dinar amount (minimum 250 IQD)' });
     }
     
-    const imageUrl = req.files && req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
+    const imageFile = req.files && Array.isArray(req.files) ? req.files.find(f => f.fieldname === 'image') : null;
+    let imageUrl = imageFile ? `/uploads/${imageFile.filename}` : null;
+
+    let parsedVariants = [];
+    try {
+      parsedVariants = JSON.parse(colorVariants || '[]');
+    } catch (e) {
+      console.warn('Failed to parse colorVariants JSON:', e.message);
+    }
+
+    if (req.files && Array.isArray(req.files)) {
+      parsedVariants.forEach((variant, index) => {
+        const file = req.files.find(f => f.fieldname === `variant_image_${index}`);
+        if (file) {
+          variant.image = `/uploads/${file.filename}`;
+        }
+      });
+    }
+
+    if (!imageUrl && parsedVariants.length > 0 && parsedVariants[0].image) {
+      imageUrl = parsedVariants[0].image;
+    }
 
     let dbVendorId = null;
     let dbStoreId = null;
@@ -147,12 +186,12 @@ router.post('/', uploadFields, async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO products (
         name, price, category, color_family, badge, description, image_url,
-        style_length, stock, promotion, material, seasonal_type, size_collection, size_colors, discount, vendor_id, store_id, extra_images, gender, admin_share, store_share
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+        style_length, stock, promotion, material, seasonal_type, size_collection, size_colors, discount, vendor_id, store_id, extra_images, gender, admin_share, store_share, color_variants
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
       [
         name, price, category, colorFamily, badge, desc, imageUrl,
         styleLength || null, Number(stock) || 0, promotion || null, material || null, 
-        seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0, dbVendorId, dbStoreId, gender || null, adminShare, storeShare
+        seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0, dbVendorId, dbStoreId, gender || null, adminShare, storeShare, JSON.stringify(parsedVariants)
       ]
     );
 
@@ -173,7 +212,8 @@ router.post('/', uploadFields, async (req, res) => {
     res.status(201).json({ id: productId, message: 'Product created successfully' });
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error('POST /api/products ERROR:', error.message, error.code, error.sqlMessage);
+    res.status(500).json({ error: error.message, code: error.code, sqlMessage: error.sqlMessage });
   } finally {
     connection.release();
   }
@@ -188,7 +228,7 @@ router.put('/:id', uploadFields, async (req, res) => {
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
       styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
-      vendorEmail, storeId, gender
+      vendorEmail, storeId, gender, colorVariants
     } = req.body;
     
     console.log("PUT /api/products/:id - req.body:", { id, name, price, category, vendorEmail, storeId });
@@ -226,7 +266,24 @@ router.put('/:id', uploadFields, async (req, res) => {
     
     console.log("PUT /api/products/:id - resolved dbStoreId:", dbStoreId, "dbVendorId:", dbVendorId);
     
-    const mainImage = req.files && req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
+    const imageFile = req.files && Array.isArray(req.files) ? req.files.find(f => f.fieldname === 'image') : null;
+    const mainImage = imageFile ? `/uploads/${imageFile.filename}` : null;
+
+    let parsedVariants = [];
+    try {
+      parsedVariants = JSON.parse(colorVariants || '[]');
+    } catch (e) {
+      console.warn('Failed to parse colorVariants JSON:', e.message);
+    }
+
+    if (req.files && Array.isArray(req.files)) {
+      parsedVariants.forEach((variant, index) => {
+        const file = req.files.find(f => f.fieldname === `variant_image_${index}`);
+        if (file) {
+          variant.image = `/uploads/${file.filename}`;
+        }
+      });
+    }
 
     let updateQuery = `UPDATE products SET 
       name = ?, 
@@ -244,12 +301,13 @@ router.put('/:id', uploadFields, async (req, res) => {
       size_colors = ?,
       discount = ?,
       extra_images = NULL,
-      gender = ?`;
+      gender = ?,
+      color_variants = ?`;
     let queryParams = [
       name, price, category, colorFamily, badge, desc, 
       styleLength || null, Number(stock) || 0, promotion || null, material || null, 
       seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0,
-      gender || null
+      gender || null, JSON.stringify(parsedVariants)
     ];
 
     if (mainImage) {

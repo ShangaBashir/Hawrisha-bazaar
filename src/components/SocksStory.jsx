@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExploreStores }) {
+export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExploreStores, onContactClick }) {
   const { language } = useLanguage();
 
   return (
@@ -51,33 +51,55 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               {/* Top Row: Stores Pill */}
               <div className="flex justify-between items-center mb-6 z-10">
                 <span className="flex items-center gap-1.5 px-4 py-1.5 bg-[#F5F5DC] rounded-full text-[10px] font-bold tracking-wider uppercase text-[#36454F] select-none">
-                  ★ {language === 'ar' ? 'المتاجر المتميزة' : language === 'ku' ? 'متا نایابەکان' : 'Featured Boutiques'}
+                  ★ {language === 'ar' ? 'الأزياء المتميزة' : language === 'ku' ? 'فاشیۆن نایابەکان' : 'Featured Fashion'}
                 </span>
               </div>
 
               {/* Overlapping Stores Badges Cluster */}
               <div className="relative h-44 w-full flex items-center justify-center my-4 select-none">
                 {/* Left Boutique Badge */}
-                <div className="absolute transform -translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#B2AC88] text-white flex flex-col items-center justify-center font-bold text-[10px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105">
-                  <span>SAGE</span>
-                  <span className="text-[6px] font-medium tracking-widest mt-0.5">GOLD</span>
+                <div className="absolute transform -translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#B2AC88] text-white flex flex-col items-start justify-center pl-2 font-bold text-[9px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105 select-none">
+                  {language === 'ar' ? (
+                    <>
+                      <span>منزلي</span>
+                    </>
+                  ) : language === 'ku' ? (
+                    <>
+                      <span>ماڵیی</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>HOMELY</span>
+                    </>
+                  )}
                 </div>
                 
                 {/* Right Boutique Badge */}
-                <div className="absolute transform translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#C08081] text-white flex flex-col items-center justify-center font-bold text-[10px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105">
-                  <span>ROSE</span>
-                  <span className="text-[6px] font-medium tracking-widest mt-0.5">PINK</span>
+                <div className="absolute transform translate-x-12 translate-y-2 w-16 h-16 rounded-full border-2 border-white shadow-lg bg-[#C08081] text-white flex flex-col items-end justify-center pr-2 font-bold text-[9px] tracking-tight leading-none z-10 transition-transform duration-300 group-hover:scale-105 select-none">
+                  {language === 'ar' ? (
+                    <>
+                      <span>دافئ</span>
+                    </>
+                  ) : language === 'ku' ? (
+                    <>
+                      <span>ئاسودە</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>COZY</span>
+                    </>
+                  )}
                 </div>
 
                 {/* Center Boutique Badge */}
-                <div className="absolute w-20 h-20 rounded-full border-4 border-white shadow-xl bg-[#36454F] text-[#F5F5DC] flex flex-col items-center justify-center font-black text-xs tracking-wider leading-none z-20 transition-transform duration-500 group-hover:rotate-6">
+                <div className="absolute w-20 h-20 rounded-full border-4 border-white shadow-xl bg-[#36454F] text-[#F5F5DC] flex flex-col items-center justify-center font-black text-[10px] tracking-wider leading-none z-20 transition-transform duration-500 group-hover:rotate-6">
                   <span>HAWRISHA</span>
-                  <span className="text-[6px] font-bold tracking-widest text-[#B2AC88] mt-1">BAZAAR</span>
+                  <span className="text-[6px] font-bold tracking-widest text-[#B2AC88] mt-0.5">BAZAAR</span>
                 </div>
                 
                 {/* Bubble Tag */}
                 <span className="absolute top-2 right-[18%] bg-[#C08081] text-white text-[9px] font-black py-1 px-3 rounded-full shadow-lg z-30 transform rotate-12 group-hover:rotate-0 transition-transform duration-300">
-                  @Boutiques
+                  @Fashion
                 </span>
               </div>
 
@@ -111,7 +133,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               className="bg-white rounded-[2rem] p-6 shadow-xl border border-gray-100 overflow-hidden group flex flex-col justify-between"
             >
               <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 bg-slate-50">
-                <img src="/carousel/slide3.jpg" alt="Vibrant Socks Style" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
+                <img src="/carousel/cominity.jfif" alt="Vibrant Socks Style" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               </div>
               <div className="text-left px-2 pb-2">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
@@ -147,12 +169,11 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               transition={{ duration: 0.6, delay: 0.2 }}
               className="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100 flex flex-col gap-6"
             >
-              {/* Accent colored image box (Using brand red #C08081 / or Charcoal #36454F) */}
-              <div className="w-full aspect-[16/9] rounded-2xl bg-[#C08081] flex items-center justify-center overflow-hidden relative group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent opacity-60"></div>
-                <img src="/carousel/slide2.webp" 
+              {/* Image box without colored frame */}
+              <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative group bg-slate-50">
+                <img src="/carousel/artsy2.webp" 
                   alt="Artistic Socks Showcase" 
-                  className="w-[85%] h-[85%] object-cover rounded-xl shadow-2xl border-4 border-white group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
               </div>
               <div className="text-left">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
@@ -171,7 +192,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               </div>
             </motion.div>
 
-            {/* Card 4: Personal Identity */}
+            {/* Card 4: Contact Us & Socials */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -181,40 +202,62 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
             >
               {/* Left text column */}
               <div className="text-left order-2 md:order-1">
-                <span className="text-[10px] font-bold text-[#B2AC88] uppercase tracking-widest block mb-2">Socks Box</span>
                 <h3 className="text-2xl font-bold text-[#36454F] mb-4">
-                  {language === 'ar' ? 'الهوية الشخصية' : language === 'ku' ? 'ناسنامەی کەسی' : 'Personal Identity'}
+                  {language === 'ar' ? 'تواصل معنا' : language === 'ku' ? 'پەیوەندیمان پێوە بکە' : 'Get in Touch'}
                 </h3>
                 <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-6">
                   {language === 'ar' 
-                    ? 'صمم صندوق جواربك الخاص ليعبر تمامًا عن شخصيتك وتفردك.' 
+                    ? 'لديك أي استفسارات أو تعليقات؟ نحن هنا لمساعدتك. أرسل لنا رسالة مباشرة.' 
                     : language === 'ku' 
-                    ? 'سندووقی گۆرەوی تایبەتی خۆت دروستبکە کە گوزارشت لە کەسایەتی خۆت بکات.' 
-                    : 'Design your own custom box of socks that represents your unique style and personality.'}
+                    ? 'پرسیار یان سەرنجت هەیە؟ ئێمە لێرەین بۆ یارمەتیدانت. پەیاممان بۆ بنێرە.' 
+                    : 'Have questions, feedback, or need help? Send us a message or find us on Instagram. We are here to help.'}
                 </p>
-                <button className="text-xs font-bold text-[#C08081] hover:text-[#B2AC88] transition-colors border-0 bg-transparent p-0 cursor-pointer">
-                  {language === 'ar' ? 'اقرأ القصة' : language === 'ku' ? 'خوێندنەوەی چیرۆک' : 'Read story'} &rarr;
+                <button 
+                  onClick={onContactClick}
+                  className="text-xs font-bold text-[#C08081] hover:text-[#B2AC88] transition-colors border-0 bg-transparent p-0 cursor-pointer"
+                >
+                  {language === 'ar' ? 'اتصل بنا' : language === 'ku' ? 'پەیوەندیمان پێوە بکە' : 'Contact Us'} &rarr;
                 </button>
               </div>
               
-              {/* Right mockup screen column */}
-              <div className="order-1 md:order-2 bg-[#36454F] rounded-2xl aspect-[3/4] p-6 flex flex-col justify-between text-white relative shadow-2xl">
+              {/* Right mockup screen column (Contact info box) */}
+              <div className="order-1 md:order-2 bg-[#36454F] rounded-2xl aspect-[3/4] p-6 flex flex-col justify-between text-white relative shadow-2xl overflow-hidden group">
                 <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                  <span>Hawrisha Brand</span>
-                  <span>Special Box</span>
+                  <span>Hawrisha Support</span>
+                  <span>Connect</span>
                 </div>
-                <div className="my-auto flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-[#B2AC88]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <h4 className="text-lg font-bold text-center text-[#B2AC88] leading-tight">
-                    Personal Identity <br/>Socks Pack
-                  </h4>
+                
+                <div className="my-auto flex flex-col gap-6 text-left">
+                  {/* Email row */}
+                  <a href="mailto:hawrishaa@gmail.com" className="flex items-center space-x-3.5 hover:text-[#B2AC88] transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#B2AC88]">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Email Us</span>
+                      <span className="text-xs font-bold text-white break-all">hawrishaa@gmail.com</span>
+                    </div>
+                  </a>
+
+                  {/* Instagram row */}
+                  <a href="https://www.instagram.com/hawrisha_bazaar" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3.5 hover:text-[#B2AC88] transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#B2AC88]">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" strokeWidth="2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zM17.5 6.5h.01" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Instagram</span>
+                      <span className="text-xs font-bold text-white">@hawrisha_bazaar</span>
+                    </div>
+                  </a>
                 </div>
+
                 <div className="text-[10px] text-gray-400 text-center uppercase tracking-widest font-semibold">
-                  Unbox Comfort
+                  Always Active
                 </div>
               </div>
             </motion.div>

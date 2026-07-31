@@ -1,38 +1,19 @@
 {
-  "name": "gorawixana",
+  "name": "hawrisha-bazaar",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Hawrisha Bazaar Monorepo — Customer Website, Admin/Store Dashboard, and Backend API",
+  "workspaces": [
+    "website",
+    "dashboard",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "backend": "node hawrisha-backend/server.js",
-    "frontend": "npm --prefix hawrisha-frontend run dev",
-    "dashboard": "npm --prefix hawrisha-dashboard run dev",
-    "server": "node hawrisha-backend/server.js",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.16.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/postcss": "^4.3.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "gh-pages": "^6.3.0",
-    "globals": "^17.6.0",
-    "postcss": "^8.5.14",
-    "tailwindcss": "^4.3.0",
-    "vite": "^8.0.12"
+    "dev:website": "npm run dev --prefix website",
+    "dev:dashboard": "npm run dev --prefix dashboard",
+    "dev:backend": "npm run start --prefix backend",
+    "dev": "npm run dev:website",
+    "build:website": "npm run build --prefix website",
+    "build:dashboard": "npm run build --prefix dashboard"
   }
 }

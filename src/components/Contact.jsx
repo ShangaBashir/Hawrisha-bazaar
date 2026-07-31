@@ -402,63 +402,7 @@ export default function Contact() {
           </motion.div>
         </motion.div>
 
-        {/* FAQs section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="text-center mb-10">
-            <div className="w-10 h-10 rounded-full bg-[#B2AC88]/10 flex items-center justify-center text-[#B2AC88] mx-auto mb-3.5">
-              <HelpCircle size={20} />
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#36454F] uppercase tracking-wider">
-              {t('contact_page.faq_title')}
-            </h3>
-            <p className="text-xs text-gray-400 mt-2">
-              {language === 'ar' ? 'تصفح الإجابات السريعة على استفساراتك' : language === 'ku' ? 'وەڵامە خێراکان بۆ پرسیارە باوەکان ببینە' : 'Browse quick answers to our most popular inquiries'}
-            </p>
-          </div>
 
-          <div className="space-y-3.5">
-            {faqs.map((faq, idx) => {
-              const isOpen = activeFaq === idx;
-              return (
-                <div 
-                  key={idx} 
-                  className="bg-white border border-[#E9ECEF] rounded-[20px] overflow-hidden shadow-xs hover:shadow-sm transition-shadow duration-300"
-                >
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full flex items-center justify-between p-5 text-start text-[#36454F] select-none hover:bg-gray-50/40 transition-colors border-0 bg-transparent"
-                  >
-                    <span className="text-xs font-bold uppercase tracking-wider pr-4 rtl:pr-0 rtl:pl-4">{faq.question}</span>
-                    <span className="text-gray-400 shrink-0">
-                      {isOpen ? <Minus size={16} /> : <Plus size={16} />}
-                    </span>
-                  </button>
-                  
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: 'easeInOut' }}
-                      >
-                        <div className="px-5 pb-5 text-xs text-gray-500 leading-relaxed border-t border-gray-50/50 pt-3 text-start">
-                          {faq.answer}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
 
       </div>
 

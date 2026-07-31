@@ -507,6 +507,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [newCityLat, setNewCityLat] = useState("33.3152");
   const [newCityLng, setNewCityLng] = useState("44.3661");
   const [cityToDelete, setCityToDelete] = useState(null);
+  const [editingCity, setEditingCity] = useState(null);
 
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
@@ -1597,6 +1598,26 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     return () => clearInterval(intervalId);
   }, [currentUserRole, currentUserEmail]);
 
+  const handleStartEditCity = (city) => {
+    setEditingCity(city);
+    let en = "", ku = "", ar = "";
+    try {
+      if (city.name && city.name.startsWith("{")) {
+        const p = JSON.parse(city.name);
+        en = p.en || "";
+        ku = p.ku || "";
+        ar = p.ar || "";
+      } else {
+        en = city.name || "";
+      }
+    } catch {
+      en = city.name || "";
+    }
+    setNewCityEn(en);
+    setNewCityKu(ku);
+    setNewCityAr(ar);
+  };
+
   const handleAddCity = async (e) => {
     e.preventDefault();
     if (!newCityEn.trim() || !newCityKu.trim() || !newCityAr.trim()) {
@@ -1604,6 +1625,37 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       return;
     }
     const trilingualName = JSON.stringify({ en: newCityEn.trim(), ku: newCityKu.trim(), ar: newCityAr.trim() });
+
+    if (editingCity) {
+      try {
+        const res = await fetch(`/api/settings/cities/${editingCity.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: trilingualName,
+            latitude: editingCity.latitude || 33.3152,
+            longitude: editingCity.longitude || 44.3661
+          })
+        });
+        if (res.ok) {
+          const updatedCity = await res.json();
+          setCitiesList(prev => prev.map(c => c.id === editingCity.id ? updatedCity : c));
+          setEditingCity(null);
+          setNewCityEn("");
+          setNewCityKu("");
+          setNewCityAr("");
+          showToast("City updated successfully!");
+        } else {
+          const err = await res.json();
+          showToast(err.error || "Failed to update city.");
+        }
+      } catch (err) {
+        console.error("Error updating city:", err);
+        showToast("Error updating city.");
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/settings/cities", {
         method: "POST",
@@ -3312,12 +3364,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
             </>
           )}
 
-          {(activeTab === "category" || activeTab === "settings") && (
+          {activeTab === "category" && (
             /* Category & Settings Management Panel */
             <div className="space-y-8">
               <div className="border-b border-slate-200 pb-5">
                 <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic tracking-tight">
-                  {activeTab === "settings" ? "System & Store Settings" : "Category & Store Settings"}
+                  Category & Store Settings
                 </h1>
                 <p className="text-xs text-slate-400 mt-1 max-w-lg font-sans">
                   Manage and configure every aspect of your store — from product
@@ -4015,12 +4067,26 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         onChangeKu={setNewCityKu}
                         onChangeAr={setNewCityAr}
                       />
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
+                        {editingCity && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCity(null);
+                              setNewCityEn("");
+                              setNewCityKu("");
+                              setNewCityAr("");
+                            }}
+                            className="py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
                         <button
                           type="submit"
                           className="py-2.5 px-6 bg-[#36454F] hover:bg-[#36454F]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm sm:w-auto w-full"
                         >
-                          Add City
+                          {editingCity ? "Update City" : "Add City"}
                         </button>
                       </div>
                     </div>
@@ -4045,13 +4111,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 {city.name.startsWith('{') ? JSON.parse(city.name).en : city.name}
                               </td>
                               <td className="py-2.5 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => setCityToDelete(city.id)}
-                                  className="text-red-500 hover:text-red-750 font-bold cursor-pointer transition-colors"
-                                >
-                                  Delete
-                                </button>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEditCity(city)}
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                    title="Edit City"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCityToDelete(city.id)}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete City"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}

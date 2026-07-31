@@ -316,4 +316,70 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// 8. GET STORE DELIVERY PRICES
+router.get('/:id/delivery', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [prices] = await db.query('SELECT * FROM store_delivery_prices WHERE store_id = ?', [id]);
+    res.json({ success: true, delivery_prices: prices });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 9. UPDATE STORE DELIVERY PRICES
+router.post('/:id/delivery', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, prices } = req.body;
+    
+    // Auth check: Vendor must own this store, or be admin
+    const [users] = await db.query('SELECT role, store_id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return res.status(403).json({ success: false, message: 'Unauthorized.' });
+    }
+    const user = users[0];
+    if (user.role !== 'admin' && String(user.store_id) !== String(id)) {
+      return res.status(403).json({ success: false, message: 'Unauthorized. You do not own this store.' });
+    }
+
+    // prices should be an array: [{ city_name: "Erbil", price: 3000, is_available: true }, ...]
+    if (!Array.isArray(prices)) {
+      return res.status(400).json({ success: false, message: 'Invalid prices data.' });
+    }
+
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      
+      // Delete existing prices for this store
+      await connection.query('DELETE FROM store_delivery_prices WHERE store_id = ?', [id]);
+      
+      // Insert new prices
+      for (const p of prices) {
+        if (!p.city_name || !p.city_name.trim()) continue;
+        const pVal = Number(p.price) || 0;
+        if (pVal < 0) throw new Error("Price cannot be negative.");
+        const isAvail = p.is_available === undefined ? true : p.is_available;
+        
+        await connection.query(`
+          INSERT INTO store_delivery_prices (store_id, city_name, price, is_available)
+          VALUES (?, ?, ?, ?)
+        `, [id, p.city_name.trim(), pVal, isAvail]);
+      }
+
+      await connection.commit();
+      res.json({ success: true, message: 'Delivery prices updated successfully.' });
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error("POST /api/stores/:id/delivery - Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

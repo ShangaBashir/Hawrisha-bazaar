@@ -44,6 +44,24 @@ router.delete('/categories/:id', async (req, res) => {
   }
 });
 
+// Update a category
+router.put('/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Category name is required' });
+  }
+  try {
+    await db.query('UPDATE categories SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Category already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // --- 2. BADGES CRUD ---
 
@@ -81,6 +99,20 @@ router.delete('/badges/:id', async (req, res) => {
     await db.query('DELETE FROM badges WHERE id = ?', [id]);
     res.json({ message: 'Badge deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update a badge
+router.put('/badges/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Badge name is required' });
+  try {
+    await db.query('UPDATE badges SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Badge already exists' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -129,6 +161,25 @@ router.delete('/colors/:id', async (req, res) => {
   }
 });
 
+// Update a color
+router.put('/colors/:id', async (req, res) => {
+  const { id: oldId } = req.params;
+  const { id, class: colorClass, name, family } = req.body;
+  if (!id || !colorClass || !name || !family) {
+    return res.status(400).json({ error: 'Color ID, CSS class, Name, and Family are required' });
+  }
+  try {
+    await db.query(
+      'UPDATE colors SET id = ?, class = ?, name = ?, family = ? WHERE id = ?',
+      [id.trim().toLowerCase(), colorClass.trim(), name.trim(), family.trim().toLowerCase(), oldId]
+    );
+    res.json({ id: id.trim().toLowerCase(), class: colorClass, name: name.trim(), family: family.trim().toLowerCase() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Color ID already exists' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- 4. STYLES CRUD ---
 router.get('/styles', async (req, res) => {
   try {
@@ -161,6 +212,19 @@ router.delete('/styles/:id', async (req, res) => {
     await db.query('DELETE FROM styles WHERE id = ?', [id]);
     res.json({ message: 'Style deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/styles/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Style name is required' });
+  try {
+    await db.query('UPDATE styles SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Style already exists' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -202,6 +266,19 @@ router.delete('/materials/:id', async (req, res) => {
   }
 });
 
+router.put('/materials/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Material name is required' });
+  try {
+    await db.query('UPDATE materials SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Material already exists' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // --- 6. SEASONS CRUD ---
 router.get('/seasons', async (req, res) => {
@@ -235,6 +312,19 @@ router.delete('/seasons/:id', async (req, res) => {
     await db.query('DELETE FROM seasons WHERE id = ?', [id]);
     res.json({ message: 'Season deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/seasons/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Season name is required' });
+  try {
+    await db.query('UPDATE seasons SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Season already exists' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -276,6 +366,19 @@ router.delete('/sizes/:id', async (req, res) => {
   }
 });
 
+router.put('/sizes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Size name is required' });
+  try {
+    await db.query('UPDATE sizes SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Size already exists' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // --- 8. PROMOTIONS CRUD ---
 router.get('/promotions', async (req, res) => {
@@ -309,6 +412,19 @@ router.delete('/promotions/:id', async (req, res) => {
     await db.query('DELETE FROM promotions WHERE id = ?', [id]);
     res.json({ message: 'Promotion deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/promotions/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Promotion name is required' });
+  try {
+    await db.query('UPDATE promotions SET name = ? WHERE id = ?', [name.trim(), id]);
+    res.json({ id, name: name.trim() });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Promotion already exists' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -444,6 +560,34 @@ router.post('/cities', async (req, res) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'City already exists' });
     }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Edit a city
+router.put('/cities/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, latitude, longitude } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'City name is required' });
+  }
+  
+  let lat = parseFloat(latitude);
+  let lng = parseFloat(longitude);
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    const coords = await geocodeCity(name);
+    lat = coords.lat;
+    lng = coords.lng;
+  }
+  
+  try {
+    await db.query(
+      'UPDATE cities SET name = ?, latitude = ?, longitude = ? WHERE id = ?',
+      [name.trim(), lat, lng, id]
+    );
+    res.json({ id: parseInt(id), name: name.trim(), latitude: lat, longitude: lng });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
