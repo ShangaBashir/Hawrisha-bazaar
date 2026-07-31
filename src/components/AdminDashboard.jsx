@@ -6893,10 +6893,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#36454F] font-sans">
-                    Add New Setting Title
+                    Add New Category Title
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Add categories, colors, sizes, badges, materials, seasonal types, or promotions.
+                    Add a new category navigation title pill to your settings bar.
                   </p>
                 </div>
               </div>
@@ -6933,7 +6933,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     handleAddSize(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "promotions") {
                     handleAddPromotion(finalEn, finalKu, finalAr);
-                  } else if (settingTypeInModal === "custom_header_tab") {
+                  } else {
                     const newTabId = `custom_tab_${Date.now()}`;
                     const newTabObj = { id: newTabId, label: finalEn };
                     const updatedCustomTabs = [...customSubTabs, newTabObj];
@@ -6946,33 +6946,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   setCatModalKu("");
                   setCatModalAr("");
                   setIsAddCategoryModalOpen(false);
-                  if (settingTypeInModal !== "custom_header_tab") {
-                    setSettingsSubTab(settingTypeInModal);
-                  }
                 }}
                 className="space-y-5"
               >
-                {/* Setting Category Type Selector */}
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
-                    Setting Type *
-                  </label>
-                  <select
-                    value={settingTypeInModal}
-                    onChange={(e) => setSettingTypeInModal(e.target.value)}
-                    className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
-                  >
-                    <option value="custom_header_tab">+ Add New Sub-Tab Navigation Title Pill</option>
-                    <option value="categories">Product Category Item</option>
-                    <option value="badges">Label / Badge Item</option>
-                    <option value="colors">Color Swatch Item</option>
-                    <option value="styles">Style / Length Item</option>
-                    <option value="materials">Material Item</option>
-                    <option value="seasons">Seasonal Type Item</option>
-                    <option value="sizes">Size Collection Item</option>
-                    <option value="promotions">Active Promotion Item</option>
-                  </select>
-                </div>
 
                 <LangTextInput
                   label="Title Name"
