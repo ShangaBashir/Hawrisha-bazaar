@@ -545,6 +545,20 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       return {};
     }
   });
+  const [deletedTabIds, setDeletedTabIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("hhawrisha_deleted_tab_ids") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [customSubTabs, setCustomSubTabs] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("hhawrisha_custom_sub_tabs") || "[]");
+    } catch {
+      return [];
+    }
+  });
   const [editingHeaderTab, setEditingHeaderTab] = useState(null);
   const [headerTabLabelInput, setHeaderTabLabelInput] = useState("");
 
@@ -2509,16 +2523,35 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleDeleteHeaderTab = (tab) => {
+    const tabTitle = customTabLabels[tab.id] || tab.label;
     setConfirmModal({
       open: true,
-      title: `Reset ${customTabLabels[tab.id] || tab.label} Header?`,
-      message: `Are you sure you want to reset the header label for "${customTabLabels[tab.id] || tab.label}" back to default?`,
+      title: `Delete "${tabTitle}" Header Title?`,
+      message: `Are you sure you want to delete the "${tabTitle}" header title pill? This will remove it from your settings navigation.`,
       onConfirm: async () => {
-        const updated = { ...customTabLabels };
-        delete updated[tab.id];
-        setCustomTabLabels(updated);
-        localStorage.setItem("hhawrisha_custom_tab_labels", JSON.stringify(updated));
-        showToast(`Reset "${tab.label}" header title to default`);
+        const updatedDeleted = [...new Set([...deletedTabIds, tab.id])];
+        setDeletedTabIds(updatedDeleted);
+        localStorage.setItem("hhawrisha_deleted_tab_ids", JSON.stringify(updatedDeleted));
+
+        // Switch to first remaining active tab if deleting currently active tab
+        if (settingsSubTab === tab.id) {
+          const allTabs = [
+            { id: "categories", label: "Categories" },
+            { id: "badges", label: "Badges / Labels" },
+            { id: "colors", label: "Colors" },
+            { id: "styles", label: "Styles / Lengths" },
+            { id: "materials", label: "Materials" },
+            { id: "seasons", label: "Seasonal Types" },
+            { id: "sizes", label: "Size Collections" },
+            { id: "promotions", label: "Promotions" },
+            ...customSubTabs
+          ];
+          const remaining = allTabs.filter((t) => !updatedDeleted.includes(t.id));
+          if (remaining.length > 0) {
+            setSettingsSubTab(remaining[0].id);
+          }
+        }
+        showToast(`Deleted "${tabTitle}" header title successfully!`);
       }
     });
   };
@@ -3862,7 +3895,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   { id: "seasons", label: "Seasonal Types" },
                   { id: "sizes", label: "Size Collections" },
                   { id: "promotions", label: "Promotions" },
-                ].map((tab) => {
+                  ...customSubTabs
+                ]
+                  .filter((tab) => !deletedTabIds.includes(tab.id))
+                  .map((tab) => {
                   const isActive = settingsSubTab === tab.id;
                   const displayLabel = customTabLabels[tab.id] || tab.label;
                   return (
@@ -6758,13 +6794,22 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     handleAddSize(catModalEn, catModalKu, catModalAr);
                   } else if (settingTypeInModal === "promotions") {
                     handleAddPromotion(catModalEn, catModalKu, catModalAr);
+                  } else if (settingTypeInModal === "custom_header_tab") {
+                    const newTabId = `custom_tab_${Date.now()}`;
+                    const newTabObj = { id: newTabId, label: catModalEn.trim() };
+                    const updatedCustomTabs = [...customSubTabs, newTabObj];
+                    setCustomSubTabs(updatedCustomTabs);
+                    localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
+                    showToast(`Added new sub-tab title "${catModalEn.trim()}"!`);
                   }
 
                   setCatModalEn("");
                   setCatModalKu("");
                   setCatModalAr("");
                   setIsAddCategoryModalOpen(false);
-                  setSettingsSubTab(settingTypeInModal);
+                  if (settingTypeInModal !== "custom_header_tab") {
+                    setSettingsSubTab(settingTypeInModal);
+                  }
                 }}
                 className="space-y-5"
               >
@@ -6778,14 +6823,15 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     onChange={(e) => setSettingTypeInModal(e.target.value)}
                     className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
                   >
-                    <option value="categories">Product Category</option>
-                    <option value="badges">Label / Badge</option>
-                    <option value="colors">Color Swatch</option>
-                    <option value="styles">Style / Length</option>
-                    <option value="materials">Material</option>
-                    <option value="seasons">Seasonal Type</option>
-                    <option value="sizes">Size Collection</option>
-                    <option value="promotions">Active Promotion</option>
+                    <option value="custom_header_tab">+ Add New Sub-Tab Navigation Title Pill</option>
+                    <option value="categories">Product Category Item</option>
+                    <option value="badges">Label / Badge Item</option>
+                    <option value="colors">Color Swatch Item</option>
+                    <option value="styles">Style / Length Item</option>
+                    <option value="materials">Material Item</option>
+                    <option value="seasons">Seasonal Type Item</option>
+                    <option value="sizes">Size Collection Item</option>
+                    <option value="promotions">Active Promotion Item</option>
                   </select>
                 </div>
 
