@@ -244,7 +244,8 @@ const LangTextInput = ({
   required = false,
   type = "input",
   error = false,
-  errorMessage = ""
+  errorMessage = "",
+  allowEnglish = false,
 }) => {
   return (
     <div className="space-y-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-200">
@@ -288,7 +289,7 @@ const LangTextInput = ({
               rows="2"
               dir="rtl"
               value={valueKu}
-              onChange={(e) => onChangeKu(e.target.value.replace(/[a-zA-Z]/g, ''))}
+              onChange={(e) => onChangeKu(allowEnglish ? e.target.value : e.target.value.replace(/[a-zA-Z]/g, ''))}
               placeholder=""
               className={`w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black bg-white transition-all resize-none font-medium ${
                 error && !valueKu.trim() ? "border-red-400 bg-red-50/30" : "border-slate-200"
@@ -299,7 +300,7 @@ const LangTextInput = ({
               type="text"
               dir="rtl"
               value={valueKu}
-              onChange={(e) => onChangeKu(e.target.value.replace(/[a-zA-Z]/g, ''))}
+              onChange={(e) => onChangeKu(allowEnglish ? e.target.value : e.target.value.replace(/[a-zA-Z]/g, ''))}
               placeholder=""
               className={`w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black bg-white transition-all font-medium ${
                 error && !valueKu.trim() ? "border-red-400 bg-red-50/30" : "border-slate-200"
@@ -316,7 +317,7 @@ const LangTextInput = ({
               rows="2"
               dir="rtl"
               value={valueAr}
-              onChange={(e) => onChangeAr(e.target.value.replace(/[a-zA-Z]/g, ''))}
+              onChange={(e) => onChangeAr(allowEnglish ? e.target.value : e.target.value.replace(/[a-zA-Z]/g, ''))}
               placeholder=""
               className={`w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black bg-white transition-all resize-none font-medium ${
                 error && !valueAr.trim() ? "border-red-400 bg-red-50/30" : "border-slate-200"
@@ -327,7 +328,7 @@ const LangTextInput = ({
               type="text"
               dir="rtl"
               value={valueAr}
-              onChange={(e) => onChangeAr(e.target.value.replace(/[a-zA-Z]/g, ''))}
+              onChange={(e) => onChangeAr(allowEnglish ? e.target.value : e.target.value.replace(/[a-zA-Z]/g, ''))}
               placeholder=""
               className={`w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black bg-white transition-all font-medium ${
                 error && !valueAr.trim() ? "border-red-400 bg-red-50/30" : "border-slate-200"
@@ -1965,8 +1966,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
   // Settings Actions
   const handleAddCategory = async (catNameEn, catNameKu, catNameAr) => {
-    if (!catNameEn.trim() || !catNameKu.trim() || !catNameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: catNameEn.trim(), ku: catNameKu.trim(), ar: catNameAr.trim() });
+    if (!catNameEn || !catNameEn.trim()) return;
+    const finalEn = catNameEn.trim();
+    const finalKu = (catNameKu && catNameKu.trim()) ? catNameKu.trim() : finalEn;
+    const finalAr = (catNameAr && catNameAr.trim()) ? catNameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/categories", {
         method: "POST",
@@ -2029,8 +2033,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
 
   const handleAddBadge = async (badgeNameEn, badgeNameKu, badgeNameAr) => {
-    if (!badgeNameEn.trim() || !badgeNameKu.trim() || !badgeNameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: badgeNameEn.trim(), ku: badgeNameKu.trim(), ar: badgeNameAr.trim() });
+    if (!badgeNameEn || !badgeNameEn.trim()) return;
+    const finalEn = badgeNameEn.trim();
+    const finalKu = (badgeNameKu && badgeNameKu.trim()) ? badgeNameKu.trim() : finalEn;
+    const finalAr = (badgeNameAr && badgeNameAr.trim()) ? badgeNameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/badges", {
         method: "POST",
@@ -2098,9 +2105,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     class: colClass,
     family: colFamily,
   }) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim() || !colClass.trim() || !colFamily.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
-    const colorId = nameEn.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!nameEn || !nameEn.trim() || !colClass || !colClass.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+    const colorId = finalEn.toLowerCase().replace(/\s+/g, "_");
+    const fam = (colFamily && colFamily.trim()) ? colFamily.trim() : "black";
 
     try {
       const res = await fetch("/api/settings/colors", {
@@ -2110,7 +2121,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           id: colorId,
           class: colClass.trim(),
           name: combinedVal,
-          family: colFamily.trim(),
+          family: fam,
         }),
       });
       if (res.ok) {
@@ -2125,7 +2136,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         id: colorId,
         class: colClass.trim(),
         name: combinedVal,
-        family: colFamily.trim(),
+        family: fam,
       };
       const updated = [...colorsList, newColor];
       setColorsList(updated);
@@ -2165,8 +2176,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleAddStyle = async (nameEn, nameKu, nameAr) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/styles", {
         method: "POST",
@@ -2228,8 +2242,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleAddMaterial = async (nameEn, nameKu, nameAr) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/materials", {
         method: "POST",
@@ -2291,8 +2308,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleAddSeason = async (nameEn, nameKu, nameAr) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/seasons", {
         method: "POST",
@@ -2354,8 +2374,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleAddSize = async (nameEn, nameKu, nameAr) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/sizes", {
         method: "POST",
@@ -2417,8 +2440,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleAddPromotion = async (nameEn, nameKu, nameAr) => {
-    if (!nameEn.trim() || !nameKu.trim() || !nameAr.trim()) return;
-    const combinedVal = JSON.stringify({ en: nameEn.trim(), ku: nameKu.trim(), ar: nameAr.trim() });
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     try {
       const res = await fetch("/api/settings/promotions", {
         method: "POST",
@@ -2503,9 +2529,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const handleSaveEditedSettingItem = async () => {
     if (!editingSettingItem) return;
     const { type, item } = editingSettingItem;
-    if (!editItemEn.trim() || !editItemKu.trim() || !editItemAr.trim()) return;
+    if (!editItemEn.trim()) return;
 
-    const combinedVal = JSON.stringify({ en: editItemEn.trim(), ku: editItemKu.trim(), ar: editItemAr.trim() });
+    const finalEn = editItemEn.trim();
+    const finalKu = editItemKu.trim() || finalEn;
+    const finalAr = editItemAr.trim() || finalEn;
+
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     let body = { name: combinedVal };
 
     if (type === "colors") {
@@ -4071,7 +4101,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newCatEn.trim() || !newCatKu.trim() || !newCatAr.trim()}
+                        disabled={!newCatEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW CATEGORY TITLE
@@ -4151,7 +4181,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newBadgeEn.trim() || !newBadgeKu.trim() || !newBadgeAr.trim()}
+                        disabled={!newBadgeEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW BADGE TITLE
@@ -4270,7 +4300,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         </div>
                         <button
                           type="submit"
-                          disabled={!newColorEn.trim() || !newColorKu.trim() || !newColorAr.trim()}
+                          disabled={!newColorEn.trim()}
                           className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           + ADD NEW COLOR TITLE
@@ -4362,7 +4392,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newStyleEn.trim() || !newStyleKu.trim() || !newStyleAr.trim()}
+                        disabled={!newStyleEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW STYLE TITLE
@@ -4442,7 +4472,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newMatEn.trim() || !newMatKu.trim() || !newMatAr.trim()}
+                        disabled={!newMatEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW MATERIAL TITLE
@@ -4522,7 +4552,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newSeasonEn.trim() || !newSeasonKu.trim() || !newSeasonAr.trim()}
+                        disabled={!newSeasonEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW SEASONAL TYPE TITLE
@@ -4599,10 +4629,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         onChangeKu={setNewSizeKu}
                         onChangeAr={setNewSizeAr}
                         placeholder="Add custom size..."
+                        allowEnglish={true}
                       />
                       <button
                         type="submit"
-                        disabled={!newSizeEn.trim() || !newSizeKu.trim() || !newSizeAr.trim()}
+                        disabled={!newSizeEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW SIZE TITLE
@@ -4682,7 +4713,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       />
                       <button
                         type="submit"
-                        disabled={!newPromoEn.trim() || !newPromoKu.trim() || !newPromoAr.trim()}
+                        disabled={!newPromoEn.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         + ADD NEW PROMOTION TITLE
@@ -6931,52 +6962,28 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   onChangeKu={setCatModalKu}
                   onChangeAr={setCatModalAr}
                   placeholder="Enter Title Name..."
+                  allowEnglish={settingTypeInModal === "sizes"}
                 />
 
                 {settingTypeInModal === "colors" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Color Swatch (Hex / Class) *
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="color"
-                          value={colorClassModal.startsWith('#') ? colorClassModal : '#36454F'}
-                          onChange={(e) => setColorClassModal(e.target.value)}
-                          className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
-                        />
-                        <input
-                          type="text"
-                          value={colorClassModal}
-                          onChange={(e) => setColorClassModal(e.target.value)}
-                          placeholder="#36454F or bg-[#...]"
-                          className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Color Family *
-                      </label>
-                      <select
-                        value={colorFamilyModal}
-                        onChange={(e) => setColorFamilyModal(e.target.value)}
-                        className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 bg-white"
-                      >
-                        <option value="black">Black</option>
-                        <option value="white">White</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="purple">Purple</option>
-                        <option value="pink">Pink</option>
-                        <option value="beige">Beige</option>
-                        <option value="brown">Brown</option>
-                        <option value="grey">Grey</option>
-                      </select>
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Color Swatch (Hex / Class) *
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={colorClassModal.startsWith('#') ? colorClassModal : '#36454F'}
+                        onChange={(e) => setColorClassModal(e.target.value)}
+                        className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={colorClassModal}
+                        onChange={(e) => setColorClassModal(e.target.value)}
+                        placeholder="#36454F or bg-[#...]"
+                        className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
+                      />
                     </div>
                   </div>
                 )}
@@ -6991,7 +6998,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   </button>
                   <button
                     type="submit"
-                    disabled={!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()}
+                    disabled={!catModalEn.trim()}
                     className="py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
                   >
                     Add {settingTypeInModal === "badges" ? "Badge / Label" :
@@ -7066,52 +7073,28 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   onChangeKu={setEditItemKu}
                   onChangeAr={setEditItemAr}
                   placeholder="Enter Item Name..."
+                  allowEnglish={editingSettingItem.type === "sizes"}
                 />
 
                 {editingSettingItem.type === "colors" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Color Swatch (Hex / Class) *
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="color"
-                          value={editItemClass.startsWith('#') ? editItemClass : '#36454F'}
-                          onChange={(e) => setEditItemClass(e.target.value)}
-                          className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
-                        />
-                        <input
-                          type="text"
-                          value={editItemClass}
-                          onChange={(e) => setEditItemClass(e.target.value)}
-                          placeholder="#36454F or bg-[#...]"
-                          className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Color Family *
-                      </label>
-                      <select
-                        value={editItemFamily}
-                        onChange={(e) => setEditItemFamily(e.target.value)}
-                        className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 bg-white"
-                      >
-                        <option value="black">Black</option>
-                        <option value="white">White</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="purple">Purple</option>
-                        <option value="pink">Pink</option>
-                        <option value="beige">Beige</option>
-                        <option value="brown">Brown</option>
-                        <option value="grey">Grey</option>
-                      </select>
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Color Swatch (Hex / Class) *
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={editItemClass.startsWith('#') ? editItemClass : '#36454F'}
+                        onChange={(e) => setEditItemClass(e.target.value)}
+                        className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={editItemClass}
+                        onChange={(e) => setEditItemClass(e.target.value)}
+                        placeholder="#36454F or bg-[#...]"
+                        className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
+                      />
                     </div>
                   </div>
                 )}
@@ -7126,7 +7109,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   </button>
                   <button
                     type="submit"
-                    disabled={!editItemEn.trim() || !editItemKu.trim() || !editItemAr.trim()}
+                    disabled={!editItemEn.trim()}
                     className="py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
                   >
                     Save Changes
