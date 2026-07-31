@@ -531,6 +531,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   // Product Color Variants state
   const [colorVariants, setColorVariants] = useState([]);
 
+  // Category Modal state
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [catModalEn, setCatModalEn] = useState("");
+  const [catModalKu, setCatModalKu] = useState("");
+  const [catModalAr, setCatModalAr] = useState("");
+
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
   const [newCatKu, setNewCatKu] = useState("");
@@ -3702,15 +3708,25 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           {activeTab === "category" && (
             /* Category & Settings Management Panel */
             <div className="space-y-8">
-              <div className="border-b border-slate-200 pb-5">
-                <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic tracking-tight">
-                  Category & Store Settings
-                </h1>
-                <p className="text-xs text-slate-400 mt-1 max-w-lg font-sans">
-                  Manage and configure every aspect of your store — from product
-                  categories and labels to colors, sizes, and seasonal
-                  collections.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic tracking-tight">
+                    Category & Store Settings
+                  </h1>
+                  <p className="text-xs text-slate-400 mt-1 max-w-lg font-sans">
+                    Manage and configure every aspect of your store — from product
+                    categories and labels to colors, sizes, and seasonal
+                    collections.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCategoryModalOpen(true)}
+                  className="px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
+                >
+                  <Plus size={16} />
+                  <span>Add New Category</span>
+                </button>
               </div>
 
               {/* Settings Sub-Tab Navigation */}
@@ -6413,8 +6429,92 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
 
+      {/* Add New Category Title Modal */}
+      <AnimatePresence>
+        {isAddCategoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddCategoryModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full relative shadow-2xl z-10 border border-slate-100/50"
+            >
+              <button
+                onClick={() => setIsAddCategoryModalOpen(false)}
+                className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center space-x-3 mb-6 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-2xl bg-[#B2AC88]/15 text-[#B2AC88] flex items-center justify-center font-bold">
+                  <Plus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#36454F] font-sans">
+                    Add New Category Title
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Define a new product category title in English, Kurdish, and Arabic.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()) return;
+                  handleAddCategory(catModalEn, catModalKu, catModalAr);
+                  setCatModalEn("");
+                  setCatModalKu("");
+                  setCatModalAr("");
+                  setIsAddCategoryModalOpen(false);
+                  setSettingsSubTab("categories");
+                }}
+                className="space-y-5"
+              >
+                <LangTextInput
+                  label="Category Title"
+                  required
+                  valueEn={catModalEn}
+                  valueKu={catModalKu}
+                  valueAr={catModalAr}
+                  onChangeEn={setCatModalEn}
+                  onChangeKu={setCatModalKu}
+                  onChangeAr={setCatModalAr}
+                  placeholder="Enter Category Title..."
+                />
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddCategoryModalOpen(false)}
+                    className="py-3 border border-slate-200 hover:bg-slate-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()}
+                    className="py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+                  >
+                    Add Category
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {/* Payment Status Confirmation Modal */}
