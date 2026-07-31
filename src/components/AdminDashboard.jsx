@@ -1737,17 +1737,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     }
   };
 
+  const effectiveStoreId = selectedDeliveryStoreId || (storeInfo && storeInfo.id) || (stores.length > 0 && stores[0].id);
+
   useEffect(() => {
-    const targetId = selectedDeliveryStoreId || currentStoreId;
-    if (targetId) {
-      fetchStoreDeliveryPrices(targetId);
+    if (effectiveStoreId) {
+      fetchStoreDeliveryPrices(effectiveStoreId);
     }
-  }, [selectedDeliveryStoreId, currentStoreId, activeTab]);
+  }, [selectedDeliveryStoreId, storeInfo, stores, activeTab]);
 
   const handleAddOrUpdateDeliveryCity = async (e) => {
     e.preventDefault();
-    const targetStoreId = selectedDeliveryStoreId || currentStoreId;
-    if (!targetStoreId) {
+    if (!effectiveStoreId) {
       showToast("No store selected for delivery settings.");
       return;
     }
@@ -1788,13 +1788,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     try {
       let res;
       if (editingDeliveryCity) {
-        res = await fetch(`/api/stores/${targetStoreId}/delivery/city/${editingDeliveryCity.id}`, {
+        res = await fetch(`/api/stores/${effectiveStoreId}/delivery/city/${editingDeliveryCity.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ city_name: trilingualName, price: priceNum })
         });
       } else {
-        res = await fetch(`/api/stores/${targetStoreId}/delivery/city`, {
+        res = await fetch(`/api/stores/${effectiveStoreId}/delivery/city`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ city_name: trilingualName, price: priceNum })
@@ -1809,7 +1809,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         setDeliveryCityKu("");
         setDeliveryCityAr("");
         setDeliveryPriceInput("");
-        fetchStoreDeliveryPrices(targetStoreId);
+        fetchStoreDeliveryPrices(effectiveStoreId);
       } else {
         showToast(data.message || "Failed to save delivery city.");
       }
@@ -1842,16 +1842,15 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const confirmDeleteDeliveryCity = async () => {
-    if (!deliveryCityToDelete) return;
-    const targetStoreId = selectedDeliveryStoreId || currentStoreId;
+    if (!deliveryCityToDelete || !effectiveStoreId) return;
     try {
-      const res = await fetch(`/api/stores/${targetStoreId}/delivery/city/${deliveryCityToDelete}`, {
+      const res = await fetch(`/api/stores/${effectiveStoreId}/delivery/city/${deliveryCityToDelete}`, {
         method: "DELETE"
       });
       const data = await res.json();
       if (res.ok && data.success) {
         showToast("Delivery city deleted successfully!");
-        fetchStoreDeliveryPrices(targetStoreId);
+        fetchStoreDeliveryPrices(effectiveStoreId);
       } else {
         showToast(data.message || "Failed to delete delivery city.");
       }
@@ -5192,13 +5191,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {currentUserRole === "admin" && storesList.length > 0 && (
+                  {currentUserRole === "admin" && stores.length > 0 && (
                     <select
-                      value={selectedDeliveryStoreId || currentStoreId || (storesList[0] && storesList[0].id)}
+                      value={selectedDeliveryStoreId || effectiveStoreId || (stores[0] && stores[0].id)}
                       onChange={(e) => setSelectedDeliveryStoreId(Number(e.target.value))}
                       className="px-3 py-2.5 bg-white border border-slate-200 text-xs font-bold text-[#36454F] rounded-xl outline-none shadow-2xs"
                     >
-                      {storesList.map((s) => (
+                      {stores.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>
