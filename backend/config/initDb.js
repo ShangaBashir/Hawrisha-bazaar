@@ -343,6 +343,20 @@ async function initializeDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    // 23. Create store_delivery_prices table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS store_delivery_prices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        store_id INT NOT NULL,
+        city_name TEXT NOT NULL,
+        price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        is_available TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Seed default cancellation limit (15 minutes) if empty
     await db.query(`
       INSERT IGNORE INTO system_settings (setting_key, setting_value) 

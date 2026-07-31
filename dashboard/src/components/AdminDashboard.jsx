@@ -33,6 +33,7 @@ import {
   Check,
   User,
   ChevronDown,
+  Search,
 } from "lucide-react";
 
 const getColorStyle = (colorClass) => {
@@ -508,6 +509,20 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [newCityLng, setNewCityLng] = useState("44.3661");
   const [cityToDelete, setCityToDelete] = useState(null);
   const [editingCity, setEditingCity] = useState(null);
+
+  // Global search state across pages
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Store delivery prices states
+  const [deliveryCities, setDeliveryCities] = useState([]);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [editingDeliveryCity, setEditingDeliveryCity] = useState(null);
+  const [deliveryCityEn, setDeliveryCityEn] = useState("");
+  const [deliveryCityKu, setDeliveryCityKu] = useState("");
+  const [deliveryCityAr, setDeliveryCityAr] = useState("");
+  const [deliveryPriceInput, setDeliveryPriceInput] = useState("");
+  const [deliveryCityToDelete, setDeliveryCityToDelete] = useState(null);
+  const [selectedDeliveryStoreId, setSelectedDeliveryStoreId] = useState(null);
 
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
@@ -1709,6 +1724,145 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     }
   };
 
+  const fetchStoreDeliveryPrices = async (storeId) => {
+    if (!storeId) return;
+    try {
+      const res = await fetch(`/api/stores/${storeId}/delivery`);
+      const data = await res.json();
+      if (data.success) {
+        setDeliveryCities(data.delivery_prices || []);
+      }
+    } catch (err) {
+      console.error("Error fetching store delivery prices:", err);
+    }
+  };
+
+  useEffect(() => {
+    const targetId = selectedDeliveryStoreId || currentStoreId;
+    if (targetId) {
+      fetchStoreDeliveryPrices(targetId);
+    }
+  }, [selectedDeliveryStoreId, currentStoreId, activeTab]);
+
+  const handleAddOrUpdateDeliveryCity = async (e) => {
+    e.preventDefault();
+    const targetStoreId = selectedDeliveryStoreId || currentStoreId;
+    if (!targetStoreId) {
+      showToast("No store selected for delivery settings.");
+      return;
+    }
+    if (!deliveryCityEn.trim() || !deliveryCityKu.trim() || !deliveryCityAr.trim()) {
+      showToast("Please provide the city name in Kurdish, English, and Arabic.");
+      return;
+    }
+    const priceNum = Number(deliveryPriceInput);
+    if (isNaN(priceNum) || priceNum < 0) {
+      showToast("Delivery price must be a valid non-negative number.");
+      return;
+    }
+
+    // Duplicate check
+    const normEn = deliveryCityEn.trim().toLowerCase();
+    const isDuplicate = deliveryCities.some((item) => {
+      if (editingDeliveryCity && item.id === editingDeliveryCity.id) return false;
+      let existingEn = item.city_name;
+      try {
+        if (item.city_name && item.city_name.startsWith("{")) {
+          existingEn = JSON.parse(item.city_name).en || item.city_name;
+        }
+      } catch (err) {}
+      return existingEn.trim().toLowerCase() === normEn;
+    });
+
+    if (isDuplicate) {
+      showToast("This city has already been added to your delivery list.");
+      return;
+    }
+
+    const trilingualName = JSON.stringify({
+      en: deliveryCityEn.trim(),
+      ku: deliveryCityKu.trim(),
+      ar: deliveryCityAr.trim()
+    });
+
+    try {
+      let res;
+      if (editingDeliveryCity) {
+        res = await fetch(`/api/stores/${targetStoreId}/delivery/city/${editingDeliveryCity.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ city_name: trilingualName, price: priceNum })
+        });
+      } else {
+        res = await fetch(`/api/stores/${targetStoreId}/delivery/city`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ city_name: trilingualName, price: priceNum })
+        });
+      }
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(editingDeliveryCity ? "Delivery city updated!" : "Delivery city added!");
+        setIsDeliveryModalOpen(false);
+        setEditingDeliveryCity(null);
+        setDeliveryCityEn("");
+        setDeliveryCityKu("");
+        setDeliveryCityAr("");
+        setDeliveryPriceInput("");
+        fetchStoreDeliveryPrices(targetStoreId);
+      } else {
+        showToast(data.message || "Failed to save delivery city.");
+      }
+    } catch (err) {
+      console.error("Error saving delivery city:", err);
+      showToast("Error saving delivery city.");
+    }
+  };
+
+  const handleStartEditDeliveryCity = (item) => {
+    setEditingDeliveryCity(item);
+    let en = "", ku = "", ar = "";
+    try {
+      if (item.city_name && item.city_name.startsWith("{")) {
+        const p = JSON.parse(item.city_name);
+        en = p.en || "";
+        ku = p.ku || "";
+        ar = p.ar || "";
+      } else {
+        en = item.city_name || "";
+      }
+    } catch (e) {
+      en = item.city_name || "";
+    }
+    setDeliveryCityEn(en);
+    setDeliveryCityKu(ku);
+    setDeliveryCityAr(ar);
+    setDeliveryPriceInput(item.price || 0);
+    setIsDeliveryModalOpen(true);
+  };
+
+  const confirmDeleteDeliveryCity = async () => {
+    if (!deliveryCityToDelete) return;
+    const targetStoreId = selectedDeliveryStoreId || currentStoreId;
+    try {
+      const res = await fetch(`/api/stores/${targetStoreId}/delivery/city/${deliveryCityToDelete}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast("Delivery city deleted successfully!");
+        fetchStoreDeliveryPrices(targetStoreId);
+      } else {
+        showToast(data.message || "Failed to delete delivery city.");
+      }
+    } catch (err) {
+      console.error("Error deleting delivery city:", err);
+      showToast("Error deleting delivery city.");
+    } finally {
+      setDeliveryCityToDelete(null);
+    }
+  };
+
   const handleSaveGeneralSettings = async () => {
     try {
       const res = await fetch("/api/settings/system-settings", {
@@ -2868,6 +3022,19 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     <span>Orders</span>
                   </div>
                 </button>
+                <button
+                  onClick={() => handleSidebarTabClick("delivery")}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all border text-left cursor-pointer ${
+                    activeTab === "delivery"
+                      ? "bg-[#B2AC88]/15 text-[#B2AC88] border-[#B2AC88]/25"
+                      : "text-[#F5F5DC]/55 border-transparent hover:text-[#F5F5DC]/80"
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Truck size={16} />
+                    <span>Delivery</span>
+                  </div>
+                </button>
               </>
             ) : (
               <>
@@ -2895,6 +3062,19 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   <div className="flex items-center space-x-2.5">
                     <ShoppingBag size={16} />
                     <span>Orders</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleSidebarTabClick("delivery")}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all border text-left cursor-pointer ${
+                    activeTab === "delivery"
+                      ? "bg-[#B2AC88]/15 text-[#B2AC88] border-[#B2AC88]/25"
+                      : "text-[#F5F5DC]/55 border-transparent hover:text-[#F5F5DC]/80"
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Truck size={16} />
+                    <span>Delivery</span>
                   </div>
                 </button>
               </>
@@ -2974,6 +3154,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
         {!isModalOpen && !isStoreModalOpen && (
           <div className={`p-6 lg:p-10 w-full mx-auto space-y-8 ${activeTab === "stores" ? "max-w-full px-4 lg:px-8" : "max-w-7xl"}`}>
+            {/* Global Search Bar */}
+            <div className="relative">
+              <div className="relative flex items-center">
+                <Search size={18} className="absolute left-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search across current page items by name, title, ID, category, or city..."
+                  className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/30 focus:border-[#B2AC88] shadow-2xs transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3.5 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {activeTab === "inventory" && (
             <>
               {/* Dashboard Title & Quick Actions */}
@@ -4058,7 +4261,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   {/* Add City Form */}
                   <form onSubmit={handleAddCity} className="space-y-4 mb-6 pb-6 border-b border-slate-100">
                     <div className="flex flex-col gap-4">
-                      <TrilingualInput
+                      <LangTextInput
                         label="City Name *"
                         valueEn={newCityEn}
                         valueKu={newCityKu}
@@ -4971,6 +5174,170 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     )}
                   </>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "delivery" && (
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#36454F] italic tracking-tight">
+                    Delivery Management
+                  </h1>
+                  <p className="text-xs text-slate-400 mt-1 max-w-lg font-sans">
+                    Configure store-specific delivery cities and prices in IQD.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {currentUserRole === "admin" && storesList.length > 0 && (
+                    <select
+                      value={selectedDeliveryStoreId || currentStoreId || (storesList[0] && storesList[0].id)}
+                      onChange={(e) => setSelectedDeliveryStoreId(Number(e.target.value))}
+                      className="px-3 py-2.5 bg-white border border-slate-200 text-xs font-bold text-[#36454F] rounded-xl outline-none shadow-2xs"
+                    >
+                      {storesList.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingDeliveryCity(null);
+                      setDeliveryCityEn("");
+                      setDeliveryCityKu("");
+                      setDeliveryCityAr("");
+                      setDeliveryPriceInput("");
+                      setIsDeliveryModalOpen(true);
+                    }}
+                    className="px-6 py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center space-x-2 shadow-md cursor-pointer transition-colors active:scale-95"
+                  >
+                    <Plus size={15} />
+                    <span>Add City</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Delivery Cities Table */}
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs">
+                {(() => {
+                  const filtered = deliveryCities.filter((item) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase().trim();
+                    let parsed = { en: "", ku: "", ar: "" };
+                    try {
+                      if (item.city_name && item.city_name.startsWith("{")) {
+                        parsed = JSON.parse(item.city_name);
+                      } else {
+                        parsed.en = item.city_name || "";
+                      }
+                    } catch {
+                      parsed.en = item.city_name || "";
+                    }
+                    return (
+                      (parsed.en || "").toLowerCase().includes(q) ||
+                      (parsed.ku || "").toLowerCase().includes(q) ||
+                      (parsed.ar || "").toLowerCase().includes(q) ||
+                      String(item.price).includes(q)
+                    );
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-16 text-center">
+                        <Truck size={40} className="mx-auto text-slate-300 mb-3" />
+                        <h4 className="text-base font-bold text-slate-600">
+                          {searchQuery ? "No matching delivery cities" : "No store delivery cities configured"}
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                          {searchQuery
+                            ? `No cities matched "${searchQuery}".`
+                            : "Click 'Add City' above to set custom delivery prices for this store."}
+                        </p>
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery("")}
+                            className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                          >
+                            Clear Search
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-sans border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                            <th className="py-3.5 px-4">City Name</th>
+                            <th className="py-3.5 px-4">Kurdish Name</th>
+                            <th className="py-3.5 px-4">English Name</th>
+                            <th className="py-3.5 px-4">Arabic Name</th>
+                            <th className="py-3.5 px-4">Delivery Price</th>
+                            <th className="py-3.5 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filtered.map((item) => {
+                            let parsed = { en: "", ku: "", ar: "" };
+                            try {
+                              if (item.city_name && item.city_name.startsWith("{")) {
+                                parsed = JSON.parse(item.city_name);
+                              } else {
+                                parsed.en = item.city_name || "";
+                              }
+                            } catch {
+                              parsed.en = item.city_name || "";
+                            }
+                            return (
+                              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-3.5 px-4 font-bold text-[#36454F]">
+                                  {parsed.en || parsed.ku || parsed.ar}
+                                </td>
+                                <td className="py-3.5 px-4 font-medium text-slate-600">
+                                  {parsed.ku || "-"}
+                                </td>
+                                <td className="py-3.5 px-4 font-medium text-slate-600">
+                                  {parsed.en || "-"}
+                                </td>
+                                <td className="py-3.5 px-4 font-medium text-slate-600">
+                                  {parsed.ar || "-"}
+                                </td>
+                                <td className="py-3.5 px-4 font-bold text-[#B2AC88]">
+                                  {Number(item.price).toLocaleString()} IQD
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => handleStartEditDeliveryCity(item)}
+                                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Edit City"
+                                    >
+                                      <Edit2 size={15} />
+                                    </button>
+                                    <button
+                                      onClick={() => setDeliveryCityToDelete(item.id)}
+                                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Delete City"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -6562,6 +6929,106 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delivery City Add / Edit Modal */}
+      {isDeliveryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
+                <Truck size={18} className="text-[#B2AC88]" />
+                <span>{editingDeliveryCity ? "Edit Delivery City" : "Add Delivery City"}</span>
+              </h3>
+              <button
+                onClick={() => setIsDeliveryModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrUpdateDeliveryCity} className="space-y-4">
+              <LangTextInput
+                label="City Name *"
+                valueEn={deliveryCityEn}
+                valueKu={deliveryCityKu}
+                valueAr={deliveryCityAr}
+                onChangeEn={setDeliveryCityEn}
+                onChangeKu={setDeliveryCityKu}
+                onChangeAr={setDeliveryCityAr}
+              />
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Delivery Price (IQD) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={deliveryPriceInput}
+                    onChange={(e) => setDeliveryPriceInput(e.target.value)}
+                    placeholder="e.g. 3000"
+                    className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
+                  />
+                  <span className="absolute right-4 top-2.5 text-xs font-bold text-slate-400 pointer-events-none">
+                    IQD
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsDeliveryModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#36454F] hover:bg-[#36454F]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer"
+                >
+                  {editingDeliveryCity ? "Update City" : "Save City"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Delivery City Confirmation Modal */}
+      {deliveryCityToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl text-center space-y-4">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-[#36454F]">Delete Delivery City?</h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Are you sure you want to remove this delivery city? Customers will no longer see custom pricing for this zone.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setDeliveryCityToDelete(null)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteDeliveryCity}
+                className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Order Details Modal */}
       <AnimatePresence>
         {expandedOrder && (

@@ -382,4 +382,92 @@ router.post('/:id/delivery', async (req, res) => {
   }
 });
 
+// 10. ADD SINGLE STORE DELIVERY CITY
+router.post('/:id/delivery/city', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { city_name, price } = req.body;
+    if (!city_name) {
+      return res.status(400).json({ success: false, message: 'City name is required.' });
+    }
+    const numPrice = Number(price);
+    if (isNaN(numPrice) || numPrice < 0) {
+      return res.status(400).json({ success: false, message: 'Delivery price must be a non-negative number.' });
+    }
+
+    const [existing] = await db.query('SELECT * FROM store_delivery_prices WHERE store_id = ?', [id]);
+    const targetName = typeof city_name === 'string' ? city_name : JSON.stringify(city_name);
+    
+    let targetEn = targetName;
+    try {
+      if (targetName.startsWith('{')) {
+        targetEn = JSON.parse(targetName).en || targetName;
+      }
+    } catch (e) {}
+
+    const isDuplicate = existing.some(item => {
+      let existingEn = item.city_name;
+      try {
+        if (item.city_name.startsWith('{')) {
+          existingEn = JSON.parse(item.city_name).en || item.city_name;
+        }
+      } catch (e) {}
+      return existingEn.toLowerCase().trim() === targetEn.toLowerCase().trim();
+    });
+
+    if (isDuplicate) {
+      return res.status(400).json({ success: false, message: 'This city has already been added to your delivery list.' });
+    }
+
+    const [result] = await db.query(
+      'INSERT INTO store_delivery_prices (store_id, city_name, price, is_available) VALUES (?, ?, ?, 1)',
+      [id, targetName, numPrice]
+    );
+
+    const [inserted] = await db.query('SELECT * FROM store_delivery_prices WHERE id = ?', [result.insertId]);
+    res.json({ success: true, message: 'City added successfully.', item: inserted[0] });
+  } catch (error) {
+    console.error("POST /api/stores/:id/delivery/city - Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 11. UPDATE SINGLE STORE DELIVERY CITY
+router.put('/:id/delivery/city/:cityId', async (req, res) => {
+  try {
+    const { id, cityId } = req.params;
+    const { city_name, price } = req.body;
+
+    const numPrice = Number(price);
+    if (isNaN(numPrice) || numPrice < 0) {
+      return res.status(400).json({ success: false, message: 'Delivery price must be a non-negative number.' });
+    }
+
+    const targetName = typeof city_name === 'string' ? city_name : JSON.stringify(city_name);
+
+    await db.query(
+      'UPDATE store_delivery_prices SET city_name = ?, price = ? WHERE id = ? AND store_id = ?',
+      [targetName, numPrice, cityId, id]
+    );
+
+    const [updated] = await db.query('SELECT * FROM store_delivery_prices WHERE id = ?', [cityId]);
+    res.json({ success: true, message: 'City updated successfully.', item: updated[0] });
+  } catch (error) {
+    console.error("PUT /api/stores/:id/delivery/city/:cityId - Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 12. DELETE SINGLE STORE DELIVERY CITY
+router.delete('/:id/delivery/city/:cityId', async (req, res) => {
+  try {
+    const { id, cityId } = req.params;
+    await db.query('DELETE FROM store_delivery_prices WHERE id = ? AND store_id = ?', [cityId, id]);
+    res.json({ success: true, message: 'City deleted successfully.' });
+  } catch (error) {
+    console.error("DELETE /api/stores/:id/delivery/city/:cityId - Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
