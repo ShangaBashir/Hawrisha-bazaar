@@ -3997,22 +3997,16 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 <button
                   type="button"
                   onClick={() => {
-                    setSettingTypeInModal(settingsSubTab || "categories");
+                    setSettingTypeInModal("custom_header_tab");
+                    setCatModalEn("");
+                    setCatModalKu("");
+                    setCatModalAr("");
                     setIsAddCategoryModalOpen(true);
                   }}
                   className="px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
                 >
                   <Plus size={16} />
-                  <span>
-                    {settingsSubTab === "badges" ? "Add New Badge / Label" :
-                     settingsSubTab === "colors" ? "Add New Color Swatch" :
-                     settingsSubTab === "styles" ? "Add New Style / Length" :
-                     settingsSubTab === "materials" ? "Add New Material" :
-                     settingsSubTab === "seasons" ? "Add New Seasonal Type" :
-                     settingsSubTab === "sizes" ? "Add New Size Collection" :
-                     settingsSubTab === "promotions" ? "Add New Promotion" :
-                     "Add New Category"}
-                  </span>
+                  <span>ADD CATEGORY</span>
                 </button>
               </div>
 
@@ -6901,39 +6895,42 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!catModalEn.trim() || !catModalKu.trim() || !catModalAr.trim()) return;
+                  if (!catModalEn.trim()) return;
+                  const finalEn = catModalEn.trim();
+                  const finalKu = (catModalKu && catModalKu.trim()) ? catModalKu.trim() : finalEn;
+                  const finalAr = (catModalAr && catModalAr.trim()) ? catModalAr.trim() : finalEn;
 
                   if (settingTypeInModal === "categories") {
-                    handleAddCategory(catModalEn, catModalKu, catModalAr);
+                    handleAddCategory(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "badges") {
-                    handleAddBadge(catModalEn, catModalKu, catModalAr);
+                    handleAddBadge(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "colors") {
-                    if (!colorClassModal.trim() || !colorFamilyModal.trim()) return;
+                    if (!colorClassModal.trim()) return;
                     const finalCls = colorClassModal.startsWith('#') ? `bg-[${colorClassModal}]` : colorClassModal;
                     handleAddColor({
-                      nameEn: catModalEn,
-                      nameKu: catModalKu,
-                      nameAr: catModalAr,
+                      nameEn: finalEn,
+                      nameKu: finalKu,
+                      nameAr: finalAr,
                       class: finalCls,
-                      family: colorFamilyModal
+                      family: colorFamilyModal || "black"
                     });
                   } else if (settingTypeInModal === "styles") {
-                    handleAddStyle(catModalEn, catModalKu, catModalAr);
+                    handleAddStyle(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "materials") {
-                    handleAddMaterial(catModalEn, catModalKu, catModalAr);
+                    handleAddMaterial(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "seasons") {
-                    handleAddSeason(catModalEn, catModalKu, catModalAr);
+                    handleAddSeason(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "sizes") {
-                    handleAddSize(catModalEn, catModalKu, catModalAr);
+                    handleAddSize(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "promotions") {
-                    handleAddPromotion(catModalEn, catModalKu, catModalAr);
+                    handleAddPromotion(finalEn, finalKu, finalAr);
                   } else if (settingTypeInModal === "custom_header_tab") {
                     const newTabId = `custom_tab_${Date.now()}`;
-                    const newTabObj = { id: newTabId, label: catModalEn.trim() };
+                    const newTabObj = { id: newTabId, label: finalEn };
                     const updatedCustomTabs = [...customSubTabs, newTabObj];
                     setCustomSubTabs(updatedCustomTabs);
                     localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
-                    showToast(`Added new sub-tab title "${catModalEn.trim()}"!`);
+                    showToast(`Added new sub-tab title "${finalEn}"!`);
                   }
 
                   setCatModalEn("");
