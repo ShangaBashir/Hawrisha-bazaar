@@ -540,6 +540,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [colorClassModal, setColorClassModal] = useState("#36454F");
   const [colorFamilyModal, setColorFamilyModal] = useState("black");
 
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null
+  });
+
   // Header Tab Customization state
   const [customTabLabels, setCustomTabLabels] = useState(() => {
     try {
@@ -2512,10 +2520,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   };
 
   const handleDeleteHeaderTab = (tab) => {
-    confirmModal({
+    setConfirmModal({
+      open: true,
       title: `Reset ${customTabLabels[tab.id] || tab.label} Header?`,
       message: `Are you sure you want to reset the header label for "${customTabLabels[tab.id] || tab.label}" back to default?`,
-      onConfirm: () => {
+      onConfirm: async () => {
         const updated = { ...customTabLabels };
         delete updated[tab.id];
         setCustomTabLabels(updated);
@@ -3954,7 +3963,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newCatEn.trim() || !newCatKu.trim() || !newCatAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Category
+                        + ADD NEW CATEGORY TITLE
                       </button>
                     </form>
 
@@ -4034,7 +4043,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newBadgeEn.trim() || !newBadgeKu.trim() || !newBadgeAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Badge
+                        + ADD NEW BADGE TITLE
                       </button>
                     </form>
 
@@ -4153,7 +4162,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           disabled={!newColorEn.trim() || !newColorKu.trim() || !newColorAr.trim()}
                           className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Add Color Swatch
+                          + ADD NEW COLOR TITLE
                         </button>
                       </form>
                       <div className="w-full border-b border-slate-100 mb-6"></div>
@@ -4245,7 +4254,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newStyleEn.trim() || !newStyleKu.trim() || !newStyleAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Style Option
+                        + ADD NEW STYLE TITLE
                       </button>
                     </form>
 
@@ -4325,7 +4334,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newMatEn.trim() || !newMatKu.trim() || !newMatAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Material
+                        + ADD NEW MATERIAL TITLE
                       </button>
                     </form>
 
@@ -4405,7 +4414,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newSeasonEn.trim() || !newSeasonKu.trim() || !newSeasonAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Seasonal Type
+                        + ADD NEW SEASONAL TYPE TITLE
                       </button>
                     </form>
 
@@ -4485,7 +4494,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newSizeEn.trim() || !newSizeKu.trim() || !newSizeAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Size
+                        + ADD NEW SIZE TITLE
                       </button>
                     </form>
 
@@ -4565,7 +4574,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         disabled={!newPromoEn.trim() || !newPromoKu.trim() || !newPromoAr.trim()}
                         className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add Promotion Campaign
+                        + ADD NEW PROMOTION TITLE
                       </button>
                     </form>
 
@@ -7085,6 +7094,59 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+      {/* Universal Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmModal.open && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl z-10 border border-slate-100/50 text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 mx-auto flex items-center justify-center font-bold mb-4 shadow-inner">
+                <Trash2 size={26} />
+              </div>
+
+              <h3 className="text-lg font-bold text-[#36454F] font-sans mb-2">
+                {confirmModal.title || "Confirm Deletion"}
+              </h3>
+              <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+                {confirmModal.message || "Are you sure you want to proceed? This action cannot be undone."}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
+                  className="py-3 border border-slate-200 hover:bg-slate-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (confirmModal.onConfirm) {
+                      const fn = confirmModal.onConfirm;
+                      setConfirmModal({ open: false, title: "", message: "", onConfirm: null });
+                      await fn();
+                    }
+                  }}
+                  className="py-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-sm active:scale-98"
+                >
+                  Yes, Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
