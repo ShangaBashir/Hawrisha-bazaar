@@ -3165,7 +3165,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search across current page items by name, title, ID, category, or city..."
+                  placeholder="Search..."
                   className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/30 focus:border-[#B2AC88] shadow-2xs transition-all"
                 />
                 {searchQuery && (
