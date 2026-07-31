@@ -2541,8 +2541,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     if (!editItemEn.trim()) return;
 
     const finalEn = editItemEn.trim();
-    const finalKu = editItemKu.trim() || finalEn;
-    const finalAr = editItemAr.trim() || finalEn;
+    const finalKu = editItemKu.trim();
+    const finalAr = editItemAr.trim();
 
     const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
     let body = { name: combinedVal };
@@ -2559,7 +2559,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     }
 
     const updateLocalArray = (arr, storageKey) => {
-      const updated = arr.map((x) => (x.id === item.id ? { ...x, ...body } : x));
+      const updated = arr.map((x) => (String(x.id) === String(item.id) ? { ...x, ...body } : x));
       localStorage.setItem(storageKey, JSON.stringify(updated));
       return updated;
     };
@@ -7084,10 +7084,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       Color Swatch (Hex / Class) *
                     </label>
                     <div className="flex items-center space-x-2">
-                      <div
-                        className="w-9 h-9 rounded-xl border border-slate-200 shrink-0 shadow-xs"
-                        style={{ backgroundColor: extractHexColor(editItemClass) }}
-                      />
                       <input
                         type="color"
                         value={extractHexColor(editItemClass)}
