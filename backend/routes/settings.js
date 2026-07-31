@@ -165,15 +165,18 @@ router.delete('/colors/:id', async (req, res) => {
 router.put('/colors/:id', async (req, res) => {
   const { id: oldId } = req.params;
   const { id, class: colorClass, name, family } = req.body;
-  if (!id || !colorClass || !name || !family) {
-    return res.status(400).json({ error: 'Color ID, CSS class, Name, and Family are required' });
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Color Name is required' });
   }
+  const targetId = (id || oldId).trim().toLowerCase();
+  const targetClass = colorClass ? colorClass.trim() : 'bg-[#000000]';
+  const targetFamily = (family && family.trim()) ? family.trim().toLowerCase() : 'black';
   try {
     await db.query(
       'UPDATE colors SET id = ?, class = ?, name = ?, family = ? WHERE id = ?',
-      [id.trim().toLowerCase(), colorClass.trim(), name.trim(), family.trim().toLowerCase(), oldId]
+      [targetId, targetClass, name.trim(), targetFamily, oldId]
     );
-    res.json({ id: id.trim().toLowerCase(), class: colorClass, name: name.trim(), family: family.trim().toLowerCase() });
+    res.json({ id: targetId, class: targetClass, name: name.trim(), family: targetFamily });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Color ID already exists' });
     res.status(500).json({ error: error.message });

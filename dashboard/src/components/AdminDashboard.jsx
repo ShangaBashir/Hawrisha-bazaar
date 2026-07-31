@@ -2540,13 +2540,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
     if (type === "colors") {
       const finalCls = editItemClass.startsWith("#") ? `bg-[${editItemClass}]` : editItemClass;
+      const fam = (item.family || editItemFamily || "black").toLowerCase();
       body = {
         id: item.id,
         class: finalCls,
         name: combinedVal,
-        family: editItemFamily.trim().toLowerCase()
+        family: fam,
       };
     }
+
+    const updateLocalArray = (arr, storageKey) => {
+      const updated = arr.map((x) => (x.id === item.id ? { ...x, ...body } : x));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+      return updated;
+    };
+
+    if (type === "categories") setCategories((prev) => updateLocalArray(prev, "hhawrisha_categories"));
+    else if (type === "badges") setBadges((prev) => updateLocalArray(prev, "hhawrisha_badges"));
+    else if (type === "colors") setColorsList((prev) => updateLocalArray(prev, "hhawrisha_colors"));
+    else if (type === "styles") setStyles((prev) => updateLocalArray(prev, "hhawrisha_styles"));
+    else if (type === "materials") setMaterials((prev) => updateLocalArray(prev, "hhawrisha_materials"));
+    else if (type === "seasons") setSeasons((prev) => updateLocalArray(prev, "hhawrisha_seasons"));
+    else if (type === "sizes") setSizes((prev) => updateLocalArray(prev, "hhawrisha_sizes"));
+    else if (type === "promotions") setPromotions((prev) => updateLocalArray(prev, "hhawrisha_promotions"));
 
     try {
       const res = await fetch(`/api/settings/${type}/${item.id}`, {
