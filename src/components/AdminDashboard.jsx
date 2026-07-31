@@ -579,6 +579,16 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       return [];
     }
   });
+  const [customTabItems, setCustomTabItems] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("hhawrisha_custom_sub_tab_items") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [newCustomItemEn, setNewCustomItemEn] = useState("");
+  const [newCustomItemKu, setNewCustomItemKu] = useState("");
+  const [newCustomItemAr, setNewCustomItemAr] = useState("");
   const [editingHeaderTab, setEditingHeaderTab] = useState(null);
   const [headerTabLabelInput, setHeaderTabLabelInput] = useState("");
 
@@ -2522,6 +2532,37 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         }
       }
     });
+  const handleAddCustomTabItem = (subTabId, nameEn, nameKu, nameAr) => {
+    if (!nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+    const newItem = { id: `custom_item_${Date.now()}`, name: combinedVal };
+
+    const currentList = customTabItems[subTabId] || [];
+    const updatedList = [newItem, ...currentList];
+    const updatedAll = { ...customTabItems, [subTabId]: updatedList };
+
+    setCustomTabItems(updatedAll);
+    localStorage.setItem("hhawrisha_custom_sub_tab_items", JSON.stringify(updatedAll));
+    showToast("Item added successfully!");
+  };
+
+  const handleDeleteCustomTabItem = (subTabId, item) => {
+    setConfirmModal({
+      open: true,
+      message: `Are you sure you want to delete "${getEnglishName(item.name)}"?`,
+      onConfirm: () => {
+        const currentList = customTabItems[subTabId] || [];
+        const updatedList = currentList.filter((x) => String(x.id) !== String(item.id));
+        const updatedAll = { ...customTabItems, [subTabId]: updatedList };
+        setCustomTabItems(updatedAll);
+        localStorage.setItem("hhawrisha_custom_sub_tab_items", JSON.stringify(updatedAll));
+        showToast("Item deleted successfully");
+        setConfirmModal({ open: false, message: '', onConfirm: null });
+      },
+    });
   };
 
   // Handle Edit Setting Items
@@ -2563,6 +2604,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       localStorage.setItem(storageKey, JSON.stringify(updated));
       return updated;
     };
+
+    if (type === "custom_tab_item") {
+      const currentList = customTabItems[settingsSubTab] || [];
+      const updatedList = currentList.map((x) => (String(x.id) === String(item.id) ? { ...x, ...body } : x));
+      const updatedAll = { ...customTabItems, [settingsSubTab]: updatedList };
+      setCustomTabItems(updatedAll);
+      localStorage.setItem("hhawrisha_custom_sub_tab_items", JSON.stringify(updatedAll));
+      showToast("Setting item updated successfully!");
+      setEditingSettingItem(null);
+      return;
+    }
 
     if (type === "categories") setCategories((prev) => updateLocalArray(prev, "hhawrisha_categories"));
     else if (type === "badges") setBadges((prev) => updateLocalArray(prev, "hhawrisha_badges"));
@@ -4781,6 +4833,97 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     {renderSettingsPagination(filteredPromotions.length)}
                   </div>
                 )}
+
+                {/* Custom Created Sub-Tab Panel */}
+                {customSubTabs.some(t => t.id === settingsSubTab) && (() => {
+                  const currentTab = customSubTabs.find(t => t.id === settingsSubTab);
+                  const tabLabel = currentTab ? getEnglishName(currentTab.label) : "Category";
+                  const items = (customTabItems[settingsSubTab] || []);
+                  const filteredItems = items.filter(item => {
+                    if (!settingsSearch.trim()) return true;
+                    const name = getEnglishName(item.name).toLowerCase();
+                    return name.includes(settingsSearch.toLowerCase());
+                  });
+
+                  return (
+                    <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs max-w-4xl mx-auto">
+                      <h3 className="text-md font-bold text-[#36454F] mb-4 uppercase tracking-wider">
+                        {tabLabel} Collections
+                      </h3>
+
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleAddCustomTabItem(settingsSubTab, newCustomItemEn, newCustomItemKu, newCustomItemAr);
+                          setNewCustomItemEn("");
+                          setNewCustomItemKu("");
+                          setNewCustomItemAr("");
+                        }}
+                        className="space-y-4 mb-6 pb-6 border-b border-slate-100"
+                      >
+                        <LangTextInput
+                          label={`New ${tabLabel} Collection`}
+                          required
+                          valueEn={newCustomItemEn}
+                          valueKu={newCustomItemKu}
+                          valueAr={newCustomItemAr}
+                          onChangeEn={setNewCustomItemEn}
+                          onChangeKu={setNewCustomItemKu}
+                          onChangeAr={setNewCustomItemAr}
+                          placeholder={`Add custom ${tabLabel.toLowerCase()} item...`}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newCustomItemEn.trim()}
+                          className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          + ADD NEW {tabLabel.toUpperCase()} TITLE
+                        </button>
+                      </form>
+
+                      <div className="divide-y divide-slate-100">
+                        {filteredItems.length === 0 ? (
+                          <p className="text-xs text-slate-400 py-6 text-center italic font-medium">
+                            No items in {tabLabel} collection yet. Add your first item above!
+                          </p>
+                        ) : (
+                          filteredItems.slice((settingsPage - 1) * 10, settingsPage * 10).map((item) => {
+                            const displayName = getEnglishName(item.name);
+                            return (
+                              <div
+                                key={item.id}
+                                className="py-2.5 px-3 hover:bg-slate-100 rounded-xl flex items-center justify-between group transition-colors"
+                              >
+                                <span className="text-sm font-semibold text-slate-700">
+                                  {displayName}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEditSettingItem("custom_tab_item", item)}
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                    title={`Edit ${tabLabel} Item`}
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCustomTabItem(settingsSubTab, item)}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    title={`Delete ${tabLabel} Item`}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                      {renderSettingsPagination(filteredItems.length)}
+                    </div>
+                  );
+                })()}
 
               </div>
             </div>
