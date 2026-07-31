@@ -540,6 +540,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [colorClassModal, setColorClassModal] = useState("#36454F");
   const [colorFamilyModal, setColorFamilyModal] = useState("black");
 
+  // Header Tab Customization state
+  const [customTabLabels, setCustomTabLabels] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("hhawrisha_custom_tab_labels") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [editingHeaderTab, setEditingHeaderTab] = useState(null);
+  const [headerTabLabelInput, setHeaderTabLabelInput] = useState("");
+
   // Editing Setting Item state
   const [editingSettingItem, setEditingSettingItem] = useState(null);
   const [editItemEn, setEditItemEn] = useState("");
@@ -2477,9 +2488,39 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         showToast(error.error || "Failed to update setting item");
       }
     } catch (e) {
-      showToast("Updated (offline mode)");
-    }
-    setEditingSettingItem(null);
+      setEditingSettingItem(null);
+  };
+
+  // Handle Header Tab Customization (Edit & Delete)
+  const handleStartEditHeaderTab = (tab) => {
+    setHeaderTabLabelInput(customTabLabels[tab.id] || tab.label);
+    setEditingHeaderTab(tab);
+  };
+
+  const handleSaveHeaderTabLabel = () => {
+    if (!editingHeaderTab || !headerTabLabelInput.trim()) return;
+    const updated = {
+      ...customTabLabels,
+      [editingHeaderTab.id]: headerTabLabelInput.trim()
+    };
+    setCustomTabLabels(updated);
+    localStorage.setItem("hhawrisha_custom_tab_labels", JSON.stringify(updated));
+    showToast(`Updated "${editingHeaderTab.label}" header title!`);
+    setEditingHeaderTab(null);
+  };
+
+  const handleDeleteHeaderTab = (tab) => {
+    confirmModal({
+      title: `Reset ${customTabLabels[tab.id] || tab.label} Header?`,
+      message: `Are you sure you want to reset the header label for "${customTabLabels[tab.id] || tab.label}" back to default?`,
+      onConfirm: () => {
+        const updated = { ...customTabLabels };
+        delete updated[tab.id];
+        setCustomTabLabels(updated);
+        localStorage.setItem("hhawrisha_custom_tab_labels", JSON.stringify(updated));
+        showToast(`Reset "${tab.label}" header title to default`);
+      }
+    });
   };
 
   // Handle open add modal
@@ -3821,19 +3862,60 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   { id: "seasons", label: "Seasonal Types" },
                   { id: "sizes", label: "Size Collections" },
                   { id: "promotions", label: "Promotions" },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSettingsSubTab(tab.id)}
-                    className={`px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all border cursor-pointer ${
-                      settingsSubTab === tab.id
-                        ? "bg-[#36454F] text-[#F5F5DC] border-[#36454F] shadow-sm"
-                        : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                ].map((tab) => {
+                  const isActive = settingsSubTab === tab.id;
+                  const displayLabel = customTabLabels[tab.id] || tab.label;
+                  return (
+                    <div
+                      key={tab.id}
+                      onClick={() => setSettingsSubTab(tab.id)}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all border cursor-pointer select-none ${
+                        isActive
+                          ? "bg-[#36454F] text-[#F5F5DC] border-[#36454F] shadow-sm"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-800"
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        {displayLabel}
+                      </span>
+
+                      <div className={`flex items-center gap-0.5 ml-1 border-l pl-1.5 ${
+                        isActive ? "border-slate-500/50" : "border-slate-200"
+                      }`}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEditHeaderTab(tab);
+                          }}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            isActive
+                              ? "text-slate-300 hover:text-white hover:bg-slate-700"
+                              : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                          }`}
+                          title={`Edit ${displayLabel} Header Title`}
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteHeaderTab(tab);
+                          }}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            isActive
+                              ? "text-slate-300 hover:text-red-300 hover:bg-red-900/40"
+                              : "text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          }`}
+                          title={`Reset ${displayLabel} Header Title`}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="w-full">
@@ -6916,6 +6998,88 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     className="py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
                   >
                     Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Sub-Tab Header Modal */}
+      <AnimatePresence>
+        {editingHeaderTab && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingHeaderTab(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl z-10 border border-slate-100/50"
+            >
+              <button
+                onClick={() => setEditingHeaderTab(null)}
+                className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center space-x-3 mb-6 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-2xl bg-[#36454F]/10 text-[#36454F] flex items-center justify-center font-bold">
+                  <Edit2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#36454F] font-sans">
+                    Edit Sub-Tab Header
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Customize the title for this category sub-tab header pill.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveHeaderTabLabel();
+                }}
+                className="space-y-5"
+              >
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">
+                    Header Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={headerTabLabelInput}
+                    onChange={(e) => setHeaderTabLabelInput(e.target.value)}
+                    placeholder="Header Title Label..."
+                    className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#36454F]/20 focus:border-[#36454F]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingHeaderTab(null)}
+                    className="py-3 border border-slate-200 hover:bg-slate-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!headerTabLabelInput.trim()}
+                    className="py-3 bg-[#36454F] hover:bg-[#36454F]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+                  >
+                    Save Title
                   </button>
                 </div>
               </form>
