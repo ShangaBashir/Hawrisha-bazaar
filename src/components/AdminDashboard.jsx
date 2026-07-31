@@ -7092,10 +7092,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   >
                     Save Title
                   </button>
-                </div>
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
       {/* Universal Confirm Delete Modal */}
       <AnimatePresence>
         {confirmModal.open && (
