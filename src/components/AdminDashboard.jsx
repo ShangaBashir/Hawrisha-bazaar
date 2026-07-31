@@ -4301,7 +4301,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   {/* Cities List Table with Newest First & Pagination */}
                   <div className="overflow-x-auto space-y-4">
                     {(() => {
-                      const itemsPerPage = 5;
+                      const itemsPerPage = 10;
                       const sorted = [...citiesList].sort((a, b) => b.id - a.id);
                       const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
                       const safePage = Math.min(citiesPage, totalPages);
@@ -4352,31 +4352,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             </tbody>
                           </table>
 
-                          {totalPages > 1 && (
-                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-                              <span className="font-semibold text-slate-400">
-                                Page {safePage} of {totalPages} ({sorted.length} total)
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  disabled={safePage === 1}
-                                  onClick={() => setCitiesPage((prev) => Math.max(1, prev - 1))}
-                                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                                >
-                                  Previous
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={safePage === totalPages}
-                                  onClick={() => setCitiesPage((prev) => Math.min(totalPages, prev + 1))}
-                                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                                >
-                                  Next
-                                </button>
-                              </div>
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                            <span className="font-semibold text-slate-400">
+                              Page {safePage} of {totalPages} ({sorted.length} total)
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                disabled={safePage === 1}
+                                onClick={() => setCitiesPage((prev) => Math.max(1, prev - 1))}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              >
+                                Previous
+                              </button>
+                              <button
+                                type="button"
+                                disabled={safePage === totalPages}
+                                onClick={() => setCitiesPage((prev) => Math.min(totalPages, prev + 1))}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              >
+                                Next
+                              </button>
                             </div>
-                          )}
+                          </div>
                         </>
                       );
                     })()}
@@ -5289,7 +5287,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     );
                   });
 
-                  const itemsPerPage = 5;
+                  const itemsPerPage = 10;
                   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
                   const safePage = Math.min(deliveryPage, totalPages);
                   const startIdx = (safePage - 1) * itemsPerPage;
@@ -5387,31 +5385,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         </table>
                       </div>
 
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
-                          <span className="font-semibold text-slate-400">
-                            Page {safePage} of {totalPages} ({filtered.length} total)
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={safePage === 1}
-                              onClick={() => setDeliveryPage((prev) => Math.max(1, prev - 1))}
-                              className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                            >
-                              Previous
-                            </button>
-                            <button
-                              type="button"
-                              disabled={safePage === totalPages}
-                              onClick={() => setDeliveryPage((prev) => Math.min(totalPages, prev + 1))}
-                              className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                            >
-                              Next
-                            </button>
-                          </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
+                        <span className="font-semibold text-slate-400">
+                          Page {safePage} of {totalPages} ({filtered.length} total)
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={safePage === 1}
+                            onClick={() => setDeliveryPage((prev) => Math.max(1, prev - 1))}
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            Previous
+                          </button>
+                          <button
+                            type="button"
+                            disabled={safePage === totalPages}
+                            onClick={() => setDeliveryPage((prev) => Math.min(totalPages, prev + 1))}
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            Next
+                          </button>
                         </div>
-                      )}
+                      </div>
                     </>
                   );
                 })()}
