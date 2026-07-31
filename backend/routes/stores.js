@@ -320,7 +320,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/delivery', async (req, res) => {
   try {
     const { id } = req.params;
-    const [prices] = await db.query('SELECT * FROM store_delivery_prices WHERE store_id = ?', [id]);
+    const [prices] = await db.query('SELECT * FROM store_delivery_prices WHERE store_id = ? ORDER BY id DESC', [id]);
     res.json({ success: true, delivery_prices: prices });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

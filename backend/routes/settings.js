@@ -466,7 +466,7 @@ router.post('/system-settings', async (req, res) => {
 // Get all cities
 router.get('/cities', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM cities ORDER BY name ASC');
+    const [rows] = await db.query('SELECT * FROM cities ORDER BY id DESC');
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -524,6 +524,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [deliveryCityToDelete, setDeliveryCityToDelete] = useState(null);
   const [selectedDeliveryStoreId, setSelectedDeliveryStoreId] = useState(null);
 
+  // Pagination states for cities & delivery cities
+  const [citiesPage, setCitiesPage] = useState(1);
+  const [deliveryPage, setDeliveryPage] = useState(1);
+
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
   const [newCatKu, setNewCatKu] = useState("");
@@ -4294,49 +4298,88 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </div>
                   </form>
 
-                  {/* Cities List Table */}
-                  <div className="overflow-x-auto max-h-[250px] overflow-y-auto pr-1">
-                    {citiesList.length === 0 ? (
-                      <p className="text-center text-xs text-slate-400 py-6 font-semibold">No cities registered yet.</p>
-                    ) : (
-                      <table className="w-full text-left text-xs font-sans">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
-                            <th className="py-2.5">Name</th>
-                            <th className="py-2.5 text-right">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {citiesList.map((city) => (
-                            <tr key={city.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                              <td className="py-2.5 font-bold text-[#36454F]">
-                                {city.name.startsWith('{') ? JSON.parse(city.name).en : city.name}
-                              </td>
-                              <td className="py-2.5 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStartEditCity(city)}
-                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Edit City"
-                                  >
-                                    <Edit2 size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setCityToDelete(city.id)}
-                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Delete City"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+                  {/* Cities List Table with Newest First & Pagination */}
+                  <div className="overflow-x-auto space-y-4">
+                    {(() => {
+                      const itemsPerPage = 5;
+                      const sorted = [...citiesList].sort((a, b) => b.id - a.id);
+                      const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
+                      const safePage = Math.min(citiesPage, totalPages);
+                      const startIdx = (safePage - 1) * itemsPerPage;
+                      const paginated = sorted.slice(startIdx, startIdx + itemsPerPage);
+
+                      if (sorted.length === 0) {
+                        return <p className="text-center text-xs text-slate-400 py-6 font-semibold">No cities registered yet.</p>;
+                      }
+
+                      return (
+                        <>
+                          <table className="w-full text-left text-xs font-sans">
+                            <thead>
+                              <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                                <th className="py-2.5">Name</th>
+                                <th className="py-2.5 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                              {paginated.map((city) => (
+                                <tr key={city.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-3 font-bold text-[#36454F]">
+                                    {city.name && city.name.startsWith('{') ? (JSON.parse(city.name).en || JSON.parse(city.name).ku || JSON.parse(city.name).ar) : city.name}
+                                  </td>
+                                  <td className="py-3 text-right">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEditCity(city)}
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                        title="Edit City"
+                                      >
+                                        <Edit2 size={14} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCityToDelete(city.id)}
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                        title="Delete City"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                              <span className="font-semibold text-slate-400">
+                                Page {safePage} of {totalPages} ({sorted.length} total)
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={safePage === 1}
+                                  onClick={() => setCitiesPage((prev) => Math.max(1, prev - 1))}
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={safePage === totalPages}
+                                  onClick={() => setCitiesPage((prev) => Math.min(totalPages, prev + 1))}
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -5221,10 +5264,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
               </div>
 
-              {/* Delivery Cities Table */}
-              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs">
+              {/* Delivery Cities Table with Newest First & Pagination */}
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs space-y-4">
                 {(() => {
-                  const filtered = deliveryCities.filter((item) => {
+                  const sorted = [...deliveryCities].sort((a, b) => b.id - a.id);
+                  const filtered = sorted.filter((item) => {
                     if (!searchQuery.trim()) return true;
                     const q = searchQuery.toLowerCase().trim();
                     let parsed = { en: "", ku: "", ar: "" };
@@ -5244,6 +5288,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       String(item.price).includes(q)
                     );
                   });
+
+                  const itemsPerPage = 5;
+                  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+                  const safePage = Math.min(deliveryPage, totalPages);
+                  const startIdx = (safePage - 1) * itemsPerPage;
+                  const paginated = filtered.slice(startIdx, startIdx + itemsPerPage);
 
                   if (filtered.length === 0) {
                     return (
@@ -5270,71 +5320,99 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   }
 
                   return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs font-sans border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
-                            <th className="py-3.5 px-4">City Name</th>
-                            <th className="py-3.5 px-4">Kurdish Name</th>
-                            <th className="py-3.5 px-4">English Name</th>
-                            <th className="py-3.5 px-4">Arabic Name</th>
-                            <th className="py-3.5 px-4">Delivery Price</th>
-                            <th className="py-3.5 px-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {filtered.map((item) => {
-                            let parsed = { en: "", ku: "", ar: "" };
-                            try {
-                              if (item.city_name && item.city_name.startsWith("{")) {
-                                parsed = JSON.parse(item.city_name);
-                              } else {
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs font-sans border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                              <th className="py-3.5 px-4">City Name</th>
+                              <th className="py-3.5 px-4">Kurdish Name</th>
+                              <th className="py-3.5 px-4">English Name</th>
+                              <th className="py-3.5 px-4">Arabic Name</th>
+                              <th className="py-3.5 px-4">Delivery Price</th>
+                              <th className="py-3.5 px-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {paginated.map((item) => {
+                              let parsed = { en: "", ku: "", ar: "" };
+                              try {
+                                if (item.city_name && item.city_name.startsWith("{")) {
+                                  parsed = JSON.parse(item.city_name);
+                                } else {
+                                  parsed.en = item.city_name || "";
+                                }
+                              } catch {
                                 parsed.en = item.city_name || "";
                               }
-                            } catch {
-                              parsed.en = item.city_name || "";
-                            }
-                            return (
-                              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 font-bold text-[#36454F]">
-                                  {parsed.en || parsed.ku || parsed.ar}
-                                </td>
-                                <td className="py-3.5 px-4 font-medium text-slate-600">
-                                  {parsed.ku || "-"}
-                                </td>
-                                <td className="py-3.5 px-4 font-medium text-slate-600">
-                                  {parsed.en || "-"}
-                                </td>
-                                <td className="py-3.5 px-4 font-medium text-slate-600">
-                                  {parsed.ar || "-"}
-                                </td>
-                                <td className="py-3.5 px-4 font-bold text-[#B2AC88]">
-                                  {Number(item.price).toLocaleString()} IQD
-                                </td>
-                                <td className="py-3.5 px-4 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => handleStartEditDeliveryCity(item)}
-                                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                      title="Edit City"
-                                    >
-                                      <Edit2 size={15} />
-                                    </button>
-                                    <button
-                                      onClick={() => setDeliveryCityToDelete(item.id)}
-                                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                      title="Delete City"
-                                    >
-                                      <Trash2 size={15} />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                              return (
+                                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-3.5 px-4 font-bold text-[#36454F]">
+                                    {parsed.en || parsed.ku || parsed.ar}
+                                  </td>
+                                  <td className="py-3.5 px-4 font-medium text-slate-600">
+                                    {parsed.ku || "-"}
+                                  </td>
+                                  <td className="py-3.5 px-4 font-medium text-slate-600">
+                                    {parsed.en || "-"}
+                                  </td>
+                                  <td className="py-3.5 px-4 font-medium text-slate-600">
+                                    {parsed.ar || "-"}
+                                  </td>
+                                  <td className="py-3.5 px-4 font-bold text-[#B2AC88]">
+                                    {Number(item.price).toLocaleString()} IQD
+                                  </td>
+                                  <td className="py-3.5 px-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => handleStartEditDeliveryCity(item)}
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                        title="Edit City"
+                                      >
+                                        <Edit2 size={15} />
+                                      </button>
+                                      <button
+                                        onClick={() => setDeliveryCityToDelete(item.id)}
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                        title="Delete City"
+                                      >
+                                        <Trash2 size={15} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
+                          <span className="font-semibold text-slate-400">
+                            Page {safePage} of {totalPages} ({filtered.length} total)
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={safePage === 1}
+                              onClick={() => setDeliveryPage((prev) => Math.max(1, prev - 1))}
+                              className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                            >
+                              Previous
+                            </button>
+                            <button
+                              type="button"
+                              disabled={safePage === totalPages}
+                              onClick={() => setDeliveryPage((prev) => Math.min(totalPages, prev + 1))}
+                              className="px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   );
                 })()}
               </div>
