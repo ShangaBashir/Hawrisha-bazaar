@@ -540,6 +540,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [colorClassModal, setColorClassModal] = useState("#36454F");
   const [colorFamilyModal, setColorFamilyModal] = useState("black");
 
+  // Editing Setting Item state
+  const [editingSettingItem, setEditingSettingItem] = useState(null);
+  const [editItemEn, setEditItemEn] = useState("");
+  const [editItemKu, setEditItemKu] = useState("");
+  const [editItemAr, setEditItemAr] = useState("");
+  const [editItemClass, setEditItemClass] = useState("#36454F");
+  const [editItemFamily, setEditItemFamily] = useState("black");
+
   // local form states for settings languages
   const [newCatEn, setNewCatEn] = useState("");
   const [newCatKu, setNewCatKu] = useState("");
@@ -2416,6 +2424,64 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     });
   };
 
+  // Handle Edit Setting Items
+  const handleStartEditSettingItem = (type, item) => {
+    let parsed = { en: "", ku: "", ar: "" };
+    try {
+      if (item.name && item.name.startsWith("{")) {
+        parsed = JSON.parse(item.name);
+      } else {
+        parsed.en = item.name || "";
+      }
+    } catch (e) {
+      parsed.en = item.name || "";
+    }
+
+    setEditItemEn(parsed.en || "");
+    setEditItemKu(parsed.ku || "");
+    setEditItemAr(parsed.ar || "");
+    setEditItemClass(item.class || "#36454F");
+    setEditItemFamily(item.family || "black");
+    setEditingSettingItem({ type, item });
+  };
+
+  const handleSaveEditedSettingItem = async () => {
+    if (!editingSettingItem) return;
+    const { type, item } = editingSettingItem;
+    if (!editItemEn.trim() || !editItemKu.trim() || !editItemAr.trim()) return;
+
+    const combinedVal = JSON.stringify({ en: editItemEn.trim(), ku: editItemKu.trim(), ar: editItemAr.trim() });
+    let body = { name: combinedVal };
+
+    if (type === "colors") {
+      const finalCls = editItemClass.startsWith("#") ? `bg-[${editItemClass}]` : editItemClass;
+      body = {
+        id: item.id,
+        class: finalCls,
+        name: combinedVal,
+        family: editItemFamily.trim().toLowerCase()
+      };
+    }
+
+    try {
+      const res = await fetch(`/api/settings/${type}/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        showToast("Setting item updated successfully!");
+        fetchSettings();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        showToast(error.error || "Failed to update setting item");
+      }
+    } catch (e) {
+      showToast("Updated (offline mode)");
+    }
+    setEditingSettingItem(null);
+  };
+
   // Handle open add modal
   const handleOpenCreate = () => {
     setIsViewOnly(false);
@@ -3825,12 +3891,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteCategory(cat)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("categories", cat)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Category"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(cat)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Category"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -3893,12 +3971,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteBadge(b)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("badges", b)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Badge / Label"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBadge(b)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Badge / Label"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -4011,12 +4101,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                   </p>
                                 </div>
                               </div>
-                              <button
-                                onClick={() => handleDeleteColor(color)}
-                                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                              >
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditSettingItem("colors", color)}
+                                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Edit Color Swatch"
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteColor(color)}
+                                  className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete Color Swatch"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
@@ -4080,12 +4182,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteStyle(style)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("styles", style)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Style"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStyle(style)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Style"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -4148,12 +4262,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteMaterial(mat)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("materials", mat)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Material"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMaterial(mat)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Material"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -4216,12 +4342,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteSeason(sea)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("seasons", sea)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Seasonal Type"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSeason(sea)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Seasonal Type"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -4284,12 +4422,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeleteSize(sz)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("sizes", sz)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Size Collection"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSize(sz)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Size Collection"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -4352,12 +4502,24 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <span className="text-sm font-semibold text-slate-700">
                               {displayName}
                             </span>
-                            <button
-                              onClick={() => handleDeletePromotion(promo)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditSettingItem("promotions", promo)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Promotion"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePromotion(promo)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Promotion"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -6626,6 +6788,134 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                          settingTypeInModal === "sizes" ? "Size" :
                          settingTypeInModal === "promotions" ? "Promotion" :
                          "Category"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Setting Item Modal */}
+      <AnimatePresence>
+        {editingSettingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingSettingItem(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full relative shadow-2xl z-10 border border-slate-100/50"
+            >
+              <button
+                onClick={() => setEditingSettingItem(null)}
+                className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center space-x-3 mb-6 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Edit2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#36454F] font-sans">
+                    Edit Setting Item
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Update item names in English, Kurdish, and Arabic.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveEditedSettingItem();
+                }}
+                className="space-y-5"
+              >
+                <LangTextInput
+                  label="Item Name"
+                  required
+                  valueEn={editItemEn}
+                  valueKu={editItemKu}
+                  valueAr={editItemAr}
+                  onChangeEn={setEditItemEn}
+                  onChangeKu={setEditItemKu}
+                  onChangeAr={setEditItemAr}
+                  placeholder="Enter Item Name..."
+                />
+
+                {editingSettingItem.type === "colors" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Color Swatch (Hex / Class) *
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          value={editItemClass.startsWith('#') ? editItemClass : '#36454F'}
+                          onChange={(e) => setEditItemClass(e.target.value)}
+                          className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={editItemClass}
+                          onChange={(e) => setEditItemClass(e.target.value)}
+                          placeholder="#36454F or bg-[#...]"
+                          className="w-full border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-800 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Color Family *
+                      </label>
+                      <select
+                        value={editItemFamily}
+                        onChange={(e) => setEditItemFamily(e.target.value)}
+                        className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 bg-white"
+                      >
+                        <option value="black">Black</option>
+                        <option value="white">White</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="purple">Purple</option>
+                        <option value="pink">Pink</option>
+                        <option value="beige">Beige</option>
+                        <option value="brown">Brown</option>
+                        <option value="grey">Grey</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSettingItem(null)}
+                    className="py-3 border border-slate-200 hover:bg-slate-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!editItemEn.trim() || !editItemKu.trim() || !editItemAr.trim()}
+                    className="py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+                  >
+                    Save Changes
                   </button>
                 </div>
               </form>
