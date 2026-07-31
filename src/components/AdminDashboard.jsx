@@ -2532,6 +2532,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         }
       }
     });
+  };
+
   const handleAddCustomTabItem = (subTabId, nameEn, nameKu, nameAr) => {
     if (!nameEn.trim()) return;
     const finalEn = nameEn.trim();
