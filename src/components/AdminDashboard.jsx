@@ -4139,10 +4139,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     setCatModalAr("");
                     setIsAddCategoryModalOpen(true);
                   }}
-                  className="relative z-20 pointer-events-auto px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
+                  className="relative z-20 pointer-events-auto px-5 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center space-x-2 shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
                 >
-                  <Plus size={16} />
-                  <span>ADD CATEGORY</span>
+                  <Plus size={16} className="text-white" />
+                  <span className="text-white">ADD CATEGORY</span>
                 </button>
               </div>
 
@@ -8383,23 +8383,23 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
       {/* Add New Category Title Modal */}
       {isAddCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn relative z-50">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
-                <Plus size={18} className="text-[#B2AC88]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-8 md:p-10 shadow-2xl space-y-6 animate-fadeIn relative z-50 border border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+              <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2.5">
+                <Plus size={20} className="text-[#B2AC88]" />
                 <span>Add New Category Title</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddCategoryModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleAddCustomCategoryHeaderTab} className="space-y-4">
+            <form onSubmit={handleAddCustomCategoryHeaderTab} className="space-y-6">
               <LangTextInput
                 label="Category Title Name *"
                 required
@@ -8412,18 +8412,18 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 placeholder="e.g. Sport Type, Footwear, Accessories..."
               />
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddCategoryModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
+                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!catModalEn.trim()}
-                  className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-7 py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Category Title
                 </button>
