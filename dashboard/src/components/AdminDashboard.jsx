@@ -4117,12 +4117,15 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 ]
                   .filter((tab) => !deletedTabIds.includes(tab.id))
                   .map((tab) => {
-                  const isActive = settingsSubTab === tab.id;
-                  const displayLabel = customTabLabels[tab.id] || tab.label;
+                  const isActive = String(settingsSubTab) === String(tab.id);
+                  const displayLabel = getEnglishName(customTabLabels[tab.id] || tab.label);
                   return (
                     <div
                       key={tab.id}
-                      onClick={() => setSettingsSubTab(tab.id)}
+                      onClick={() => {
+                        setSettingsSubTab(tab.id);
+                        setSettingsPage(1);
+                      }}
                       className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all border cursor-pointer select-none ${
                         isActive
                           ? "bg-[#36454F] text-[#F5F5DC] border-[#36454F] shadow-sm"
@@ -4174,41 +4177,43 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
               <div className="w-full">
                 {/* Category Subtab */}
-                {settingsSubTab === "categories" && (
-                  <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs max-w-4xl mx-auto">
-                    <h3 className="text-md font-bold text-[#36454F] mb-4 uppercase tracking-wider">
-                      Product Categories
-                    </h3>
+                {settingsSubTab === "categories" && (() => {
+                  const catTitle = getEnglishName(customTabLabels["categories"] || "Product Categories");
+                  return (
+                    <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs max-w-4xl mx-auto">
+                      <h3 className="text-md font-bold text-[#36454F] mb-4 uppercase tracking-wider">
+                        {catTitle}
+                      </h3>
 
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddCategory(newCatEn, newCatKu, newCatAr);
-                        setNewCatEn("");
-                        setNewCatKu("");
-                        setNewCatAr("");
-                      }}
-                      className="space-y-4 mb-6 pb-6 border-b border-slate-100"
-                    >
-                      <LangTextInput
-                        label="New Category Name"
-                        required
-                        valueEn={newCatEn}
-                        valueKu={newCatKu}
-                        valueAr={newCatAr}
-                        onChangeEn={setNewCatEn}
-                        onChangeKu={setNewCatKu}
-                        onChangeAr={setNewCatAr}
-                        placeholder="Add custom category..."
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newCatEn.trim()}
-                        className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleAddCategory(newCatEn, newCatKu, newCatAr);
+                          setNewCatEn("");
+                          setNewCatKu("");
+                          setNewCatAr("");
+                        }}
+                        className="space-y-4 mb-6 pb-6 border-b border-slate-100"
                       >
-                        + ADD NEW CATEGORY TITLE
-                      </button>
-                    </form>
+                        <LangTextInput
+                          label={`New ${catTitle} Item`}
+                          required
+                          valueEn={newCatEn}
+                          valueKu={newCatKu}
+                          valueAr={newCatAr}
+                          onChangeEn={setNewCatEn}
+                          onChangeKu={setNewCatKu}
+                          onChangeAr={setNewCatAr}
+                          placeholder={`Add custom ${catTitle.toLowerCase()} item...`}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newCatEn.trim()}
+                          className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          + ADD NEW {catTitle.toUpperCase()} TITLE
+                        </button>
+                      </form>
 
                     <div className="divide-y divide-slate-100">
                       {filteredCategories.slice((settingsPage - 1) * 10, settingsPage * 10).map((cat) => {
@@ -4251,7 +4256,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </div>
                     {renderSettingsPagination(filteredCategories.length)}
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Badges Subtab */}
                 {settingsSubTab === "badges" && (
