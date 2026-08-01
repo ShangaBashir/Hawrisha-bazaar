@@ -4101,14 +4101,15 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSettingTypeInModal("custom_header_tab");
                     setCatModalEn("");
                     setCatModalKu("");
                     setCatModalAr("");
                     setIsAddCategoryModalOpen(true);
                   }}
-                  className="px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
+                  className="relative z-20 pointer-events-auto px-4 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 shadow-xs transition-colors cursor-pointer active:scale-95 shrink-0"
                 >
                   <Plus size={16} />
                   <span>ADD CATEGORY</span>
