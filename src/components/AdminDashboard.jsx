@@ -2894,12 +2894,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setIsModalOpen(true);
   };
 
-  // Color Variant Handler Functions
   const handleAddColorVariant = () => {
-    const defaultColorId = colorsList[0]?.id || "";
     setColorVariants(prev => [
       ...prev,
-      { colorId: defaultColorId, imageFile: null, imagePreview: "", stockMap: {} }
+      { colorId: "", imageFile: null, imagePreview: "", stockMap: {} }
     ]);
   };
 
@@ -2918,6 +2916,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       setColorVariants(prev => prev.map((v, i) => i === index ? { ...v, imageFile: file, imagePreview: reader.result } : v));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemoveVariantImage = (index) => {
+    setColorVariants(prev => prev.map((v, i) => i === index ? { ...v, imageFile: null, imagePreview: "" } : v));
   };
 
   const handleAddSizeToVariant = (variantIndex, sizeName) => {
@@ -2987,27 +2989,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         "Price (must be a valid Iraqi Dinar amount, e.g. 3000. Minimum 250 IQD)",
       );
     if (!descEn.trim() || !descKu.trim() || !descAr.trim()) emptyFields.push("Product Description in 3 languages");
-    if (!editingProduct && !imageFile) {
-      emptyFields.push("Product Image Upload");
-    }
-    if (sizeCollection.length === 0) {
-      emptyFields.push("Size Collection (choose at least one)");
-    } else {
-      const missingColors = sizeCollection.some(size => !sizeColors[size] || sizeColors[size].length === 0);
-      if (missingColors) {
-        emptyFields.push("Assign at least one Color Style to each selected size");
-      }
-    }
-    if (colorFamily.length === 0) {
-      emptyFields.push("Product Colors (choose at least one)");
-    }
+    
     if (category.length === 0) {
       emptyFields.push("Category (choose at least one)");
     }
     if (styleLength.length === 0) {
       emptyFields.push("Style / Length (choose at least one)");
     }
-
     if (material.length === 0) {
       emptyFields.push("Material (choose at least one)");
     }
@@ -3018,14 +3006,20 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       emptyFields.push("Store (choose one)");
     }
 
-    if (colorVariants.length > 0) {
+    if (colorVariants.length === 0) {
+      emptyFields.push("Product Color Variants (add at least one color variant)");
+    } else {
+      const unselectedColor = colorVariants.some(v => !v.colorId);
+      if (unselectedColor) {
+        emptyFields.push("Select a color for each added variant");
+      }
       const invalidVariantImage = colorVariants.some(v => !v.imageFile && !v.imagePreview);
       if (invalidVariantImage) {
-        emptyFields.push("Each added color variant must have a required image");
+        emptyFields.push("Upload an image for each color variant");
       }
       const invalidVariantSize = colorVariants.some(v => Object.keys(v.stockMap || {}).length === 0);
       if (invalidVariantSize) {
-        emptyFields.push("Each added color variant must have at least one size and stock quantity specified");
+        emptyFields.push("Specify at least one size & stock quantity per color variant");
       }
     }
 
@@ -7688,7 +7682,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   })()}
                 </div>
 
-                 {/* Gender & Product Colors Grid */}
+                {/* Gender & Style Grid */}
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                    <div>
                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
@@ -7705,88 +7699,28 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                        <option value="Kids">Kids</option>
                      </select>
                    </div>
-
                    <div>
                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                       <Palette size={13} className="inline mr-1" />
-                       <span>Product Colors *</span>
+                       <span>Style / Length *</span>
                      </label>
                      <MultiSelectDropdown
-                       options={colorsList}
-                       selectedValues={colorFamily}
-                       onChange={setColorFamily}
-                       placeholder="Select Colors"
-                       error={showValidation && colorFamily.length === 0}
-                       valueKey="class"
-                       renderOption={(opt) => {
-                        if (!opt) return "";
-                        const colorClass = typeof opt === 'object' ? (opt.class || "") : String(opt);
-                        const colorName = typeof opt === 'object' ? getEnglishName(opt.name) : String(opt);
-                        const isBgClass = typeof colorClass === 'string' && colorClass.startsWith('bg-') && !colorClass.includes('[');
-                        const hexStyle = (typeof colorClass === 'string' && (colorClass.startsWith('#') || colorClass.startsWith('bg-[')))
-                          ? { backgroundColor: colorClass.startsWith('bg-[') ? colorClass.slice(4, -1) : colorClass }
-                          : {};
-                        return (
-                          <div className="flex items-center space-x-2">
-                            <span 
-                              className={`w-4 h-4 rounded-full border border-gray-200 shrink-0 ${isBgClass ? colorClass : ''}`}
-                              style={hexStyle}
-                            />
-                            <span>{colorName}</span>
-                          </div>
-                        );
-                      }}
+                       options={styles}
+                       selectedValues={styleLength}
+                       onChange={setStyleLength}
+                       placeholder="Select Style"
+                       error={showValidation && styleLength.length === 0}
+                       valueKey="name"
+                       renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
                      />
-                     {showValidation && colorFamily.length === 0 && (
+                     {showValidation && styleLength.length === 0 && (
                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                         Select at least one color
+                         Select at least one style
                        </p>
                      )}
                    </div>
                  </div>
 
                 {/* Extended Product Attributes Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Style / Length *</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={styles}
-                      selectedValues={styleLength}
-                      onChange={setStyleLength}
-                      placeholder="Select Style"
-                      error={showValidation && styleLength.length === 0}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                    {showValidation && styleLength.length === 0 && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                        Select at least one style
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Size Collection *</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={sizes}
-                      selectedValues={sizeCollection}
-                      onChange={setSizeCollection}
-                      placeholder="Select Sizes"
-                      error={showValidation && sizeCollection.length === 0}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                    {showValidation && sizeCollection.length === 0 && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                        Select at least one size
-                      </p>
-                    )}
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
@@ -7829,19 +7763,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Stock Inventory</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={stock}
-                      onChange={(e) => setStock(Number(e.target.value))}
-                      className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] text-black transition-all placeholder:text-gray-400 font-medium bg-white shadow-xs"
-                    />
-                  </div>
                   <div>
                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
                       <span>Discount (%)</span>
@@ -7920,7 +7841,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   ) : (
                     <div className="space-y-6">
                       {colorVariants.map((variant, index) => {
-                        const selectedColorObj = colorsList.find((c) => c.id === variant.colorId) || colorsList[0];
+                        const selectedColorObj = colorsList.find((c) => c.id === variant.colorId);
                         const assignedSizes = Object.keys(variant.stockMap || {});
                         const availableToAddSizes = sizes.map(s => getEnglishName(s.name)).filter(s => !assignedSizes.includes(s));
 
@@ -7928,9 +7849,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           <div key={index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4 relative">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                               <div className="flex items-center space-x-2">
-                                <span className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs inline-block" style={getColorStyle(selectedColorObj?.class)} />
+                                <span
+                                  className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs inline-block"
+                                  style={selectedColorObj ? getColorStyle(selectedColorObj.class) : { backgroundColor: "#cbd5e1" }}
+                                />
                                 <span className="text-xs font-bold text-[#36454F] uppercase tracking-wider">
-                                  Variant #{index + 1}: {getEnglishName(selectedColorObj?.name || "Color")}
+                                  Variant #{index + 1}: {selectedColorObj ? getEnglishName(selectedColorObj.name) : "Select Color"}
                                 </span>
                               </div>
                               <button
@@ -7950,10 +7874,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                   Select Color *
                                 </label>
                                 <select
-                                  value={variant.colorId}
+                                  value={variant.colorId || ""}
                                   onChange={(e) => handleVariantColorChange(index, e.target.value)}
-                                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88]"
+                                  className={`w-full border px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] ${
+                                    showValidation && !variant.colorId ? "border-red-400 bg-red-50/20 text-red-600" : "border-slate-200 text-slate-800"
+                                  }`}
                                 >
+                                  <option value="" disabled>Select a color</option>
                                   {colorsList.map((col) => (
                                     <option key={col.id} value={col.id}>
                                       {getEnglishName(col.name)} ({col.family})
@@ -7962,27 +7889,53 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 </select>
                               </div>
 
-                              {/* Variant Image Upload */}
+                              {/* Variant Image Upload & Change */}
                               <div>
                                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                   Variant Image (Required) *
                                 </label>
                                 <div className="flex items-center space-x-3">
                                   {variant.imagePreview ? (
-                                    <div className="relative w-14 h-14 rounded-xl border border-slate-200 overflow-hidden shrink-0 group">
-                                      <img src={variant.imagePreview} alt="Variant" className="w-full h-full object-cover" />
-                                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                                        <Upload size={14} />
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          className="hidden"
-                                          onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
-                                        />
-                                      </label>
+                                    <div className="flex items-center space-x-3">
+                                      <div className="relative w-14 h-14 rounded-xl border border-slate-200 overflow-hidden shrink-0 group">
+                                        <img src={variant.imagePreview} alt="Variant" className="w-full h-full object-cover" />
+                                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
+                                          <Upload size={14} />
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
+                                          />
+                                        </label>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <label className="px-3 py-1.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-lg text-xs font-bold uppercase cursor-pointer transition-colors flex items-center space-x-1.5 shadow-2xs">
+                                          <Edit2 size={13} />
+                                          <span>Change Image</span>
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
+                                          />
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveVariantImage(index)}
+                                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Remove Image"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : (
-                                    <label className="flex items-center justify-center px-4 py-2.5 border border-dashed border-slate-300 hover:border-[#B2AC88] rounded-xl text-xs font-bold text-slate-500 hover:text-[#B2AC88] bg-slate-50/50 cursor-pointer transition-colors space-x-2">
+                                    <label className={`flex items-center justify-center px-4 py-2.5 border border-dashed rounded-xl text-xs font-bold bg-slate-50/50 cursor-pointer transition-colors space-x-2 ${
+                                      showValidation && !variant.imagePreview
+                                        ? "border-red-400 text-red-500 hover:border-red-500"
+                                        : "border-slate-300 text-slate-500 hover:text-[#B2AC88] hover:border-[#B2AC88]"
+                                    }`}>
                                       <Upload size={14} />
                                       <span>Upload Image</span>
                                       <input
@@ -7992,11 +7945,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                         onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
                                       />
                                     </label>
-                                  )}
-                                  {variant.imagePreview && (
-                                    <span className="text-[11px] font-semibold text-slate-400 truncate max-w-[150px]">
-                                      Image attached
-                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -8068,72 +8016,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   )}
                 </div>
 
-                {/* 3. Per-Size Color Picker (Legacy fallback if colorVariants empty) */}
-                {colorVariants.length === 0 && sizeCollection.length > 0 && (
-                  <div className="space-y-4">
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400">
-                      <span>Colors per Size *</span>
-                    </label>
-                    {showValidation && sizeCollection.some(size => !sizeColors[size] || sizeColors[size].length === 0) && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                        Each size must have at least one color assigned
-                      </p>
-                    )}
-                    <div className="space-y-3">
-                      {sizeCollection.map(size => {
-                        const assignedColorIds = sizeColors[size] || [];
-                        return (
-                          <div key={size} className={`border rounded-xl p-3 ${showValidation && assignedColorIds.length === 0 ? 'border-red-300 bg-red-50/30' : 'border-slate-200 bg-gray-50/30'}` }>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-[#36454F] uppercase tracking-wider">{size}</span>
-                              <div className="flex gap-1">
-                                {assignedColorIds.map(colorId => {
-                                  const col = colorsList.find(c => c.id === colorId);
-                                  if (!col) return null;
-                                  return (
-                                    <span key={colorId} title={getEnglishName(col.name)} className={`w-4 h-4 rounded-full border border-gray-300 ${typeof col.class === 'string' && col.class.startsWith('bg-') ? col.class : ''}`} style={getColorStyle(col.class)} />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {colorsList.map(col => {
-                                const isChecked = assignedColorIds.includes(col.id);
-                                return (
-                                  <button
-                                    key={col.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSizeColors(prev => {
-                                        const current = prev[size] || [];
-                                        const updated = isChecked
-                                          ? current.filter(id => id !== col.id)
-                                          : [...current, col.id];
-                                        return { ...prev, [size]: updated };
-                                      });
-                                    }}
-                                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                                      isChecked
-                                        ? 'border-[#B2AC88] bg-[#B2AC88]/10 text-[#36454F]'
-                                        : 'border-slate-200 bg-white text-gray-500 hover:border-[#B2AC88]/50'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`w-3 h-3 rounded-full border border-gray-300 shrink-0 ${typeof col.class === 'string' && col.class.startsWith('bg-') ? col.class : ''}`}
-                                      style={getColorStyle(col.class)}
-                                    />
-                                    {getEnglishName(col.name)}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 <LangTextInput
                   label="Product Description"
                   required
@@ -8148,55 +8030,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   error={showValidation && (!descEn.trim() || !descKu.trim() || !descAr.trim())}
                   errorMessage="Product description is required in all 3 languages"
                 />
-
-                {/* 5. Image Selector & Preview */}
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                    <Upload size={13} />
-                    <span>Product Image Upload *</span>
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    {/* Upload Box */}
-                    <label className={`w-full sm:w-1/2 flex flex-col items-center justify-center border border-dashed rounded-2xl p-4 cursor-pointer text-center group transition-colors ${
-                      showValidation && !editingProduct && !imageFile
-                        ? "border-red-400 bg-red-50/30 ring-2 ring-red-200"
-                        : "border-slate-200 bg-gray-50/30 hover:border-[#B2AC88]"
-                    }`}>
-                      <Upload
-                        size={24}
-                        className="text-gray-400 group-hover:text-[#B2AC88] transition-colors mb-1.5"
-                      />
-                      <span className="text-xs font-bold text-[#36454F] group-hover:text-[#B2AC88] transition-colors">
-                        Choose File
-                      </span>
-                      <span className="text-[10px] text-gray-400 mt-0.5">
-                        JPG, PNG, WEBP
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                    </label>
-
-                    {/* Preview Box */}
-                    <div className="w-full sm:w-1/2 h-32 border border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden bg-gray-50/50">
-                      {imagePreview ? (
-                        <img src={imagePreview}
-                          alt="Product Preview"
-                          className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
-                      ) : (
-                        <div className="flex flex-col items-center text-gray-300">
-                          <ImageIcon size={28} />
-                          <span className="text-[10px] uppercase font-bold tracking-widest mt-1">
-                            Preview
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
 
                 {/* Submit Action */}
