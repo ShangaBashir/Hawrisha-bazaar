@@ -1091,26 +1091,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
     // 3. Colors
     try {
-        const res = await fetch("/api/settings/colors");
+      const res = await fetch("/api/settings/colors");
       if (res.ok) {
         const data = await res.json();
-        // Normalize color names to strings to prevent React render crash
-        const normalized = Array.isArray(data) ? data.map(c => ({
-          ...c,
-          name: (() => {
-            if (!c.name) return "";
-            if (typeof c.name === "string") {
-              try {
-                const p = JSON.parse(c.name);
-                if (p && typeof p === "object") return p.en || p.EN || p.ku || p.ar || c.name;
-              } catch { return c.name; }
-              return c.name;
-            }
-            if (typeof c.name === "object") return c.name.en || c.name.EN || c.name.ku || c.name.ar || "";
-            return String(c.name);
-          })()
-        })) : data;
-        setColorsList(sortNewestFirst(normalized));
+        setColorsList(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_colors", JSON.stringify(data));
       } else {
         throw new Error();
       }

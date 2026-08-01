@@ -89,6 +89,15 @@ async function initializeDatabase() {
     await modifyColumnType('products', 'seasonal_type', 'TEXT DEFAULT NULL');
     await modifyColumnType('products', 'size_collection', 'TEXT DEFAULT NULL');
 
+    await modifyColumnType('colors', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('categories', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('badges', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('styles', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('materials', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('seasons', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('sizes', 'name', 'TEXT DEFAULT NULL');
+    await modifyColumnType('promotions', 'name', 'TEXT DEFAULT NULL');
+
     // 3. Create product_colors table
     await db.query(`
       CREATE TABLE IF NOT EXISTS product_colors (

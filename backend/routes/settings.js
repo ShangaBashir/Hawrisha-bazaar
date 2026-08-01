@@ -172,10 +172,16 @@ router.put('/colors/:id', async (req, res) => {
   const targetClass = colorClass ? colorClass.trim() : 'bg-[#000000]';
   const targetFamily = (family && family.trim()) ? family.trim().toLowerCase() : 'black';
   try {
-    await db.query(
-      'UPDATE colors SET id = ?, class = ?, name = ?, family = ? WHERE id = ?',
-      [targetId, targetClass, name.trim(), targetFamily, oldId]
+    const [result] = await db.query(
+      'UPDATE colors SET class = ?, name = ?, family = ? WHERE id = ? OR id = ?',
+      [targetClass, name.trim(), targetFamily, oldId, targetId]
     );
+    if (result.affectedRows === 0) {
+      await db.query(
+        'INSERT INTO colors (id, class, name, family) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE class = ?, name = ?, family = ?',
+        [targetId, targetClass, name.trim(), targetFamily, targetClass, name.trim(), targetFamily]
+      );
+    }
     res.json({ id: targetId, class: targetClass, name: name.trim(), family: targetFamily });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Color ID already exists' });
