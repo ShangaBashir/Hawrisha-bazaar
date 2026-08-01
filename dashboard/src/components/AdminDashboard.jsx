@@ -2999,10 +2999,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         "Price (must be a valid Iraqi Dinar amount, e.g. 3000. Minimum 250 IQD)",
       );
     if (!descEn.trim() || !descKu.trim() || !descAr.trim()) emptyFields.push("Product Description in 3 languages");
-    
-    if (category.length === 0) {
-      emptyFields.push("Category (choose at least one)");
-    }
     if (styleLength.length === 0) {
       emptyFields.push("Style / Length (choose at least one)");
     }
@@ -7628,28 +7624,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     )}
                   </div>
                 )}
-
-                {/* 3. Category Input */}
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                    <SlidersHorizontal size={13} className="inline mr-1" />
-                    <span>Category *</span>
-                  </label>
-                  <MultiSelectDropdown
-                    options={categories}
-                    selectedValues={category}
-                    onChange={setCategory}
-                    placeholder="Select Category"
-                    error={showValidation && category.length === 0}
-                    valueKey="name"
-                    renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                  />
-                  {showValidation && category.length === 0 && (
-                    <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                      Select at least one category
-                    </p>
-                  )}
-                </div>
 
                 {/* 4. Price Input */}
                 <div>
