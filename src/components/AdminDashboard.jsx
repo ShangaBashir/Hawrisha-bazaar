@@ -4132,6 +4132,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   onClick={(e) => {
                     e.stopPropagation();
                     setSettingTypeInModal("custom_header_tab");
+                    setCategoryAddTarget("header_title");
                     setCatModalEn("");
                     setCatModalKu("");
                     setCatModalAr("");
@@ -4215,6 +4216,22 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </div>
                   );
                 })}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryAddTarget("header_title");
+                    setCatModalEn("");
+                    setCatModalKu("");
+                    setCatModalAr("");
+                    setIsAddCategoryModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all border border-dashed border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88]/10 text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 shadow-2xs select-none"
+                  title="Add New Category Title Pill"
+                >
+                  <Plus size={13} />
+                  <span>ADD CATEGORY TITLE</span>
+                </button>
               </div>
 
               <div className="w-full">
