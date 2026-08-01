@@ -4877,9 +4877,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   const tabLabel = currentTab ? getEnglishName(currentTab.label) : (customTabLabels[settingsSubTab] || "Category");
                   const items = (customTabItems[settingsSubTab] || []);
                   const filteredItems = items.filter(item => {
-                    if (!settingsSearch.trim()) return true;
-                    const name = getEnglishName(item.name).toLowerCase();
-                    return name.includes(settingsSearch.toLowerCase());
+                    const q = (searchQuery || "").trim().toLowerCase();
+                    if (!q) return true;
+                    const name = getEnglishName(item ? item.name : "").toLowerCase();
+                    return name.includes(q);
                   });
 
                   return (
