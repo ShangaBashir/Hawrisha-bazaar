@@ -595,11 +595,19 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       .then((data) => {
         if (active) {
           setCategories(data);
+          try { localStorage.setItem('hhawrisha_categories', JSON.stringify(data)); } catch(e) {}
         }
       })
       .catch((err) => {
-        console.warn('Failed to fetch categories, using default fallback', err);
+        console.warn('Failed to fetch categories, checking local storage fallback', err);
         if (active) {
+          const localCats = localStorage.getItem('hhawrisha_categories');
+          if (localCats) {
+            try {
+              setCategories(JSON.parse(localCats));
+              return;
+            } catch(e) {}
+          }
           setCategories([
             { id: 'animals', name: 'Animals' },
             { id: 'fruits', name: 'Fruits' },

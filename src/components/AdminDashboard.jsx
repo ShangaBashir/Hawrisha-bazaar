@@ -1052,6 +1052,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setCategories(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_categories", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1077,6 +1078,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setBadges(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_badges", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1171,6 +1173,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setStyles(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_styles", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1196,6 +1199,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setMaterials(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_materials", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1221,6 +1225,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setSeasons(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_seasons", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1247,6 +1252,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setSizes(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_sizes", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -1272,6 +1278,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       if (res.ok) {
         const data = await res.json();
         setPromotions(sortNewestFirst(data));
+        localStorage.setItem("hhawrisha_promotions", JSON.stringify(data));
       } else {
         throw new Error();
       }
@@ -2024,6 +2031,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       message: `Are you sure you want to delete "${getEnglishName(cat.name)}"?`,
       onConfirm: async () => {
         setConfirmModal({ open: false, message: '', onConfirm: null });
+        const updated = categories.filter((c) => String(c.id) !== String(cat.id) && c.name !== cat.name);
+        setCategories(updated);
+        localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
+        if (category && category.includes(cat.name)) {
+          setCategory(prev => prev.filter(c => c !== cat.name));
+        }
+        
         const isNumber = /^\d+$/.test(cat.id);
         if (isNumber) {
           try {
@@ -2036,15 +2050,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
               showToast(`Failed to delete category: ${errData.error || "Server error"}`);
             }
           } catch {
-            const updated = categories.filter((c) => c.id !== cat.id);
-            setCategories(updated);
-            localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
             showToast("Category deleted (offline fallback)");
           }
         } else {
-          const updated = categories.filter((c) => c.id !== cat.id);
-          setCategories(updated);
-          localStorage.setItem("hhawrisha_categories", JSON.stringify(updated));
           showToast("Category deleted successfully");
         }
       },
