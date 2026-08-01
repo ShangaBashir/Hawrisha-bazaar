@@ -8381,112 +8381,57 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         )}
       </AnimatePresence>
 
-      {/* Universal Add New Category Modal */}
-      {isAddCategoryModalOpen && (() => {
-        const currentActiveTabObj = [
-          { id: "categories", label: "Categories" },
-          { id: "badges", label: "Badges / Labels" },
-          { id: "colors", label: "Colors" },
-          { id: "styles", label: "Styles / Lengths" },
-          { id: "materials", label: "Materials" },
-          { id: "seasons", label: "Seasonal Types" },
-          { id: "sizes", label: "Size Collections" },
-          { id: "promotions", label: "Promotions" },
-          ...customSubTabs
-        ].find(t => String(t.id) === String(settingsSubTab));
+      {/* Add New Category Title Modal */}
+      {isAddCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn relative z-50">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
+                <Plus size={18} className="text-[#B2AC88]" />
+                <span>Add New Category Title</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddCategoryModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-        const activeTabLabel = currentActiveTabObj
-          ? getEnglishName(customTabLabels[currentActiveTabObj.id] || currentActiveTabObj.label)
-          : "Category";
+            <form onSubmit={handleAddCustomCategoryHeaderTab} className="space-y-4">
+              <LangTextInput
+                label="Category Title Name *"
+                required
+                valueEn={catModalEn}
+                valueKu={catModalKu}
+                valueAr={catModalAr}
+                onChangeEn={setCatModalEn}
+                onChangeKu={setCatModalKu}
+                onChangeAr={setCatModalAr}
+                placeholder="e.g. Sport Type, Footwear, Accessories..."
+              />
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn relative z-50">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
-                  <Plus size={18} className="text-[#B2AC88]" />
-                  <span>
-                    {categoryAddTarget === "header_title"
-                      ? "Create Category Title Pill"
-                      : `Add Category in "${activeTabLabel}"`}
-                  </span>
-                </h3>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddCategoryModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
                 >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Add Target Selector */}
-              <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCategoryAddTarget("item")}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    categoryAddTarget === "item"
-                      ? "bg-white text-[#36454F] shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Category in {activeTabLabel}
+                  Cancel
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setCategoryAddTarget("header_title")}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    categoryAddTarget === "header_title"
-                      ? "bg-white text-[#36454F] shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
+                  type="submit"
+                  disabled={!catModalEn.trim()}
+                  className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  + New Title Pill
+                  Create Category Title
                 </button>
               </div>
-
-              <form onSubmit={handleModalCategorySubmit} className="space-y-4">
-                <LangTextInput
-                  label={
-                    categoryAddTarget === "header_title"
-                      ? "Category Title Name *"
-                      : `Category Name under "${activeTabLabel}" *`
-                  }
-                  required
-                  valueEn={catModalEn}
-                  valueKu={catModalKu}
-                  valueAr={catModalAr}
-                  onChangeEn={setCatModalEn}
-                  onChangeKu={setCatModalKu}
-                  onChangeAr={setCatModalAr}
-                  placeholder={
-                    categoryAddTarget === "header_title"
-                      ? "e.g. Sport Type, Footwear..."
-                      : `Add new category under ${activeTabLabel}...`
-                  }
-                />
-
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddCategoryModalOpen(false)}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer active:scale-95"
-                  >
-                    {categoryAddTarget === "header_title" ? "Create Title Pill" : "Add Category"}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Edit Category Header Title Modal */}
       {editingHeaderTab && (
