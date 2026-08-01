@@ -556,6 +556,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [settingTypeInModal, setSettingTypeInModal] = useState("categories");
   const [catModalEn, setCatModalEn] = useState("");
   const [catModalKu, setCatModalKu] = useState("");
+  const [catModalAr, setCatModalAr] = useState("");
   const [editingHeaderTab, setEditingHeaderTab] = useState(null);
   const [editHeaderEn, setEditHeaderEn] = useState("");
   const [editHeaderKu, setEditHeaderKu] = useState("");
