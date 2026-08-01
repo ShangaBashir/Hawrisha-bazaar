@@ -5292,7 +5292,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           <th className="pb-3 pr-4 w-14">Logo</th>
                           <th className="pb-3 px-4">Store Name</th>
                           <th className="pb-3 px-4">Owner</th>
-                          <th className="pb-3 px-4">Email</th>
                           <th className="pb-3 px-4">Phone</th>
                           <th className="pb-3 px-4">City</th>
                           <th className="pb-3 px-4">Products</th>
@@ -5325,8 +5324,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             </td>
                             {/* Owner */}
                             <td className="py-4 px-4 text-slate-600 font-semibold text-xs">{store.owner_name || '—'}</td>
-                            {/* Email */}
-                            <td className="py-4 px-4 text-slate-500 text-xs truncate max-w-[160px]">{store.email}</td>
                             {/* Phone */}
                             <td className="py-4 px-4 text-slate-500 text-xs font-mono">{store.phone || '—'}</td>
                             {/* City */}
