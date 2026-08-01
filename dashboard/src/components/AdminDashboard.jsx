@@ -556,7 +556,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [settingTypeInModal, setSettingTypeInModal] = useState("categories");
   const [catModalEn, setCatModalEn] = useState("");
   const [catModalKu, setCatModalKu] = useState("");
-  const [catModalAr, setCatModalAr] = useState("");
+  const [editingHeaderTab, setEditingHeaderTab] = useState(null);
+  const [editHeaderEn, setEditHeaderEn] = useState("");
+  const [editHeaderKu, setEditHeaderKu] = useState("");
+  const [editHeaderAr, setEditHeaderAr] = useState("");
+
   // Header Tab Customization state
   const [customTabLabels, setCustomTabLabels] = useState(() => {
     try {
@@ -589,7 +593,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [newCustomItemEn, setNewCustomItemEn] = useState("");
   const [newCustomItemKu, setNewCustomItemKu] = useState("");
   const [newCustomItemAr, setNewCustomItemAr] = useState("");
-  const [editingHeaderTab, setEditingHeaderTab] = useState(null);
   const [headerTabLabelInput, setHeaderTabLabelInput] = useState("");
 
   // Editing Setting Item state
@@ -2552,6 +2555,64 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     });
   };
 
+  const handleAddCustomCategoryHeaderTab = (e) => {
+    e.preventDefault();
+    if (!catModalEn.trim()) return;
+    const finalEn = catModalEn.trim();
+    const finalKu = (catModalKu && catModalKu.trim()) ? catModalKu.trim() : finalEn;
+    const finalAr = (catModalAr && catModalAr.trim()) ? catModalAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+
+    const newTabId = `custom_tab_${Date.now()}`;
+    const newTabObj = { id: newTabId, label: combinedVal };
+
+    const updatedCustomTabs = [...customSubTabs, newTabObj];
+    setCustomSubTabs(updatedCustomTabs);
+    localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
+
+    setSettingsSubTab(newTabId);
+    setSettingsPage(1);
+
+    showToast(`Category title "${finalEn}" created successfully!`);
+    setIsAddCategoryModalOpen(false);
+    setCatModalEn("");
+    setCatModalKu("");
+    setCatModalAr("");
+  };
+
+  const handleStartEditHeaderTab = (tab) => {
+    const rawVal = customTabLabels[tab.id] || tab.label || "";
+    const parsed = parseLangObj(rawVal);
+    setEditHeaderEn(parsed.en);
+    setEditHeaderKu(parsed.ku);
+    setEditHeaderAr(parsed.ar);
+    setEditingHeaderTab(tab);
+  };
+
+  const handleSaveEditedHeaderTab = (e) => {
+    e.preventDefault();
+    if (!editingHeaderTab || !editHeaderEn.trim()) return;
+    const finalEn = editHeaderEn.trim();
+    const finalKu = (editHeaderKu && editHeaderKu.trim()) ? editHeaderKu.trim() : finalEn;
+    const finalAr = (editHeaderAr && editHeaderAr.trim()) ? editHeaderAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+
+    if (customSubTabs.some(t => String(t.id) === String(editingHeaderTab.id))) {
+      const updatedCustomTabs = customSubTabs.map(t =>
+        String(t.id) === String(editingHeaderTab.id) ? { ...t, label: combinedVal } : t
+      );
+      setCustomSubTabs(updatedCustomTabs);
+      localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
+    } else {
+      const updatedLabels = { ...customTabLabels, [editingHeaderTab.id]: combinedVal };
+      setCustomTabLabels(updatedLabels);
+      localStorage.setItem("hhawrisha_custom_tab_labels", JSON.stringify(updatedLabels));
+    }
+
+    showToast("Category title updated successfully!");
+    setEditingHeaderTab(null);
+  };
+
   // Handle Edit Setting Items
   const handleStartEditSettingItem = (type, item) => {
     const parsed = parseLangObj(item.name);
@@ -2631,23 +2692,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setEditingSettingItem(null);
   };
 
-  // Handle Header Tab Customization (Edit & Delete)
-  const handleStartEditHeaderTab = (tab) => {
-    setHeaderTabLabelInput(customTabLabels[tab.id] || tab.label);
-    setEditingHeaderTab(tab);
-  };
-
-  const handleSaveHeaderTabLabel = () => {
-    if (!editingHeaderTab || !headerTabLabelInput.trim()) return;
-    const updated = {
-      ...customTabLabels,
-      [editingHeaderTab.id]: headerTabLabelInput.trim()
-    };
-    setCustomTabLabels(updated);
-    localStorage.setItem("hhawrisha_custom_tab_labels", JSON.stringify(updated));
-    showToast(`Updated "${editingHeaderTab.label}" header title!`);
-    setEditingHeaderTab(null);
-  };
 
   const handleDeleteHeaderTab = (tab) => {
     const tabTitle = customTabLabels[tab.id] || tab.label;
@@ -8284,6 +8328,110 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           </div>
         )}
       </AnimatePresence>
+
+      {/* Add New Category Header Title Modal */}
+      {isAddCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
+                <Plus size={18} className="text-[#B2AC88]" />
+                <span>Add New Category Title</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddCategoryModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCustomCategoryHeaderTab} className="space-y-4">
+              <LangTextInput
+                label="Category Title Name *"
+                required
+                valueEn={catModalEn}
+                valueKu={catModalKu}
+                valueAr={catModalAr}
+                onChangeEn={setCatModalEn}
+                onChangeKu={setCatModalKu}
+                onChangeAr={setCatModalAr}
+                placeholder="e.g. Sport Type..."
+              />
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddCategoryModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!catModalEn.trim()}
+                  className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Create Category Title
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Header Title Modal */}
+      {editingHeaderTab && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
+                <Edit2 size={18} className="text-[#B2AC88]" />
+                <span>Edit Category Title</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingHeaderTab(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedHeaderTab} className="space-y-4">
+              <LangTextInput
+                label="Category Title Name *"
+                required
+                valueEn={editHeaderEn}
+                valueKu={editHeaderKu}
+                valueAr={editHeaderAr}
+                onChangeEn={setEditHeaderEn}
+                onChangeKu={setEditHeaderKu}
+                onChangeAr={setEditHeaderAr}
+                placeholder="e.g. Sport Type..."
+              />
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingHeaderTab(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl uppercase transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editHeaderEn.trim()}
+                  className="px-6 py-2.5 bg-[#36454F] hover:bg-[#36454F]/90 text-white text-xs font-bold rounded-xl uppercase shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delivery City Add / Edit Modal */}
       {isDeliveryModalOpen && (
