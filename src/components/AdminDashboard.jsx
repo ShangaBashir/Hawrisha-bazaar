@@ -4822,9 +4822,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 )}
 
                 {/* Custom Created Sub-Tab Panel */}
-                {customSubTabs.some(t => t.id === settingsSubTab) && (() => {
-                  const currentTab = customSubTabs.find(t => t.id === settingsSubTab);
-                  const tabLabel = currentTab ? getEnglishName(currentTab.label) : "Category";
+                {(!["categories", "badges", "colors", "styles", "materials", "seasons", "sizes", "promotions"].includes(settingsSubTab)) && (() => {
+                  const currentTab = customSubTabs.find(t => String(t.id) === String(settingsSubTab));
+                  const tabLabel = currentTab ? getEnglishName(currentTab.label) : (customTabLabels[settingsSubTab] || "Category");
                   const items = (customTabItems[settingsSubTab] || []);
                   const filteredItems = items.filter(item => {
                     if (!settingsSearch.trim()) return true;
