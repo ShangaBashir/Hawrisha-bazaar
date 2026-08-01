@@ -550,6 +550,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
   // Product Color Variants state
   const [colorVariants, setColorVariants] = useState([]);
+  const [customAttributes, setCustomAttributes] = useState({});
 
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [categoryAddTarget, setCategoryAddTarget] = useState("item"); // 'item' or 'header_title'
@@ -3062,6 +3063,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     formData.append("sizeCollection", JSON.stringify(sizeCollection));
     formData.append("discount", discount);
     formData.append("gender", gender || "");
+    formData.append("customAttributes", JSON.stringify(customAttributes));
     
     // Format and append colorVariants metadata & image binary files
     let calculatedStock = Number(stock) || 0;
@@ -7699,67 +7701,74 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                        <option value="Kids">Kids</option>
                      </select>
                    </div>
-                   <div>
-                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                       <span>Style / Length *</span>
-                     </label>
-                     <MultiSelectDropdown
-                       options={styles}
-                       selectedValues={styleLength}
-                       onChange={setStyleLength}
-                       placeholder="Select Style"
-                       error={showValidation && styleLength.length === 0}
-                       valueKey="name"
-                       renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                     />
-                     {showValidation && styleLength.length === 0 && (
-                       <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                         Select at least one style
-                       </p>
-                     )}
-                   </div>
+                   {!deletedTabIds.includes("styles") && (
+                     <div>
+                       <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                         <span>{getEnglishName(customTabLabels["styles"] || "Style / Length")} *</span>
+                       </label>
+                       <MultiSelectDropdown
+                         options={styles}
+                         selectedValues={styleLength}
+                         onChange={setStyleLength}
+                         placeholder={`Select ${getEnglishName(customTabLabels["styles"] || "Style")}`}
+                         error={showValidation && styleLength.length === 0}
+                         valueKey="name"
+                         renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                       />
+                       {showValidation && styleLength.length === 0 && (
+                         <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
+                           Select at least one option
+                         </p>
+                       )}
+                     </div>
+                   )}
                  </div>
 
-                {/* Extended Product Attributes Grid */}
+                {/* Extended Dynamic Product Attributes Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Material *</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={materials}
-                      selectedValues={material}
-                      onChange={setMaterial}
-                      placeholder="Select Material"
-                      error={showValidation && material.length === 0}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                    {showValidation && material.length === 0 && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                        Select at least one material
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Seasonal Type *</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={seasons}
-                      selectedValues={seasonalType}
-                      onChange={setSeasonalType}
-                      placeholder="Select Seasons"
-                      error={showValidation && seasonalType.length === 0}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                    {showValidation && seasonalType.length === 0 && (
-                      <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
-                        Select at least one season
-                      </p>
-                    )}
-                  </div>
+                  {!deletedTabIds.includes("materials") && (
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                        <span>{getEnglishName(customTabLabels["materials"] || "Material")} *</span>
+                      </label>
+                      <MultiSelectDropdown
+                        options={materials}
+                        selectedValues={material}
+                        onChange={setMaterial}
+                        placeholder={`Select ${getEnglishName(customTabLabels["materials"] || "Material")}`}
+                        error={showValidation && material.length === 0}
+                        valueKey="name"
+                        renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                      />
+                      {showValidation && material.length === 0 && (
+                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
+                          Select at least one material
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {!deletedTabIds.includes("seasons") && (
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                        <span>{getEnglishName(customTabLabels["seasons"] || "Seasonal Type")} *</span>
+                      </label>
+                      <MultiSelectDropdown
+                        options={seasons}
+                        selectedValues={seasonalType}
+                        onChange={setSeasonalType}
+                        placeholder={`Select ${getEnglishName(customTabLabels["seasons"] || "Seasons")}`}
+                        error={showValidation && seasonalType.length === 0}
+                        valueKey="name"
+                        renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                      />
+                      {showValidation && seasonalType.length === 0 && (
+                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1.5 ml-1">
+                          Select at least one season
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -7780,35 +7789,68 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Label / Badge</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={badges}
-                      selectedValues={badge}
-                      onChange={setBadge}
-                      placeholder="Select Label/Badge"
-                      error={false}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
-                      <span>Active Promotion</span>
-                    </label>
-                    <MultiSelectDropdown
-                      options={promotions}
-                      selectedValues={promotion}
-                      onChange={setPromotion}
-                      placeholder="Select Promotion"
-                      error={false}
-                      valueKey="name"
-                      renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
-                    />
-                  </div>
+                  {!deletedTabIds.includes("badges") && (
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                        <span>{getEnglishName(customTabLabels["badges"] || "Label / Badge")}</span>
+                      </label>
+                      <MultiSelectDropdown
+                        options={badges}
+                        selectedValues={badge}
+                        onChange={setBadge}
+                        placeholder={`Select ${getEnglishName(customTabLabels["badges"] || "Label/Badge")}`}
+                        error={false}
+                        valueKey="name"
+                        renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                      />
+                    </div>
+                  )}
+
+                  {!deletedTabIds.includes("promotions") && (
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                        <span>{getEnglishName(customTabLabels["promotions"] || "Active Promotion")}</span>
+                      </label>
+                      <MultiSelectDropdown
+                        options={promotions}
+                        selectedValues={promotion}
+                        onChange={setPromotion}
+                        placeholder={`Select ${getEnglishName(customTabLabels["promotions"] || "Promotion")}`}
+                        error={false}
+                        valueKey="name"
+                        renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                      />
+                    </div>
+                  )}
                 </div>
+
+                {/* Custom Category Titles Created on Category Page */}
+                {customSubTabs
+                  .filter((subTab) => !deletedTabIds.includes(subTab.id))
+                  .map((subTab) => {
+                    const tabLabel = getEnglishName(customTabLabels[subTab.id] || subTab.label);
+                    const tabItems = customTabItems[subTab.id] || [];
+                    const selectedVals = customAttributes[subTab.id] || [];
+
+                    return (
+                      <div key={subTab.id} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                          <label className="flex items-center space-x-1.5 text-xs font-bold uppercase text-gray-400 mb-2">
+                            <span>{tabLabel}</span>
+                          </label>
+                          <MultiSelectDropdown
+                            options={tabItems}
+                            selectedValues={selectedVals}
+                            onChange={(vals) => setCustomAttributes((prev) => ({ ...prev, [subTab.id]: vals }))}
+                            placeholder={`Select ${tabLabel}`}
+                            error={false}
+                            valueKey="name"
+                            renderOption={(opt) => getEnglishName(opt ? (opt.name || opt) : "")}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
 
                 {/* Product Color Variants & Per-Size Stock Section */}
                 <div className="p-6 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-6">
@@ -7873,34 +7915,43 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                   Select Color *
                                 </label>
-                                <select
-                                  value={variant.colorId || ""}
-                                  onChange={(e) => handleVariantColorChange(index, e.target.value)}
-                                  className={`w-full border px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] ${
-                                    showValidation && !variant.colorId ? "border-red-400 bg-red-50/20 text-red-600" : "border-slate-200 text-slate-800"
-                                  }`}
-                                >
-                                  <option value="" disabled>Select a color</option>
-                                  {colorsList.map((col) => (
-                                    <option key={col.id} value={col.id}>
-                                      {getEnglishName(col.name)} ({col.family})
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="flex items-center space-x-2.5">
+                                  {selectedColorObj && (
+                                    <span
+                                      className="w-7 h-7 rounded-full border border-slate-300 shadow-2xs shrink-0 inline-block transition-transform hover:scale-105"
+                                      style={getColorStyle(selectedColorObj.class)}
+                                      title={getEnglishName(selectedColorObj.name)}
+                                    />
+                                  )}
+                                  <select
+                                    value={variant.colorId || ""}
+                                    onChange={(e) => handleVariantColorChange(index, e.target.value)}
+                                    className={`w-full border px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] ${
+                                      showValidation && !variant.colorId ? "border-red-400 bg-red-50/20 text-red-600" : "border-slate-200 text-slate-800"
+                                    }`}
+                                  >
+                                    <option value="" disabled>Select a color</option>
+                                    {colorsList.map((col) => (
+                                      <option key={col.id} value={col.id}>
+                                        {getEnglishName(col.name)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
 
-                              {/* Variant Image Upload & Change */}
+                              {/* Variant Image Upload & Icon-only Change Button */}
                               <div>
                                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                   Variant Image (Required) *
                                 </label>
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-4">
                                   {variant.imagePreview ? (
                                     <div className="flex items-center space-x-3">
-                                      <div className="relative w-14 h-14 rounded-xl border border-slate-200 overflow-hidden shrink-0 group">
+                                      <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-2xl border border-slate-200 overflow-hidden shrink-0 shadow-sm group">
                                         <img src={variant.imagePreview} alt="Variant" className="w-full h-full object-cover" />
                                         <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                                          <Upload size={14} />
+                                          <Upload size={18} />
                                           <input
                                             type="file"
                                             accept="image/*"
@@ -7909,10 +7960,12 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                           />
                                         </label>
                                       </div>
-                                      <div className="flex items-center space-x-2">
-                                        <label className="px-3 py-1.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-lg text-xs font-bold uppercase cursor-pointer transition-colors flex items-center space-x-1.5 shadow-2xs">
-                                          <Edit2 size={13} />
-                                          <span>Change Image</span>
+                                      <div className="flex flex-col gap-2">
+                                        <label
+                                          className="p-2.5 bg-[#36454F] hover:bg-[#2c3841] text-[#B2AC88] hover:text-white rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center active:scale-95"
+                                          title="Change Image"
+                                        >
+                                          <Edit2 size={16} />
                                           <input
                                             type="file"
                                             accept="image/*"
@@ -7923,21 +7976,23 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                         <button
                                           type="button"
                                           onClick={() => handleRemoveVariantImage(index)}
-                                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                          className="p-2.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95"
                                           title="Remove Image"
                                         >
-                                          <Trash2 size={14} />
+                                          <Trash2 size={16} />
                                         </button>
                                       </div>
                                     </div>
                                   ) : (
-                                    <label className={`flex items-center justify-center px-4 py-2.5 border border-dashed rounded-xl text-xs font-bold bg-slate-50/50 cursor-pointer transition-colors space-x-2 ${
+                                    <label className={`flex items-center justify-center w-28 h-28 md:w-32 md:h-32 border-2 border-dashed rounded-2xl text-xs font-bold bg-slate-50/50 cursor-pointer transition-all space-x-2 text-center p-3 ${
                                       showValidation && !variant.imagePreview
                                         ? "border-red-400 text-red-500 hover:border-red-500"
                                         : "border-slate-300 text-slate-500 hover:text-[#B2AC88] hover:border-[#B2AC88]"
                                     }`}>
-                                      <Upload size={14} />
-                                      <span>Upload Image</span>
+                                      <div className="flex flex-col items-center">
+                                        <Upload size={20} className="mb-1" />
+                                        <span className="text-[11px]">Upload Image</span>
+                                      </div>
                                       <input
                                         type="file"
                                         accept="image/*"
