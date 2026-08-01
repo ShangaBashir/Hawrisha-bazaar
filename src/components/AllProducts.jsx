@@ -1679,7 +1679,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       }}
                                       className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                     />
-                                    <span>{sz.name}</span>
+                                    <span>{getLocalized(sz.name, language)}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1731,7 +1731,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       }}
                                       className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                     />
-                                    <span>{st.name}</span>
+                                    <span>{getLocalized(st.name, language)}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1783,7 +1783,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       }}
                                       className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                     />
-                                    <span>{mat.name}</span>
+                                    <span>{getLocalized(mat.name, language)}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1835,7 +1835,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       }}
                                       className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                     />
-                                    <span>{seas.name}</span>
+                                    <span>{getLocalized(seas.name, language)}</span>
                                   </label>
                                 ))}
                               </div>
