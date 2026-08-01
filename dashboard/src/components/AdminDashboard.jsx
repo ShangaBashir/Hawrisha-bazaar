@@ -2555,7 +2555,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     });
   };
 
-  const handleAddCustomCategoryHeaderTab = (e) => {
+  const handleAddCustomCategoryHeaderTab = async (e) => {
     e.preventDefault();
     if (!catModalEn.trim()) return;
     const finalEn = catModalEn.trim();
@@ -2570,10 +2570,23 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     setCustomSubTabs(updatedCustomTabs);
     localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
 
+    const newCatObj = { id: `cat_${Date.now()}`, name: combinedVal };
+    const updatedCategories = [newCatObj, ...categories];
+    setCategories(updatedCategories);
+    localStorage.setItem("hhawrisha_categories", JSON.stringify(updatedCategories));
+
+    try {
+      await fetch("/api/settings/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: combinedVal })
+      });
+    } catch {}
+
     setSettingsSubTab(newTabId);
     setSettingsPage(1);
 
-    showToast(`Category title "${finalEn}" created successfully!`);
+    showToast(`Category "${finalEn}" created successfully!`);
     setIsAddCategoryModalOpen(false);
     setCatModalEn("");
     setCatModalKu("");
