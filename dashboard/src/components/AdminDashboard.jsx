@@ -4218,58 +4218,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   );
                 })}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCategoryAddTarget("header_title");
-                    setCatModalEn("");
-                    setCatModalKu("");
-                    setCatModalAr("");
-                    setIsAddCategoryModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all border border-dashed border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88]/10 text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 shadow-2xs select-none"
-                  title="Add New Category Title Pill"
-                >
-                  <Plus size={13} />
-                  <span>ADD CATEGORY TITLE</span>
-                </button>
-              </div>
-
-              {/* Inline Add Category Title Form Card */}
-              <div className="bg-white border border-[#B2AC88]/40 rounded-2xl p-6 shadow-sm max-w-4xl mx-auto mb-8">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                  <h3 className="text-sm font-bold text-[#36454F] uppercase tracking-wider flex items-center gap-2">
-                    <Plus size={16} className="text-[#B2AC88]" />
-                    <span>Add New Category Title Pill</span>
-                  </h3>
-                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                    Create new category pills like Sport Type, Footwear, Accessories, etc.
-                  </span>
-                </div>
-
-                <form
-                  onSubmit={handleAddCustomCategoryHeaderTab}
-                  className="space-y-4"
-                >
-                  <LangTextInput
-                    label="New Category Title *"
-                    required
-                    valueEn={catModalEn}
-                    valueKu={catModalKu}
-                    valueAr={catModalAr}
-                    onChangeEn={setCatModalEn}
-                    onChangeKu={setCatModalKu}
-                    onChangeAr={setCatModalAr}
-                    placeholder="e.g. Footwear, Sport Type, Accessories..."
-                  />
-                  <button
-                    type="submit"
-                    disabled={!catModalEn.trim()}
-                    className="w-full py-3 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    + CREATE NEW CATEGORY TITLE PILL
-                  </button>
-                </form>
               </div>
 
               <div className="w-full">
