@@ -28,7 +28,7 @@ const getColorStyle = (colorClass) => {
 };
 
 export default function Header({ currentView, onViewChange, cartCount, wishlistCount, onCartClick, onWishlistClick, onSearch, isLoggedIn, currentUser, currentUserRole, onLoginClick, onLogoutClick, onFilterSelect }) {
-  const { language, setLanguage, t, tCategory } = useLanguage();
+  const { language, setLanguage, t, tCategory, getLocalized } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -644,7 +644,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {badge.name}
+                                {getLocalized(badge.name, language)}
                               </button>
                             ))}
                           </motion.div>
@@ -707,7 +707,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         onClick={() => toggleGroup('styles')}
                         className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
                       >
-                        <span>{language === 'ar' ? 'الموديلات' : language === 'ku' ? 'شێوازەکان' : 'Styles'}</span>
+                        <span>{language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Styles & Lengths'}</span>
                         <ChevronDown 
                           size={14} 
                           className={`text-gray-400 transition-transform duration-200 ${openGroups.styles ? 'rotate-0' : '-rotate-90'}`} 
@@ -733,7 +733,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {st.name}
+                                {getLocalized(st.name, language)}
                               </button>
                             ))}
                           </motion.div>
@@ -777,7 +777,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {mat.name}
+                                {getLocalized(mat.name, language)}
                               </button>
                             ))}
                           </motion.div>
@@ -818,7 +818,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {seas.name}
+                                {getLocalized(seas.name, language)}
                               </button>
                             ))}
                           </motion.div>
@@ -862,7 +862,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {sz.name}
+                                {getLocalized(sz.name, language)}
                               </button>
                             ))}
                           </motion.div>
@@ -903,7 +903,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                                 }}
                                 className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
                               >
-                                {promo.name}
+                                {getLocalized(promo.name, language)}
                               </button>
                             ))}
                           </motion.div>

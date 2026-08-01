@@ -62,17 +62,25 @@ export function LanguageProvider({ children }) {
 
   const getLocalizedValue = (val) => {
     if (!val) return '';
-    try {
-      if (typeof val === 'string' && val.trim().startsWith('{') && val.trim().endsWith('}')) {
-        const parsed = JSON.parse(val);
-        const l = language ? language.toLowerCase() : 'en';
-        const u = l.toUpperCase();
-        return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
-      }
-    } catch (e) {
-      // Ignore
+    const l = language ? language.toLowerCase() : 'en';
+    const u = l.toUpperCase();
+    if (typeof val === 'object' && val !== null) {
+      return val[l] || val[u] || val['en'] || val['EN'] || val['ku'] || val['KU'] || val['ar'] || val['AR'] || '';
     }
-    return val;
+    let currentVal = val;
+    for (let i = 0; i < 3; i++) {
+      try {
+        if (typeof currentVal !== 'string') break;
+        const parsed = JSON.parse(currentVal);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed[l] || parsed[u] || parsed['en'] || parsed['EN'] || parsed['ku'] || parsed['KU'] || parsed['ar'] || parsed['AR'] || val;
+        }
+        currentVal = parsed;
+      } catch {
+        break;
+      }
+    }
+    return currentVal;
   };
 
   // Helper to translate categories fetched from backend dynamically
@@ -123,7 +131,7 @@ export function LanguageProvider({ children }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, tCategory, tBadge, tMaterial, tSeason }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, tCategory, tBadge, tMaterial, tSeason, getLocalizedValue, getLocalized: getLocalizedValue }}>
       {children}
     </LanguageContext.Provider>
   );
