@@ -551,6 +551,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   // Product Color Variants state
   const [colorVariants, setColorVariants] = useState([]);
   const [customAttributes, setCustomAttributes] = useState({});
+  const [viewingVariantImage, setViewingVariantImage] = useState(null);
 
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [categoryAddTarget, setCategoryAddTarget] = useState("item"); // 'item' or 'header_title'
@@ -7909,38 +7910,63 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                              {/* Color Selector */}
-                              <div>
-                                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                  Select Color *
-                                </label>
-                                <div className="flex items-center space-x-2.5">
-                                  {selectedColorObj && (
-                                    <span
-                                      className="w-7 h-7 rounded-full border border-slate-300 shadow-2xs shrink-0 inline-block transition-transform hover:scale-105"
-                                      style={getColorStyle(selectedColorObj.class)}
-                                      title={getEnglishName(selectedColorObj.name)}
-                                    />
-                                  )}
-                                  <select
-                                    value={variant.colorId || ""}
-                                    onChange={(e) => handleVariantColorChange(index, e.target.value)}
-                                    className={`w-full border px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] ${
-                                      showValidation && !variant.colorId ? "border-red-400 bg-red-50/20 text-red-600" : "border-slate-200 text-slate-800"
-                                    }`}
-                                  >
-                                    <option value="" disabled>Select a color</option>
-                                    {colorsList.map((col) => (
-                                      <option key={col.id} value={col.id}>
-                                        {getEnglishName(col.name)}
-                                      </option>
-                                    ))}
-                                  </select>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                              {/* Color Selector & Add Size */}
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Select Color *
+                                  </label>
+                                  <div className="flex items-center space-x-2.5">
+                                    {selectedColorObj && (
+                                      <span
+                                        className="w-7 h-7 rounded-full border border-slate-300 shadow-2xs shrink-0 inline-block transition-transform hover:scale-105"
+                                        style={getColorStyle(selectedColorObj.class)}
+                                        title={getEnglishName(selectedColorObj.name)}
+                                      />
+                                    )}
+                                    <select
+                                      value={variant.colorId || ""}
+                                      onChange={(e) => handleVariantColorChange(index, e.target.value)}
+                                      className={`w-full border px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] ${
+                                        showValidation && !variant.colorId ? "border-red-400 bg-red-50/20 text-red-600" : "border-slate-200 text-slate-800"
+                                      }`}
+                                    >
+                                      <option value="" disabled>Select a color</option>
+                                      {colorsList.map((col) => (
+                                        <option key={col.id} value={col.id}>
+                                          {getEnglishName(col.name)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
+
+                                {/* + Add Size dropdown under color */}
+                                {availableToAddSizes.length > 0 && (
+                                  <div>
+                                    <select
+                                      defaultValue=""
+                                      onChange={(e) => {
+                                        if (e.target.value) {
+                                          handleAddSizeToVariant(index, e.target.value);
+                                          e.target.value = "";
+                                        }
+                                      }}
+                                      className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none cursor-pointer transition-colors"
+                                    >
+                                      <option value="" disabled>+ Add Size</option>
+                                      {availableToAddSizes.map((sz) => (
+                                        <option key={sz} value={sz}>
+                                          + Add {sz}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
                               </div>
 
-                              {/* Variant Image Upload & Icon-only Change Button */}
+                              {/* Variant Image Upload, Larger Preview & Icons */}
                               <div>
                                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                   Variant Image (Required) *
@@ -7948,10 +7974,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 <div className="flex items-center space-x-4">
                                   {variant.imagePreview ? (
                                     <div className="flex items-center space-x-3">
-                                      <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-2xl border border-slate-200 overflow-hidden shrink-0 shadow-sm group">
+                                      <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-2xl border border-slate-200 overflow-hidden shrink-0 shadow-md group">
                                         <img src={variant.imagePreview} alt="Variant" className="w-full h-full object-cover" />
                                         <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                                          <Upload size={18} />
+                                          <Upload size={22} />
                                           <input
                                             type="file"
                                             accept="image/*"
@@ -7960,9 +7986,19 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                           />
                                         </label>
                                       </div>
-                                      <div className="flex flex-col gap-2">
+                                      <div className="flex flex-col gap-2.5">
+                                        {/* Eye Icon for full view */}
+                                        <button
+                                          type="button"
+                                          onClick={() => setViewingVariantImage(variant.imagePreview)}
+                                          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-2xs"
+                                          title="View Image Full Size"
+                                        >
+                                          <Eye size={16} />
+                                        </button>
+                                        {/* Edit Icon for change image */}
                                         <label
-                                          className="p-2.5 bg-[#36454F] hover:bg-[#2c3841] text-[#B2AC88] hover:text-white rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center active:scale-95"
+                                          className="p-2.5 bg-[#36454F] hover:bg-[#2c3841] text-[#B2AC88] hover:text-white rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center active:scale-95"
                                           title="Change Image"
                                         >
                                           <Edit2 size={16} />
@@ -7973,10 +8009,20 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                             onChange={(e) => e.target.files[0] && handleVariantImageChange(index, e.target.files[0])}
                                           />
                                         </label>
+                                        {/* Trash Icon with confirmation */}
                                         <button
                                           type="button"
-                                          onClick={() => handleRemoveVariantImage(index)}
-                                          className="p-2.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95"
+                                          onClick={() => {
+                                            setConfirmModal({
+                                              open: true,
+                                              title: "Delete Variant Image",
+                                              message: "Are you sure you want to delete this variant image?",
+                                              onConfirm: () => {
+                                                handleRemoveVariantImage(index);
+                                              }
+                                            });
+                                          }}
+                                          className="p-2.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-2xs"
                                           title="Remove Image"
                                         >
                                           <Trash2 size={16} />
@@ -7984,14 +8030,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                       </div>
                                     </div>
                                   ) : (
-                                    <label className={`flex items-center justify-center w-28 h-28 md:w-32 md:h-32 border-2 border-dashed rounded-2xl text-xs font-bold bg-slate-50/50 cursor-pointer transition-all space-x-2 text-center p-3 ${
+                                    <label className={`flex items-center justify-center w-36 h-36 md:w-44 md:h-44 border-2 border-dashed rounded-2xl text-xs font-bold bg-slate-50/50 cursor-pointer transition-all space-x-2 text-center p-4 ${
                                       showValidation && !variant.imagePreview
                                         ? "border-red-400 text-red-500 hover:border-red-500"
                                         : "border-slate-300 text-slate-500 hover:text-[#B2AC88] hover:border-[#B2AC88]"
                                     }`}>
                                       <div className="flex flex-col items-center">
-                                        <Upload size={20} className="mb-1" />
-                                        <span className="text-[11px]">Upload Image</span>
+                                        <Upload size={24} className="mb-1.5" />
+                                        <span className="text-xs">Upload Image</span>
                                       </div>
                                       <input
                                         type="file"
@@ -8005,38 +8051,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                               </div>
                             </div>
 
-                            {/* Size & Stock Management for this Color */}
-                            <div className="pt-3 border-t border-slate-100 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                  Available Sizes & Stock Quantities *
-                                </label>
-                                {availableToAddSizes.length > 0 && (
-                                  <select
-                                    defaultValue=""
-                                    onChange={(e) => {
-                                      if (e.target.value) {
-                                        handleAddSizeToVariant(index, e.target.value);
-                                        e.target.value = "";
-                                      }
-                                    }}
-                                    className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                                  >
-                                    <option value="" disabled>+ Add Size</option>
-                                    {availableToAddSizes.map((sz) => (
-                                      <option key={sz} value={sz}>
-                                        + Add {sz}
-                                      </option>
-                                    ))}
-                                  </select>
-                                )}
-                              </div>
-
-                              {assignedSizes.length === 0 ? (
-                                <p className="text-[11px] text-amber-600 font-medium italic">
-                                  No sizes assigned yet for this color. Use "+ Add Size" dropdown to specify sizes and stock quantities.
-                                </p>
-                              ) : (
+                            {/* Assigned Sizes & Stock Quantity Inputs (Without Header & Helper Texts) */}
+                            {assignedSizes.length > 0 && (
+                              <div className="pt-3 border-t border-slate-100">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                   {assignedSizes.map((sz) => (
                                     <div key={sz} className="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
@@ -8062,8 +8079,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                     </div>
                                   ))}
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -8261,6 +8278,41 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   Delete
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Full-size Variant Image Preview Modal */}
+      <AnimatePresence>
+        {viewingVariantImage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setViewingVariantImage(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              className="relative z-10 max-w-4xl w-full p-2 flex flex-col items-center justify-center"
+            >
+              <button
+                type="button"
+                onClick={() => setViewingVariantImage(null)}
+                className="absolute -top-12 right-0 p-2.5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                title="Close Preview"
+              >
+                <X size={22} />
+              </button>
+              <img
+                src={viewingVariantImage}
+                alt="Variant Image Preview"
+                className="max-h-[85vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl border border-white/10"
+              />
             </motion.div>
           </div>
         )}
