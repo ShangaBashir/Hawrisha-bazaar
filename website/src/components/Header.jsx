@@ -64,6 +64,8 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
   const [seasonsList, setSeasonsList] = useState([]);
   const [sizesList, setSizesList] = useState([]);
   const [promotionsList, setPromotionsList] = useState([]);
+  const [designsList, setDesignsList] = useState([]);
+  const [sportTypesList, setSportTypesList] = useState([]);
 
   const [mobileOpenSections, setMobileOpenSections] = useState({
     categories: false,
@@ -74,6 +76,8 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
     seasons: false,
     sizes: false,
     promotions: false,
+    designs: false,
+    sportTypes: false,
   });
 
   const toggleMobileSection = (sec) => {
@@ -81,15 +85,14 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
   };
 
   const [openGroups, setOpenGroups] = useState({
-    categories: false,
-    badges: false,
-    colors: false,
-    styles: false,
-    materials: false,
-    seasons: false,
-    sizes: false,
-    promotions: false,
-    gender: false,
+    colors: true,
+    gender: true,
+    sizes: true,
+    materials: true,
+    styles: true,
+    seasons: true,
+    designs: true,
+    sportTypes: true,
   });
 
   const toggleGroup = (group) => {
@@ -223,6 +226,22 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
           { id: 'buy_2_get_1_free', name: 'Buy 2 Get 1 Free' },
           { id: 'new_season_promo', name: 'New Season Promo' }
         ]);
+      });
+
+    // Fetch Designs
+    fetch('/api/settings/designs')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setDesignsList(data); })
+      .catch(() => {
+        if (active) setDesignsList([]);
+      });
+
+    // Fetch Sport Types
+    fetch('/api/settings/sport-types')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setSportTypesList(data); })
+      .catch(() => {
+        if (active) setSportTypesList([]);
       });
 
     return () => { active = false; };
@@ -556,401 +575,304 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 right-0 top-full mt-1 bg-[#FAF9F5] border border-brand-sage/10 rounded-2xl shadow-2xl p-8 z-50 font-sans grid grid-cols-4 gap-y-8 gap-x-10 text-start normal-case tracking-normal"
+                  className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 font-sans text-start normal-case tracking-normal overflow-hidden"
                 >
-                  {/* Column 1: Categories & Badges */}
-                  <div className="flex flex-col space-y-6">
-                    {/* Categories Group */}
+                  {/* Header Banner */}
+                  <div className="bg-gradient-to-r from-[#36454F] to-[#4a5f6e] px-8 py-4 flex items-center justify-between">
                     <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('categories')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'الفئات' : language === 'ku' ? 'پۆلەکان' : 'Categories'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.categories ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.categories && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsCategoriesDropdownOpen(false);
-                                if (onFilterSelect) onFilterSelect('categories', ['All']);
-                              }}
-                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer uppercase tracking-wider"
-                            >
-                              {language === 'ar' ? 'جميع الأقسام' : language === 'ku' ? 'هەموو پۆلەکان' : 'All Categories'}
-                            </button>
-                            {categoriesList.map(cat => (
-                              <button
-                                key={cat.id || cat.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('categories', [cat.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {tCategory ? tCategory(cat.name) : cat.name}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <h2 className="text-white font-bold text-sm uppercase tracking-widest">Shop Socks</h2>
+                      <p className="text-[#B2AC88]/80 text-xs mt-0.5">
+                        {language === 'ar' ? 'استكشف حسب الفئة' : language === 'ku' ? 'بگەڕێ بەپێی پۆل' : 'Browse by filter'}
+                      </p>
                     </div>
-
-                    {/* Badges / Labels Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('badges')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'الملصقات' : language === 'ku' ? 'نیشانەکان' : 'Badges & Labels'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.badges ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.badges && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {badgesList.map(badge => (
-                              <button
-                                key={badge.id || badge.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('badges', [badge.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(badge.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCategoriesDropdownOpen(false);
+                        if (onFilterSelect) onFilterSelect('categories', ['All']);
+                      }}
+                      className="text-xs text-[#B2AC88] hover:text-white border border-[#B2AC88]/40 hover:border-white/60 px-3 py-1.5 rounded-lg transition-all font-semibold uppercase tracking-wider cursor-pointer"
+                    >
+                      {language === 'ar' ? 'عرض الكل' : language === 'ku' ? 'هەموو ببینە' : 'View All'}
+                    </button>
                   </div>
 
-                  {/* Column 2: Colors & Styles */}
-                  <div className="flex flex-col space-y-6">
-                    {/* Colors Group */}
-                    <div>
+                  {/* Grid of 4 columns × 2 rows */}
+                  <div className="grid grid-cols-4 gap-0 p-6 gap-x-0">
+
+                    {/* ─── Col 1: Colors ─── */}
+                    <div className="px-4 border-r border-gray-100">
                       <button
                         type="button"
                         onClick={() => toggleGroup('colors')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none group"
                       >
-                        <span>{language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.colors ? 'rotate-0' : '-rotate-90'}`} 
-                        />
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.colors ? 'rotate-0' : '-rotate-90'}`} />
                       </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.colors && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {uniqueColorFilters.map(col => (
-                              <button
-                                key={col.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('colors', [col.name]);
-                                }}
-                                className="flex items-center space-x-2.5 text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer capitalize"
-                              >
-                                <span 
-                                  className="w-3 h-3 rounded-full border border-gray-200/50 shrink-0" 
-                                  style={getColorStyle(col.class)}
-                                />
-                                <span>{col.name}</span>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {openGroups.colors && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {uniqueColorFilters.map(col => (
+                            <button
+                              key={col.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('colors', [col.name]);
+                              }}
+                              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-100 hover:border-[#B2AC88]/50 hover:bg-[#FAF9F5] text-[11px] font-semibold text-gray-600 hover:text-[#36454F] transition-all cursor-pointer capitalize group"
+                            >
+                              <span className="w-3.5 h-3.5 rounded-full border border-gray-200 shrink-0" style={getColorStyle(col.class)} />
+                              <span>{col.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Styles Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('styles')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Styles & Lengths'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.styles ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.styles && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {stylesList.map(st => (
-                              <button
-                                key={st.id || st.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('styles', [st.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(st.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* Column 3: Materials & Seasons */}
-                  <div className="flex flex-col space-y-6">
-                    {/* Materials Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('materials')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Materials'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.materials ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.materials && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {materialsList.map(mat => (
-                              <button
-                                key={mat.id || mat.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('materials', [mat.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(mat.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Seasons Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('seasons')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'الفصول' : language === 'ku' ? 'وەرزەکان' : 'Seasons'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.seasons ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.seasons && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {seasonsList.map(seas => (
-                              <button
-                                key={seas.id || seas.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('seasons', [seas.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(seas.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* Column 4: Sizes & Promotions */}
-                  <div className="flex flex-col space-y-6">
-                    {/* Sizes Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('sizes')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'المقاسات' : language === 'ku' ? 'قەبارەکان' : 'Sizes'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.sizes ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.sizes && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {sizesList.map(sz => (
-                              <button
-                                key={sz.id || sz.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('sizes', [sz.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(sz.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Promotions Group */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup('promotions')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
-                      >
-                        <span>{language === 'ar' ? 'العروض الترويجية' : language === 'ku' ? 'کەمپین و عەرزەکان' : 'Promotions'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.promotions ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.promotions && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {promotionsList.map(promo => (
-                              <button
-                                key={promo.id || promo.name}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('promotions', [promo.name]);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {getLocalized(promo.name, language)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Gender Group */}
-                    <div>
+                    {/* ─── Col 2: Gender ─── */}
+                    <div className="px-4 border-r border-gray-100">
                       <button
                         type="button"
                         onClick={() => toggleGroup('gender')}
-                        className="w-full flex items-center justify-start gap-1.5 text-[13px] font-extrabold text-[#36454F] uppercase tracking-wider mb-2 text-start border-0 bg-transparent cursor-pointer p-0 select-none hover:text-[#B2AC88] transition-colors"
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
                       >
-                        <span>{language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-gray-400 transition-transform duration-200 ${openGroups.gender ? 'rotate-0' : '-rotate-90'}`} 
-                        />
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.gender ? 'rotate-0' : '-rotate-90'}`} />
                       </button>
-                      
-                      <AnimatePresence>
-                        {openGroups.gender && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex flex-col space-y-2 overflow-hidden pl-1 mt-1"
-                          >
-                            {['Women', 'Men', 'Kids'].map(g => (
-                              <button
-                                key={g}
-                                type="button"
-                                onClick={() => {
-                                  setIsCategoriesDropdownOpen(false);
-                                  if (onFilterSelect) onFilterSelect('gender', g);
-                                }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
-                              >
-                                {g === 'Women' ? (language === 'ar' ? 'نساء' : language === 'ku' ? 'ژن' : 'Women') : g === 'Men' ? (language === 'ar' ? 'رجال' : language === 'ku' ? 'پیاو' : 'Men') : (language === 'ar' ? 'أطفال' : language === 'ku' ? 'منداڵ' : 'Kids')}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {openGroups.gender && (
+                        <div className="flex flex-col space-y-1.5">
+                          {[
+                            { val: 'Women', ar: 'نساء', ku: 'ژن' },
+                            { val: 'Men', ar: 'رجال', ku: 'پیاو' },
+                            { val: 'Kids', ar: 'أطفال', ku: 'منداڵ' },
+                            { val: 'Unisex', ar: 'للجنسين', ku: 'هەردووکی' },
+                          ].map(g => (
+                            <button
+                              key={g.val}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('gender', g.val);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {language === 'ar' ? g.ar : language === 'ku' ? g.ku : g.val}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* ─── Col 3: Sizes ─── */}
+                    <div className="px-4 border-r border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('sizes')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'المقاسات' : language === 'ku' ? 'قەبارەکان' : 'Sizes'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.sizes ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.sizes && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {sizesList.map(sz => (
+                            <button
+                              key={sz.id || sz.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('sizes', [sz.name]);
+                              }}
+                              className="px-2.5 py-1 text-[11px] font-bold text-gray-600 hover:text-[#36454F] border border-gray-200 hover:border-[#B2AC88] rounded-lg hover:bg-[#FAF9F5] transition-all cursor-pointer"
+                            >
+                              {getLocalized(sz.name, language)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ─── Col 4: Material ─── */}
+                    <div className="px-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('materials')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Material'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.materials ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.materials && (
+                        <div className="flex flex-col space-y-1.5">
+                          {materialsList.map(mat => (
+                            <button
+                              key={mat.id || mat.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('materials', [mat.name]);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {getLocalized(mat.name, language)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Divider row */}
+                    <div className="col-span-4 border-t border-gray-100 my-4" />
+
+                    {/* ─── Col 1 (row 2): Style / Length ─── */}
+                    <div className="px-4 border-r border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('styles')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Style / Length'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.styles ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.styles && (
+                        <div className="flex flex-col space-y-1.5">
+                          {stylesList.map(st => (
+                            <button
+                              key={st.id || st.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('styles', [st.name]);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {getLocalized(st.name, language)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ─── Col 2 (row 2): Season ─── */}
+                    <div className="px-4 border-r border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('seasons')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'الفصول' : language === 'ku' ? 'وەرزەکان' : 'Season'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.seasons ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.seasons && (
+                        <div className="flex flex-col space-y-1.5">
+                          {seasonsList.map(seas => (
+                            <button
+                              key={seas.id || seas.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('seasons', [seas.name]);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {getLocalized(seas.name, language)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ─── Col 3 (row 2): Design ─── */}
+                    <div className="px-4 border-r border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('designs')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'التصميم' : language === 'ku' ? 'دیزاین' : 'Design'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.designs ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.designs && (
+                        <div className="flex flex-col space-y-1.5">
+                          {designsList.length > 0 ? designsList.map(d => (
+                            <button
+                              key={d.id || d.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('designs', [d.name]);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {getLocalized(d.name, language)}
+                            </button>
+                          )) : (
+                            <span className="text-xs text-gray-400 italic">
+                              {language === 'ar' ? 'قريباً' : language === 'ku' ? 'بەزووی' : 'Coming soon'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ─── Col 4 (row 2): Sport Type ─── */}
+                    <div className="px-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup('sportTypes')}
+                        className="w-full flex items-center justify-between text-[11px] font-extrabold text-[#36454F] uppercase tracking-widest mb-3 border-0 bg-transparent cursor-pointer p-0 select-none"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
+                          {language === 'ar' ? 'نوع الرياضة' : language === 'ku' ? 'جۆری وەرزش' : 'Sport Type'}
+                        </span>
+                        <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.sportTypes ? 'rotate-0' : '-rotate-90'}`} />
+                      </button>
+                      {openGroups.sportTypes && (
+                        <div className="flex flex-col space-y-1.5">
+                          {sportTypesList.length > 0 ? sportTypesList.map(sp => (
+                            <button
+                              key={sp.id || sp.name}
+                              type="button"
+                              onClick={() => {
+                                setIsCategoriesDropdownOpen(false);
+                                if (onFilterSelect) onFilterSelect('sportTypes', [sp.name]);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-[#B2AC88] hover:translate-x-1 transition-all duration-200 text-start border-0 bg-transparent py-0.5 cursor-pointer"
+                            >
+                              {getLocalized(sp.name, language)}
+                            </button>
+                          )) : (
+                            <span className="text-xs text-gray-400 italic">
+                              {language === 'ar' ? 'قريباً' : language === 'ku' ? 'بەزووی' : 'Coming soon'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                 </motion.div>
               )}

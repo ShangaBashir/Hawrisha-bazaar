@@ -175,6 +175,22 @@ async function initializeDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    // 11b. Create designs table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS designs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name TEXT NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 11c. Create sport_types table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sport_types (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name TEXT NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // 12. Create users table
     await db.query(`
       CREATE TABLE IF NOT EXISTS users (

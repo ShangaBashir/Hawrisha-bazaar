@@ -329,7 +329,9 @@ function App() {
       badges: [],
       promotions: [],
       onlyDiscounted: false,
-      gender: ''
+      gender: '',
+      designs: [],
+      sportTypes: []
     };
     if (type === 'categories' && value.includes('All')) {
       newFilters.categories = [];

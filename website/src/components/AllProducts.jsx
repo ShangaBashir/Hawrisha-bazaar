@@ -504,6 +504,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [colorsList, setColorsList] = useState([]);
   const [badgesList, setBadgesList] = useState([]);
   const [promotionsList, setPromotionsList] = useState([]);
+  const [designsList, setDesignsList] = useState([]);
+  const [sportTypesList, setSportTypesList] = useState([]);
 
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) {
@@ -530,6 +532,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
   const [selectedPromotions, setSelectedPromotions] = useState([]);
+  const [selectedDesigns, setSelectedDesigns] = useState([]);
+  const [selectedSportTypes, setSelectedSportTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -725,6 +729,18 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         ]);
       });
 
+    // Fetch Designs
+    fetch('/api/settings/designs')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setDesignsList(data); })
+      .catch(() => { if (active) setDesignsList([]); });
+
+    // Fetch Sport Types
+    fetch('/api/settings/sport-types')
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (active) setSportTypesList(data); })
+      .catch(() => { if (active) setSportTypesList([]); });
+
     return () => { active = false; };
   }, []);
 
@@ -779,6 +795,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setSelectedSizes(globalFilters.sizes || []);
     setSelectedBadges(globalFilters.badges || []);
     setSelectedPromotions(globalFilters.promotions || []);
+    setSelectedDesigns(globalFilters.designs || []);
+    setSelectedSportTypes(globalFilters.sportTypes || []);
     setOnlyDiscounted(globalFilters.onlyDiscounted || false);
     setSelectedGender(globalFilters.gender || '');
     
@@ -801,6 +819,8 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     style: false,
     material: false,
     season: false,
+    design: false,
+    sportType: false,
   });
 
   const toggleSection = (section) => {
@@ -1054,9 +1074,15 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         const matchesPromotion = selectedPromotions.length === 0 || 
           selectedPromotions.some(promo => parseJsonArray(product.promotion).includes(promo));
 
+        const matchesDesign = selectedDesigns.length === 0 ||
+          selectedDesigns.some(d => parseJsonArray(product.design).includes(d));
+
+        const matchesSportType = selectedSportTypes.length === 0 ||
+          selectedSportTypes.some(st => parseJsonArray(product.sport_type).includes(st));
+
         const matchesGender = !selectedGender || product.gender === selectedGender;
 
-        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount && matchesBadge && matchesPromotion && matchesGender;
+        return matchesSearch && matchesCategory && matchesPrice && matchesColor && matchesStyle && matchesMaterial && matchesSeason && matchesSize && matchesDiscount && matchesBadge && matchesPromotion && matchesDesign && matchesSportType && matchesGender;
       })
       .sort((a, b) => {
         if (sortBy === 'Price: Low to High') {
@@ -1078,7 +1104,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         }
         return 0;
       });
-  }, [products, localSearchTerm, initialSearchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions, selectedGender]);
+  }, [products, localSearchTerm, initialSearchTerm, selectedCategories, maxPriceFilter, selectedColors, sortBy, likedProducts, selectedStyles, selectedMaterials, selectedSeasons, selectedSizes, colorsList, onlyDiscounted, selectedBadges, selectedPromotions, selectedDesigns, selectedSportTypes, selectedGender]);
 
   // Reset page when any filter updates
   useEffect(() => {
@@ -1815,6 +1841,104 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                     />
                                     <span>{getLocalized(seas.name, language)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Design Section */}
+                        {designsList.length > 0 && (
+                          <div className="space-y-2">
+                            <div
+                              onClick={() => toggleSection('design')}
+                              className="flex items-center justify-between cursor-pointer group select-none"
+                            >
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">
+                                {language === 'ar' ? 'التصميم' : language === 'ku' ? 'دیزاین' : 'Design'}
+                              </h4>
+                              <div className="flex items-center space-x-2">
+                                {selectedDesigns.length > 0 && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedDesigns([]); }}
+                                    className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                                <ChevronDown
+                                  size={13}
+                                  className={`text-gray-400 group-hover:text-[#36454F] transition-transform duration-200 ${collapsedSections.design ? '-rotate-90' : 'rotate-0'}`}
+                                />
+                              </div>
+                            </div>
+                            {!collapsedSections.design && (
+                              <div className="flex flex-col space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {designsList.map((d) => (
+                                  <label key={d.id || d.name} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedDesigns.includes(d.name)}
+                                      onChange={() => {
+                                        if (selectedDesigns.includes(d.name)) {
+                                          setSelectedDesigns(selectedDesigns.filter(x => x !== d.name));
+                                        } else {
+                                          setSelectedDesigns([...selectedDesigns, d.name]);
+                                        }
+                                      }}
+                                      className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]"
+                                    />
+                                    <span>{getLocalized(d.name, language)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Sport Type Section */}
+                        {sportTypesList.length > 0 && (
+                          <div className="space-y-2">
+                            <div
+                              onClick={() => toggleSection('sportType')}
+                              className="flex items-center justify-between cursor-pointer group select-none"
+                            >
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">
+                                {language === 'ar' ? 'نوع الرياضة' : language === 'ku' ? 'جۆری وەرزش' : 'Sport Type'}
+                              </h4>
+                              <div className="flex items-center space-x-2">
+                                {selectedSportTypes.length > 0 && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedSportTypes([]); }}
+                                    className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                                <ChevronDown
+                                  size={13}
+                                  className={`text-gray-400 group-hover:text-[#36454F] transition-transform duration-200 ${collapsedSections.sportType ? '-rotate-90' : 'rotate-0'}`}
+                                />
+                              </div>
+                            </div>
+                            {!collapsedSections.sportType && (
+                              <div className="flex flex-col space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {sportTypesList.map((sp) => (
+                                  <label key={sp.id || sp.name} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedSportTypes.includes(sp.name)}
+                                      onChange={() => {
+                                        if (selectedSportTypes.includes(sp.name)) {
+                                          setSelectedSportTypes(selectedSportTypes.filter(x => x !== sp.name));
+                                        } else {
+                                          setSelectedSportTypes([...selectedSportTypes, sp.name]);
+                                        }
+                                      }}
+                                      className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]"
+                                    />
+                                    <span>{getLocalized(sp.name, language)}</span>
                                   </label>
                                 ))}
                               </div>

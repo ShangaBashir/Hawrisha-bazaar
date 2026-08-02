@@ -438,7 +438,97 @@ router.put('/promotions/:id', async (req, res) => {
   }
 });
 
-// --- 9. SYSTEM SETTINGS ---
+// --- 10. DESIGNS CRUD ---
+router.get('/designs', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM designs ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/designs', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Design name is required' });
+  try {
+    const [result] = await db.query('INSERT INTO designs (name) VALUES (?)', [typeof name === 'string' ? name.trim() : JSON.stringify(name)]);
+    res.json({ id: result.insertId, name });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Design already exists' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/designs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM designs WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/designs/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Design name is required' });
+  try {
+    const nameVal = typeof name === 'string' ? name.trim() : JSON.stringify(name);
+    await db.query('UPDATE designs SET name = ? WHERE id = ?', [nameVal, id]);
+    res.json({ id, name });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- 11. SPORT TYPES CRUD ---
+router.get('/sport-types', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM sport_types ORDER BY name ASC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/sport-types', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Sport type name is required' });
+  try {
+    const [result] = await db.query('INSERT INTO sport_types (name) VALUES (?)', [typeof name === 'string' ? name.trim() : JSON.stringify(name)]);
+    res.json({ id: result.insertId, name });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Sport type already exists' });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/sport-types/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM sport_types WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/sport-types/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Sport type name is required' });
+  try {
+    const nameVal = typeof name === 'string' ? name.trim() : JSON.stringify(name);
+    await db.query('UPDATE sport_types SET name = ? WHERE id = ?', [nameVal, id]);
+    res.json({ id, name });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- 12. SYSTEM SETTINGS ---
 // Get all system settings
 router.get('/system-settings', async (req, res) => {
   try {
