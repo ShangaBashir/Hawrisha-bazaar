@@ -3381,7 +3381,17 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     const cityMatch = matchesSearch(s.city, searchQuery);
     const ownerMatch = matchesSearch(s.owner_name, searchQuery);
     const emailMatch = matchesSearch(s.email, searchQuery);
-    const phoneMatch = matchesSearch(s.phone, searchQuery);
+    
+    // Robust phone matching
+    const cleanPhoneSearch = term.replace(/\D/g, '');
+    const cleanStorePhone = (s.phone || '').replace(/\D/g, '');
+    const phoneMatch = matchesSearch(s.phone, searchQuery) ||
+      (cleanPhoneSearch.length > 0 && cleanStorePhone.includes(cleanPhoneSearch)) ||
+      (cleanPhoneSearch.length > 0 && cleanPhoneSearch.startsWith('0') && cleanStorePhone.includes(cleanPhoneSearch.slice(1))) ||
+      (cleanPhoneSearch.length > 0 && cleanStorePhone.includes('964' + cleanPhoneSearch)) ||
+      (cleanPhoneSearch.length > 0 && cleanPhoneSearch.startsWith('964') && cleanStorePhone.includes(cleanPhoneSearch.slice(3))) ||
+      (cleanPhoneSearch.length > 0 && cleanPhoneSearch.startsWith('07') && cleanStorePhone.includes('9647' + cleanPhoneSearch.slice(2)));
+
     return nameMatch || descMatch || cityMatch || ownerMatch || emailMatch || phoneMatch;
   });
 
