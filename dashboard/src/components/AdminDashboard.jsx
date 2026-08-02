@@ -7169,7 +7169,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     handleAddPromotion(finalEn, finalKu, finalAr);
                   } else {
                     const newTabId = `custom_tab_${Date.now()}`;
-                    const newTabObj = { id: newTabId, label: finalEn };
+                    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+                    const newTabObj = { id: newTabId, label: combinedVal };
                     const updatedCustomTabs = [...customSubTabs, newTabObj];
                     setCustomSubTabs(updatedCustomTabs);
                     localStorage.setItem("hhawrisha_custom_sub_tabs", JSON.stringify(updatedCustomTabs));
@@ -7357,87 +7358,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
         )}
       </AnimatePresence>
 
-      {/* Edit Sub-Tab Header Modal */}
-      <AnimatePresence>
-        {editingHeaderTab && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditingHeaderTab(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
-            />
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl z-10 border border-slate-100/50"
-            >
-              <button
-                onClick={() => setEditingHeaderTab(null)}
-                className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="flex items-center space-x-3 mb-6 border-b border-slate-100 pb-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#36454F]/10 text-[#36454F] flex items-center justify-center font-bold">
-                  <Edit2 size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-[#36454F] font-sans">
-                    Edit Sub-Tab Header
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Customize the title for this category sub-tab header pill.
-                  </p>
-                </div>
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSaveHeaderTabLabel();
-                }}
-                className="space-y-5"
-              >
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">
-                    Header Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={headerTabLabelInput}
-                    onChange={(e) => setHeaderTabLabelInput(e.target.value)}
-                    placeholder="Header Title Label..."
-                    className="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#36454F]/20 focus:border-[#36454F]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingHeaderTab(null)}
-                    className="py-3 border border-slate-200 hover:bg-slate-50 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!headerTabLabelInput.trim()}
-                    className="py-3 bg-[#36454F] hover:bg-[#36454F]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
-                  >
-                    Save Title
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Universal Confirm Delete Modal */}
       <AnimatePresence>
