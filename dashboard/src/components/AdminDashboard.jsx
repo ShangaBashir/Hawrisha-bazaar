@@ -517,8 +517,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     { id: "buy_2_get_1_free", name: "Buy 2 Get 1 Free" },
     { id: "new_season_promo", name: "New Season Promo" },
   ]);
+  const [designs, setDesigns] = useState([]);
+  const [sportTypes, setSportTypes] = useState([]);
 
-  const [settingsSubTab, setSettingsSubTab] = useState("categories"); // 'categories', 'badges', 'colors', 'styles', 'materials', 'seasons', 'sizes', 'promotions'
+  const [settingsSubTab, setSettingsSubTab] = useState("categories"); // 'categories', 'badges', 'colors', 'styles', 'materials', 'seasons', 'sizes', 'promotions', 'designs', 'sport-types'
   const [settingsPage, setSettingsPage] = useState(1);
   const [cancellationLimit, setCancellationLimit] = useState(15);
   const [citiesList, setCitiesList] = useState([]);
@@ -638,6 +640,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [newPromoEn, setNewPromoEn] = useState("");
   const [newPromoKu, setNewPromoKu] = useState("");
   const [newPromoAr, setNewPromoAr] = useState("");
+
+  const [newDesignEn, setNewDesignEn] = useState("");
+  const [newDesignKu, setNewDesignKu] = useState("");
+  const [newDesignAr, setNewDesignAr] = useState("");
+
+  const [newSportTypeEn, setNewSportTypeEn] = useState("");
+  const [newSportTypeKu, setNewSportTypeKu] = useState("");
+  const [newSportTypeAr, setNewSportTypeAr] = useState("");
 
   const matchesSearch = (val, q) => {
     if (!q || !q.trim()) return true;
@@ -1296,7 +1306,29 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       }
     }
 
-    // 9. System settings (cancellation limit)
+    // 9. Designs
+    try {
+      const res = await fetch("/api/settings/designs");
+      if (res.ok) {
+        const data = await res.json();
+        setDesigns(sortNewestFirst(data));
+      }
+    } catch (err) {
+      console.error("Error fetching designs:", err);
+    }
+
+    // 10. Sport Types
+    try {
+      const res = await fetch("/api/settings/sport-types");
+      if (res.ok) {
+        const data = await res.json();
+        setSportTypes(sortNewestFirst(data));
+      }
+    } catch (err) {
+      console.error("Error fetching sport types:", err);
+    }
+
+    // 11. System settings (cancellation limit)
     try {
       const res = await fetch("/api/settings/system-settings");
       if (res.ok) {
@@ -2533,6 +2565,96 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     });
   };
 
+  const handleAddDesign = async (nameEn, nameKu, nameAr) => {
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+    try {
+      const res = await fetch("/api/settings/designs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: combinedVal }),
+      });
+      if (res.ok) {
+        showToast("Design added successfully!");
+        fetchSettings();
+      } else {
+        const error = await res.json();
+        showToast(error.error || "Failed to add design");
+      }
+    } catch {
+      showToast("Error: Backend not reachable");
+    }
+  };
+
+  const handleDeleteDesign = async (design) => {
+    setConfirmModal({
+      open: true,
+      message: `Are you sure you want to delete "${getEnglishName(design.name)}"?`,
+      onConfirm: async () => {
+        setConfirmModal({ open: false, message: '', onConfirm: null });
+        try {
+          const res = await fetch(`/api/settings/designs/${design.id}`, { method: "DELETE" });
+          if (res.ok) {
+            showToast("Design deleted successfully!");
+            fetchSettings();
+          } else {
+            showToast("Failed to delete design");
+          }
+        } catch {
+          showToast("Error: Backend not reachable");
+        }
+      }
+    });
+  };
+
+  const handleAddSportType = async (nameEn, nameKu, nameAr) => {
+    if (!nameEn || !nameEn.trim()) return;
+    const finalEn = nameEn.trim();
+    const finalKu = (nameKu && nameKu.trim()) ? nameKu.trim() : finalEn;
+    const finalAr = (nameAr && nameAr.trim()) ? nameAr.trim() : finalEn;
+    const combinedVal = JSON.stringify({ en: finalEn, ku: finalKu, ar: finalAr });
+    try {
+      const res = await fetch("/api/settings/sport-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: combinedVal }),
+      });
+      if (res.ok) {
+        showToast("Sport Type added successfully!");
+        fetchSettings();
+      } else {
+        const error = await res.json();
+        showToast(error.error || "Failed to add sport type");
+      }
+    } catch {
+      showToast("Error: Backend not reachable");
+    }
+  };
+
+  const handleDeleteSportType = async (sportType) => {
+    setConfirmModal({
+      open: true,
+      message: `Are you sure you want to delete "${getEnglishName(sportType.name)}"?`,
+      onConfirm: async () => {
+        setConfirmModal({ open: false, message: '', onConfirm: null });
+        try {
+          const res = await fetch(`/api/settings/sport-types/${sportType.id}`, { method: "DELETE" });
+          if (res.ok) {
+            showToast("Sport Type deleted successfully!");
+            fetchSettings();
+          } else {
+            showToast("Failed to delete sport type");
+          }
+        } catch {
+          showToast("Error: Backend not reachable");
+        }
+      }
+    });
+  };
+
   const handleAddCustomTabItem = (subTabId, nameEn, nameKu, nameAr) => {
     if (!nameEn.trim()) return;
     const finalEn = nameEn.trim();
@@ -3440,6 +3562,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const filteredSeasons = seasons.filter((s) => matchesSearch(s.name, searchQuery));
   const filteredSizes = sizes.filter((sz) => matchesSearch(sz.name, searchQuery));
   const filteredPromotions = promotions.filter((p) => matchesSearch(p.name, searchQuery));
+  const filteredDesigns = designs.filter((d) => matchesSearch(d.name, searchQuery));
+  const filteredSportTypes = sportTypes.filter((sp) => matchesSearch(sp.name, searchQuery));
   const filteredCities = citiesList.filter((c) => matchesSearch(c.name, searchQuery));
   const filteredDeliveryCities = deliveryCities.filter((d) => matchesSearch(d.city || d.city_name, searchQuery));
 
@@ -4168,6 +4292,8 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   { id: "seasons", label: "Seasonal Types" },
                   { id: "sizes", label: "Size Collections" },
                   { id: "promotions", label: "Promotions" },
+                  { id: "designs", label: "Designs" },
+                  { id: "sport-types", label: "Sport Types" },
                   ...customSubTabs
                 ]
                   .filter((tab) => !deletedTabIds.includes(tab.id))
@@ -4927,8 +5053,122 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   </div>
                 )}
 
+                {/* Designs Subtab */}
+                {settingsSubTab === "designs" && (
+                  <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs max-w-4xl mx-auto">
+                    <h3 className="text-md font-bold text-[#36454F] mb-4 uppercase tracking-wider">
+                      Design Collections
+                    </h3>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleAddDesign(newDesignEn, newDesignKu, newDesignAr);
+                        setNewDesignEn(""); setNewDesignKu(""); setNewDesignAr("");
+                      }}
+                      className="space-y-4 mb-6 pb-6 border-b border-slate-100"
+                    >
+                      <LangTextInput
+                        label="New Design Collection"
+                        required
+                        valueEn={newDesignEn}
+                        valueKu={newDesignKu}
+                        valueAr={newDesignAr}
+                        onChangeEn={setNewDesignEn}
+                        onChangeKu={setNewDesignKu}
+                        onChangeAr={setNewDesignAr}
+                        placeholder="Add custom design..."
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newDesignEn.trim()}
+                        className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        + ADD NEW DESIGN TITLE
+                      </button>
+                    </form>
+                    <div className="divide-y divide-slate-100">
+                      {designs.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-6 text-center italic font-medium">No designs yet. Add your first design above!</p>
+                      ) : (
+                        designs.slice((settingsPage - 1) * 10, settingsPage * 10).map((d) => {
+                          let displayName = d.name;
+                          try { if (d.name && d.name.startsWith("{")) { displayName = JSON.parse(d.name).en || d.name; } } catch (e) {}
+                          return (
+                            <div key={d.id} className="py-2.5 px-3 hover:bg-slate-100 rounded-xl flex items-center justify-between group transition-colors">
+                              <span className="text-sm font-semibold text-slate-700">{displayName}</span>
+                              <div className="flex items-center gap-1.5">
+                                <button type="button" onClick={() => handleDeleteDesign(d)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete Design">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                    {renderSettingsPagination(designs.length)}
+                  </div>
+                )}
+
+                {/* Sport Types Subtab */}
+                {settingsSubTab === "sport-types" && (
+                  <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs max-w-4xl mx-auto">
+                    <h3 className="text-md font-bold text-[#36454F] mb-4 uppercase tracking-wider">
+                      Sport Type Collections
+                    </h3>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleAddSportType(newSportTypeEn, newSportTypeKu, newSportTypeAr);
+                        setNewSportTypeEn(""); setNewSportTypeKu(""); setNewSportTypeAr("");
+                      }}
+                      className="space-y-4 mb-6 pb-6 border-b border-slate-100"
+                    >
+                      <LangTextInput
+                        label="New Sport Type Collection"
+                        required
+                        valueEn={newSportTypeEn}
+                        valueKu={newSportTypeKu}
+                        valueAr={newSportTypeAr}
+                        onChangeEn={setNewSportTypeEn}
+                        onChangeKu={setNewSportTypeKu}
+                        onChangeAr={setNewSportTypeAr}
+                        placeholder="Add custom sport type..."
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newSportTypeEn.trim()}
+                        className="w-full py-2.5 bg-[#B2AC88] hover:bg-[#B2AC88]/90 text-white rounded-xl text-xs font-bold uppercase cursor-pointer transition-colors active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        + ADD NEW SPORT TYPE TITLE
+                      </button>
+                    </form>
+                    <div className="divide-y divide-slate-100">
+                      {sportTypes.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-6 text-center italic font-medium">No sport types yet. Add your first sport type above!</p>
+                      ) : (
+                        sportTypes.slice((settingsPage - 1) * 10, settingsPage * 10).map((sp) => {
+                          let displayName = sp.name;
+                          try { if (sp.name && sp.name.startsWith("{")) { displayName = JSON.parse(sp.name).en || sp.name; } } catch (e) {}
+                          return (
+                            <div key={sp.id} className="py-2.5 px-3 hover:bg-slate-100 rounded-xl flex items-center justify-between group transition-colors">
+                              <span className="text-sm font-semibold text-slate-700">{displayName}</span>
+                              <div className="flex items-center gap-1.5">
+                                <button type="button" onClick={() => handleDeleteSportType(sp)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete Sport Type">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                    {renderSettingsPagination(sportTypes.length)}
+                  </div>
+                )}
+
                 {/* Custom Created Sub-Tab Panel */}
-                {(!["categories", "badges", "colors", "styles", "materials", "seasons", "sizes", "promotions"].includes(settingsSubTab)) && (() => {
+                {(!["categories", "badges", "colors", "styles", "materials", "seasons", "sizes", "promotions", "designs", "sport-types"].includes(settingsSubTab)) && (() => {
                   const currentTab = customSubTabs.find(t => String(t.id) === String(settingsSubTab));
                   const tabLabel = currentTab ? getEnglishName(currentTab.label) : (customTabLabels[settingsSubTab] || "Category");
                   const items = (customTabItems[settingsSubTab] || []);
