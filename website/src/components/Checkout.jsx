@@ -188,7 +188,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
 
   useEffect(() => {
     fetchAddresses();
-  }, [currentUserEmail, dbCities]);
+  }, [currentUserEmail, flatLocationsList]);
 
   // Dynamic Leaflet asset loading
   useEffect(() => {
@@ -280,7 +280,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
       setMapInstance(null);
       setMarkerInstance(null);
     };
-  }, [isMapScriptLoaded, isAddingNewAddress, formData.province, dbCities]);
+  }, [isMapScriptLoaded, isAddingNewAddress, formData.province, flatLocationsList]);
 
   const handleMapSearch = (query) => {
     if (!query.trim()) {
