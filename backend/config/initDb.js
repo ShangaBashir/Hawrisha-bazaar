@@ -80,6 +80,36 @@ async function initializeDatabase() {
       }
     };
 
+    // Widen a settings table's `name` column to TEXT so long trilingual JSON
+    // values are never truncated. A TEXT column cannot sit in a full-length
+    // UNIQUE index, so we drop the old unique index first and re-add it with a
+    // key-length prefix (still enforces uniqueness for the routes' duplicate
+    // checks). Idempotent: safe to run on every boot.
+    const modifyNameToText = async (tableName) => {
+      try {
+        const [fullLenIdx] = await db.query(
+          `SELECT DISTINCT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+             AND COLUMN_NAME = 'name' AND SUB_PART IS NULL AND INDEX_NAME <> 'PRIMARY'`,
+          [tableName]
+        );
+        for (const row of fullLenIdx) {
+          await db.query(`ALTER TABLE ${tableName} DROP INDEX \`${row.INDEX_NAME}\``);
+        }
+        await db.query(`ALTER TABLE ${tableName} MODIFY COLUMN name TEXT NOT NULL`);
+        const [existing] = await db.query(
+          `SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = 'uniq_name'`,
+          [tableName]
+        );
+        if (existing[0].c === 0) {
+          await db.query(`ALTER TABLE ${tableName} ADD UNIQUE KEY uniq_name (name(191))`);
+        }
+      } catch (e) {
+        console.warn(`Could not convert name->TEXT on ${tableName}:`, e.message);
+      }
+    };
+
     await modifyColumnType('products', 'category', 'TEXT DEFAULT NULL');
     await modifyColumnType('products', 'color_family', 'TEXT DEFAULT NULL');
     await modifyColumnType('products', 'badge', 'TEXT DEFAULT NULL');
@@ -90,13 +120,14 @@ async function initializeDatabase() {
     await modifyColumnType('products', 'size_collection', 'TEXT DEFAULT NULL');
 
     await modifyColumnType('colors', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('categories', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('badges', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('styles', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('materials', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('seasons', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('sizes', 'name', 'TEXT DEFAULT NULL');
-    await modifyColumnType('promotions', 'name', 'TEXT DEFAULT NULL');
+    // These 7 tables have a UNIQUE name index, so they need the index-aware path.
+    await modifyNameToText('categories');
+    await modifyNameToText('badges');
+    await modifyNameToText('styles');
+    await modifyNameToText('materials');
+    await modifyNameToText('seasons');
+    await modifyNameToText('sizes');
+    await modifyNameToText('promotions');
 
     // 3. Create product_colors table
     await db.query(`

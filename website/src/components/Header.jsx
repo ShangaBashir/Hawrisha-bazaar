@@ -673,7 +673,6 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                             { val: 'Women', ar: 'نساء', ku: 'ژن' },
                             { val: 'Men', ar: 'رجال', ku: 'پیاو' },
                             { val: 'Kids', ar: 'أطفال', ku: 'منداڵ' },
-                            { val: 'Unisex', ar: 'للجنسين', ku: 'هەردووکی' },
                           ].map(g => (
                             <button
                               key={g.val}

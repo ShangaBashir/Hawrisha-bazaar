@@ -32,11 +32,11 @@ app.use((req, res, next) => {
 
 // Serve static images stored on server
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/categories', express.static(path.join(__dirname, '../hawrisha-frontend/public/categories')));
-app.use('/bestsellers', express.static(path.join(__dirname, '../hawrisha-frontend/public/bestsellers')));
-app.use('/carousel', express.static(path.join(__dirname, '../hawrisha-frontend/public/carousel')));
-app.use('/products', express.static(path.join(__dirname, '../hawrisha-frontend/public/products')));
-app.use(express.static(path.join(__dirname, '../hawrisha-frontend/public')));
+app.use('/categories', express.static(path.join(__dirname, '../public/categories')));
+app.use('/bestsellers', express.static(path.join(__dirname, '../public/bestsellers')));
+app.use('/carousel', express.static(path.join(__dirname, '../public/carousel')));
+app.use('/products', express.static(path.join(__dirname, '../public/products')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api/products', productRoutes);
