@@ -571,9 +571,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   className="flex-grow flex items-center"
                   onSubmit={(e) => {
                     e.preventDefault();
+                    // Run the search but keep the bar open; only the X closes it.
                     if (headerSearchTerm.trim() && onSearch) {
                       onSearch(headerSearchTerm.trim());
-                      setIsMobileSearchOpen(false);
                     }
                   }}
                 >
@@ -582,14 +582,18 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     placeholder={t('nav.search_placeholder')}
                     value={headerSearchTerm}
                     onChange={(e) => setHeaderSearchTerm(e.target.value)}
-                    className="w-full text-sm bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-semibold"
+                    className="w-full text-[11px] bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-semibold"
                     autoFocus
                   />
                 </form>
               </div>
               <button
                 type="button"
-                onClick={() => setIsMobileSearchOpen(false)}
+                onClick={() => {
+                  setHeaderSearchTerm('');
+                  if (onSearch) onSearch('');
+                  setIsMobileSearchOpen(false);
+                }}
                 className="text-[#B2AC88] hover:text-[#8E8866] transition-colors p-1.5 shrink-0 cursor-pointer"
                 title="Close search"
               >
