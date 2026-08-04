@@ -75,8 +75,9 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     return language === 'ar' ? 'العودة للمتجر' : language === 'ku' ? 'گەڕانەوە بۆ فرۆشگا' : 'Back to Store';
   };
 
-  const [locationsList, setLocationsList] = useState([]);
   const [flatLocationsList, setFlatLocationsList] = useState([]);
+  // Cities managed from the dashboard's System Settings → Cities Management.
+  const [cities, setCities] = useState([]);
   const [storeDeliveries, setStoreDeliveries] = useState({});
   const [colorsList, setColorsList] = useState([]);
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -111,15 +112,17 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
 
   // Fetch Cities and Colors list from DB
   useEffect(() => {
-    fetch('/api/locations')
+    // Cities come from the dashboard's System Settings → Cities Management, so
+    // the checkout city dropdown always matches what the admin configured.
+    fetch('/api/settings/cities')
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setLocationsList(data.locations || []);
-          setFlatLocationsList(data.flat || []);
+        if (Array.isArray(data)) {
+          setCities(data);
+          setFlatLocationsList(data);
         }
       })
-      .catch(err => console.error('Error fetching locations:', err));
+      .catch(err => console.error('Error fetching cities:', err));
 
     fetch('/api/settings/colors')
       .then(res => res.json())
@@ -845,25 +848,11 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           className={`w-full px-4 py-3 bg-gray-50/50 border ${errors.province ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-200 focus:border-[#B2AC88] focus:ring-[#B2AC88]/15'} rounded-xl focus:outline-none focus:ring-3 text-xs text-[#36454F] font-semibold transition-all appearance-none cursor-pointer`}
                         >
                           <option value="">{language === 'ar' ? 'اختر محافظتك' : language === 'ku' ? 'شارەکەت هەڵبژێرە' : 'Select your city'}</option>
-                          {locationsList.map((region) => {
-                             const rName = getLocalized ? getLocalized(region.name, language) : region.name;
-                             return (
-                               <optgroup key={region.id} label={rName}>
-                                 {region.children?.map(gov => {
-                                   const gName = getLocalized ? getLocalized(gov.name, language) : gov.name;
-                                   return (
-                                     <optgroup key={gov.id} label={`  ${gName}`}>
-                                       {gov.children?.map(city => {
-                                         const cName = getLocalized ? getLocalized(city.name, language) : city.name;
-                                         // Storing the en value to match with the db or old addresses
-                                         const cNameEn = getLocalized ? getLocalized(city.name, 'en') : city.name;
-                                         return <option key={city.id} value={cNameEn}>{cName}</option>
-                                       })}
-                                     </optgroup>
-                                   );
-                                 })}
-                               </optgroup>
-                             );
+                          {cities.map((city) => {
+                             const cName = getLocalized(city.name, language);
+                             // Store the English value so it matches saved addresses and store delivery prices.
+                             const cNameEn = getLocalized(city.name, 'en');
+                             return <option key={city.id} value={cNameEn}>{cName}</option>;
                           })}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 end-4 flex items-center text-gray-400">
