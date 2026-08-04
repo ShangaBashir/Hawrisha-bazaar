@@ -97,6 +97,7 @@ async function main() {
     const seasons    = await api('/api/settings/seasons');
     const sizes      = await api('/api/settings/sizes');
     const colors     = await api('/api/settings/colors');
+    const cityList   = await api('/api/settings/cities'); // dashboard Cities Management
     for (const [label, arr] of [['styles', styles], ['materials', materials], ['seasons', seasons], ['sizes', sizes], ['colors', colors]]) {
       if (!arr.length) throw new Error(`No ${label} configured — cannot build valid products.`);
     }
@@ -124,6 +125,17 @@ async function main() {
         commission_percentage: 10,
       });
       const storeId = store.id;
+
+      // Delivery Management: make the store deliverable to the dashboard cities
+      // (this is what the checkout city dropdown reads from).
+      if (cityList.length) {
+        const prices = cityList.map((c, idx) => ({
+          city_name: c.name,
+          price: 3000 + (idx % 5) * 1000, // 3000–7000 IQD
+          is_available: true,
+        }));
+        await jsonPost(`/api/stores/${storeId}/delivery`, { email: ADMIN_EMAIL, prices });
+      }
 
       const productCount = (i % 2 === 0) ? 3 : 2;
       for (let p = 0; p < productCount; p++) {

@@ -76,8 +76,6 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
   };
 
   const [flatLocationsList, setFlatLocationsList] = useState([]);
-  // Cities managed from the dashboard's System Settings → Cities Management.
-  const [cities, setCities] = useState([]);
   const [storeDeliveries, setStoreDeliveries] = useState({});
   const [colorsList, setColorsList] = useState([]);
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -112,15 +110,13 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
 
   // Fetch Cities and Colors list from DB
   useEffect(() => {
-    // Cities come from the dashboard's System Settings → Cities Management, so
-    // the checkout city dropdown always matches what the admin configured.
+    // Full city list (with coordinates) — used only to center the map on the
+    // chosen city. The selectable cities themselves come from each store's
+    // Delivery Management configuration (see deliveryCities below).
     fetch('/api/settings/cities')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          setCities(data);
-          setFlatLocationsList(data);
-        }
+        if (Array.isArray(data)) setFlatLocationsList(data);
       })
       .catch(err => console.error('Error fetching cities:', err));
 
@@ -235,12 +231,13 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
   useEffect(() => {
     if (!isMapScriptLoaded || !window.L || !isAddingNewAddress) return;
     
-    let selectedCityObj = flatLocationsList.find(c => {
+    const norm = (v) => (v || '').toString().toLowerCase().trim();
+    const selectedCityObj = flatLocationsList.find(c => {
        const parsed = typeof c.name === 'string' && c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name };
-       return parsed.en === formData.province || parsed.ku === formData.province || parsed.ar === formData.province;
+       return [parsed.en, parsed.ku, parsed.ar].some(n => norm(n) === norm(formData.province));
     });
-    const centerLat = selectedCityObj && selectedCityObj.latitude ? parseFloat(selectedCityObj.latitude) : mapCoords.lat || 33.3152;
-    const centerLng = selectedCityObj && selectedCityObj.longitude ? parseFloat(selectedCityObj.longitude) : mapCoords.lng || 44.3661;
+    const centerLat = selectedCityObj && selectedCityObj.latitude ? parseFloat(selectedCityObj.latitude) : (mapCoords.lat || 33.3152);
+    const centerLng = selectedCityObj && selectedCityObj.longitude ? parseFloat(selectedCityObj.longitude) : (mapCoords.lng || 44.3661);
 
     const container = document.getElementById('checkout-map');
     if (!container) return;
@@ -249,10 +246,13 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
       container._leaflet_id = null;
     }
 
-    const map = window.L.map('checkout-map').setView([centerLat, centerLng], 12);
-    
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+    const map = window.L.map('checkout-map', { zoomControl: true, scrollWheelZoom: true }).setView([centerLat, centerLng], 13);
+
+    // Clean, Google-Maps-like basemap (CARTO Voyager, retina-aware).
+    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO',
+      subdomains: 'abcd',
+      maxZoom: 20,
     }).addTo(map);
     
     const marker = window.L.marker([centerLat, centerLng], { draggable: true }).addTo(map);
@@ -285,23 +285,32 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     };
   }, [isMapScriptLoaded, isAddingNewAddress, formData.province, flatLocationsList]);
 
-  const handleMapSearch = (query) => {
-    if (!query.trim()) {
-      setMapSearchResults([]);
-      return;
-    }
+  const runGeocodeSearch = (query) => {
     setIsSearchingMap(true);
-    fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)},Iraq&format=json&limit=5`)
+    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=iq&accept-language=${language}&q=${encodeURIComponent(query)}`;
+    fetch(url, { headers: { Accept: 'application/json' } })
       .then(res => res.json())
       .then(data => {
-        setMapSearchResults(data || []);
+        setMapSearchResults(Array.isArray(data) ? data : []);
         setIsSearchingMap(false);
       })
       .catch(err => {
         console.error('Map search error:', err);
+        setMapSearchResults([]);
         setIsSearchingMap(false);
       });
   };
+
+  // Debounce the geocode search: firing on every keystroke tripped Nominatim's
+  // ~1 req/sec rate limit, so results came back empty. Wait for a pause first.
+  useEffect(() => {
+    const q = mapSearchQuery.trim();
+    if (q.length < 3) { setMapSearchResults([]); setIsSearchingMap(false); return; }
+    setIsSearchingMap(true);
+    const timer = setTimeout(() => runGeocodeSearch(q), 450);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapSearchQuery]);
 
   const handleSelectSearchResult = (result) => {
     const lat = parseFloat(result.lat);
@@ -382,10 +391,32 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     });
   }, [cart]);
 
+  // Selectable cities = the delivery cities configured on each cart store's
+  // Delivery Management page. With multiple stores, only cities that EVERY
+  // store delivers to are offered, so any pick is actually deliverable.
+  const deliveryCities = (() => {
+    const uniqueStoreIds = [...new Set(cart.map(item => item.store_id))].filter(Boolean);
+    if (uniqueStoreIds.length === 0) return [];
+    const perStore = uniqueStoreIds.map(storeId => {
+      const m = new Map();
+      (storeDeliveries[storeId] || []).forEach(d => {
+        if (!d.city_name || d.is_available === false || d.is_available === 0) return;
+        const en = (getLocalized(d.city_name, 'en') || '').toLowerCase().trim();
+        if (en) m.set(en, d.city_name);
+      });
+      return m;
+    });
+    // If any store has no delivery cities configured, nothing is deliverable.
+    if (perStore.some(m => m.size === 0)) return [];
+    let keys = [...perStore[0].keys()];
+    for (let i = 1; i < perStore.length; i++) keys = keys.filter(k => perStore[i].has(k));
+    return keys.map(k => ({ key: k, name: perStore[0].get(k) }));
+  })();
+
   // Calculate Shipping Cost based on selected location
   let calculatedShippingCost = 0;
   let isDeliveryAvailable = true;
-  
+
   const selectedLoc = flatLocationsList.find(l => {
      const parsed = typeof l.name === 'string' && l.name.startsWith('{') ? JSON.parse(l.name) : { en: l.name };
      return parsed.en === formData.province || parsed.ku === formData.province || parsed.ar === formData.province;
@@ -848,11 +879,11 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           className={`w-full px-4 py-3 bg-gray-50/50 border ${errors.province ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-200 focus:border-[#B2AC88] focus:ring-[#B2AC88]/15'} rounded-xl focus:outline-none focus:ring-3 text-xs text-[#36454F] font-semibold transition-all appearance-none cursor-pointer`}
                         >
                           <option value="">{language === 'ar' ? 'اختر محافظتك' : language === 'ku' ? 'شارەکەت هەڵبژێرە' : 'Select your city'}</option>
-                          {cities.map((city) => {
+                          {deliveryCities.map((city) => {
                              const cName = getLocalized(city.name, language);
                              // Store the English value so it matches saved addresses and store delivery prices.
                              const cNameEn = getLocalized(city.name, 'en');
-                             return <option key={city.id} value={cNameEn}>{cName}</option>;
+                             return <option key={city.key} value={cNameEn}>{cName}</option>;
                           })}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 end-4 flex items-center text-gray-400">
@@ -862,6 +893,15 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                         </div>
                       </div>
                       {errors.province && <p className="text-[10px] text-red-500 font-bold">{errors.province}</p>}
+                      {deliveryCities.length === 0 && cart.length > 0 && (
+                        <p className="text-[10px] text-amber-600 font-bold">
+                          {language === 'ar'
+                            ? 'لا يوجد توصيل مُهيأ لهذا المتجر بعد. يرجى المحاولة لاحقاً.'
+                            : language === 'ku'
+                            ? 'هێشتا هیچ شارێکی گەیاندن بۆ ئەم فرۆشگایە دانەنراوە.'
+                            : 'This store has no delivery cities configured yet.'}
+                        </p>
+                      )}
                     </div>
 
                     {/* Leaflet Map & Search Box */}
@@ -878,10 +918,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                             <input
                               type="text"
                               value={mapSearchQuery}
-                              onChange={(e) => {
-                                setMapSearchQuery(e.target.value);
-                                handleMapSearch(e.target.value);
-                              }}
+                              onChange={(e) => setMapSearchQuery(e.target.value)}
                               placeholder={language === 'ar' ? 'ابحث عن الشارع، الحي، أو المعالم...' : language === 'ku' ? 'گەڕان بۆ شەقام، گەڕەک یان نیشانەیەک...' : 'Search street, neighborhood, landmarks...'}
                               className="w-full ps-11 pe-4 py-3 bg-gray-50/50 border border-gray-250 focus:border-[#B2AC88] focus:ring-3 focus:ring-[#B2AC88]/15 rounded-xl focus:outline-none text-xs text-[#36454F] font-semibold transition-all shadow-2xs"
                             />
