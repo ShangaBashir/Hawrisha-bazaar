@@ -553,6 +553,53 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
       </div>
     </div>
 
+      {/* Mobile & Tablet Search — slides down directly under the header bar */}
+      <AnimatePresence initial={false}>
+        {isMobileSearchOpen && (
+          <motion.div
+            key="mobile-search"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="lg:hidden overflow-hidden border-t border-brand-sage/10 bg-[#FAF9F5]"
+          >
+            <div className="px-6 sm:px-10 py-3 flex items-center gap-3" dir={isRTL ? 'rtl' : 'ltr'}>
+              <div className="flex-1 flex items-center bg-[#F8F9FA] border border-[#B2AC88] rounded-full px-4 py-2 shadow-xs">
+                <Search size={18} className="text-[#B2AC88] shrink-0 me-2" />
+                <form
+                  className="flex-grow flex items-center"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (headerSearchTerm.trim() && onSearch) {
+                      onSearch(headerSearchTerm.trim());
+                      setIsMobileSearchOpen(false);
+                    }
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder={t('nav.search_placeholder')}
+                    value={headerSearchTerm}
+                    onChange={(e) => setHeaderSearchTerm(e.target.value)}
+                    className="w-full text-sm bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-semibold"
+                    autoFocus
+                  />
+                </form>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="text-[#B2AC88] hover:text-[#8E8866] transition-colors p-1.5 shrink-0 cursor-pointer"
+                title="Close search"
+              >
+                <X size={22} strokeWidth={2.5} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Navigation (Desktop only) */}
       <nav className="hidden lg:block w-full px-6 sm:px-10 lg:px-12 pb-3.5 relative">
         <ul className="flex justify-center gap-8 text-xs font-semibold select-none uppercase tracking-wider">
@@ -1188,64 +1235,6 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
         )}
       </AnimatePresence>
 
-      {/* Mobile & Tablet Search Overlay */}
-      <AnimatePresence>
-        {isMobileSearchOpen && (
-          <>
-            {/* Backdrop for lower half click-to-close */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileSearchOpen(false)}
-              className="fixed inset-0 bg-black/45 z-[99] lg:hidden cursor-pointer"
-            />
-            <motion.div
-              initial={{ y: '-100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed top-0 left-0 right-0 h-auto py-5 bg-white z-[100] flex flex-col font-sans lg:hidden rounded-b-3xl shadow-xl"
-            >
-              <div className="px-4 flex items-center justify-between gap-3 w-full max-w-xl mx-auto">
-                {/* Full Width Search Bar with #B2AC88 Border */}
-                <div className="flex-1 flex items-center bg-[#F8F9FA] border border-[#B2AC88] rounded-full px-4 py-2 shadow-xs">
-                  <form 
-                    className="flex-grow flex items-center"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (headerSearchTerm.trim() && onSearch) {
-                        onSearch(headerSearchTerm.trim());
-                        setIsMobileSearchOpen(false);
-                      }
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      value={headerSearchTerm}
-                      onChange={(e) => {
-                        setHeaderSearchTerm(e.target.value);
-                      }}
-                      className="w-full text-sm bg-transparent focus:outline-none text-[#36454F] placeholder-slate-400 font-semibold"
-                      autoFocus
-                    />
-                  </form>
-                </div>
-                {/* X Button in #B2AC88 */}
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSearchOpen(false)}
-                  className="text-[#B2AC88] hover:text-[#8E8866] transition-colors p-1.5 shrink-0 cursor-pointer"
-                  title="Close search"
-                >
-                  <X size={22} strokeWidth={2.5} className="text-[#B2AC88]" />
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </header>
   );
 }
