@@ -506,6 +506,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [promotionsList, setPromotionsList] = useState([]);
   const [designsList, setDesignsList] = useState([]);
   const [sportTypesList, setSportTypesList] = useState([]);
+  // Bumped to re-pull the latest dashboard settings so filter options stay in
+  // sync with add/edit/delete done in the admin dashboard (no reload needed).
+  const [settingsVersion, setSettingsVersion] = useState(0);
 
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) {
@@ -630,7 +633,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
         }
       });
     return () => { active = false; };
-  }, []);
+  }, [settingsVersion]);
 
   // Fetch styles, materials, seasons, sizes, colors lists
   useEffect(() => {
@@ -742,6 +745,19 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       .catch(() => { if (active) setSportTypesList([]); });
 
     return () => { active = false; };
+  }, [settingsVersion]);
+
+  // Re-pull settings when the tab regains focus/visibility so filter options
+  // reflect edits made in the dashboard without needing a manual page reload.
+  useEffect(() => {
+    const refresh = () => setSettingsVersion(v => v + 1);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   // Memoized category counts calculated dynamically

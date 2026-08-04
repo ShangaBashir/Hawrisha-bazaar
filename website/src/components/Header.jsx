@@ -66,6 +66,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
   const [promotionsList, setPromotionsList] = useState([]);
   const [designsList, setDesignsList] = useState([]);
   const [sportTypesList, setSportTypesList] = useState([]);
+  // Bumped whenever we want to re-pull the latest dashboard settings (so
+  // category/filter changes made in the admin dashboard appear here live).
+  const [settingsVersion, setSettingsVersion] = useState(0);
 
   const [mobileOpenSections, setMobileOpenSections] = useState({
     categories: false,
@@ -245,7 +248,25 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
       });
 
     return () => { active = false; };
+  }, [settingsVersion]);
+
+  // Keep the SOCKS menu in sync with the dashboard: re-pull settings whenever
+  // the tab regains focus/visibility (e.g. after editing in the dashboard tab)
+  // and whenever the mega menu is opened.
+  useEffect(() => {
+    const refresh = () => setSettingsVersion(v => v + 1);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
+
+  useEffect(() => {
+    if (isCategoriesDropdownOpen) setSettingsVersion(v => v + 1);
+  }, [isCategoriesDropdownOpen]);
 
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) return [];
