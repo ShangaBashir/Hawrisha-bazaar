@@ -775,7 +775,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                         value={formData.notes}
                         onChange={handleInputChange}
                         rows="3"
-                        placeholder={language === 'ar' ? 'تعليمات خاصة بالمندوب، وقت التوصيل المفضل، إلخ.' : language === 'ku' ? 'ڕێنمایی تایبەت بۆ گەیەنەر، کاتی گەیاندنی دڵخواز، هتد.' : 'Special instructions for the courier, preferred delivery time, etc.'}
+                        placeholder=""
                         className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 focus:border-[#B2AC88] focus:ring-3 focus:ring-[#B2AC88]/15 rounded-xl focus:outline-none text-xs text-[#36454F] font-semibold transition-all resize-none"
                       />
                     </div>
@@ -934,7 +934,11 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                   </div>
                   <div className="flex justify-between text-sm font-bold text-gray-600 font-sans">
                     <span>{t('checkout_page.shipping')}</span>
-                    {shippingCost === 0 ? (
+                    {!formData.province ? (
+                      <span className="text-gray-400 font-bold">
+                        {language === 'ar' ? 'اختر مدينة' : language === 'ku' ? 'شارێک هەڵبژێرە' : 'Select a city'}
+                      </span>
+                    ) : shippingCost === 0 ? (
                       <span className="text-green-600 font-black">{t('checkout_page.free')}</span>
                     ) : (
                       <span>{shippingCost.toLocaleString()} IQD</span>
@@ -946,21 +950,6 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                   <div className="flex justify-between text-base font-extrabold text-[#36454F] pt-2 font-sans">
                     <span>{language === 'ar' ? 'المجموع الكلي' : language === 'ku' ? 'کۆی گشتی کۆتایی' : 'Grand Total'}</span>
                     <span className="text-lg font-black text-[#B2AC88]">{total.toLocaleString()} IQD</span>
-                  </div>
-                </div>
-
-                {/* Cash on Delivery Notice */}
-                <div className="bg-[#36454F]/5 rounded-2xl p-5 flex items-start space-x-3.5 rtl:space-x-reverse border border-[#36454F]/5 text-start">
-                  <Truck size={22} className="text-[#36454F] shrink-0 mt-0.5" />
-                  <div>
-                    <h5 className="text-xs font-black text-[#36454F] uppercase tracking-wider">{t('checkout_page.cod')}</h5>
-                    <p className="text-[11px] text-gray-500 font-bold mt-1 leading-relaxed font-sans">
-                      {language === 'ar' 
-                        ? 'يتم الدفع مباشرة للمندوب عند تسليم الطلب إلى باب منزلك.' 
-                        : language === 'ku' 
-                        ? 'پارەدان ڕاستەوخۆ دەبێت بۆ گەیەنەر کاتێک داواکارییەکەت دەگاتە بەردەم دەرگاکەت.' 
-                        : 'Payment is made directly to the courier agent when your order is delivered to your door.'}
-                    </p>
                   </div>
                 </div>
 
