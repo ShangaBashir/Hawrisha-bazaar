@@ -564,9 +564,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="lg:hidden overflow-hidden border-t border-brand-sage/10 bg-[#FAF9F5]"
           >
-            <div className="px-6 sm:px-10 py-3 flex items-center gap-3" dir={isRTL ? 'rtl' : 'ltr'}>
-              <div className="flex-1 flex items-center bg-[#F8F9FA] border border-[#B2AC88] rounded-full px-4 py-2 shadow-xs">
-                <Search size={18} className="text-[#B2AC88] shrink-0 me-2" />
+            <div className="px-6 sm:px-10 py-3" dir={isRTL ? 'rtl' : 'ltr'}>
+              <div className="flex items-center bg-[#F8F9FA] border border-[#B2AC88] rounded-full px-4 py-2 shadow-xs">
+                <Search size={14} className="text-slate-400 shrink-0 me-2" />
                 <form
                   className="flex-grow flex items-center"
                   onSubmit={(e) => {
@@ -586,19 +586,19 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     autoFocus
                   />
                 </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderSearchTerm('');
+                    if (onSearch) onSearch('');
+                    setIsMobileSearchOpen(false);
+                  }}
+                  className="text-slate-400 hover:text-[#36454F] transition-colors ms-2 shrink-0 cursor-pointer"
+                  title="Close search"
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeaderSearchTerm('');
-                  if (onSearch) onSearch('');
-                  setIsMobileSearchOpen(false);
-                }}
-                className="text-[#B2AC88] hover:text-[#8E8866] transition-colors p-1.5 shrink-0 cursor-pointer"
-                title="Close search"
-              >
-                <X size={22} strokeWidth={2.5} />
-              </button>
             </div>
           </motion.div>
         )}
