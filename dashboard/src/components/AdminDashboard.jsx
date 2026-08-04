@@ -8770,10 +8770,40 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   )}
                   
                   <div className="space-y-2 pt-2 border-t border-slate-200">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">{currentUserRole === "admin" ? "Total Items Price" : "Your Store's Total"}</span>
-                      <span className="font-bold text-[#36454F]">{(currentUserRole === "admin" ? expandedOrder.total : expandedOrder.vendor_total)?.toLocaleString()} IQD</span>
-                    </div>
+                    {(() => {
+                      const items = expandedOrder.items || [];
+                      const itemsPrice = expandedOrder.subtotal != null
+                        ? Number(expandedOrder.subtotal)
+                        : items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
+                      const delivery = Number(expandedOrder.shipping_cost) || 0;
+                      const total = expandedOrder.total != null ? Number(expandedOrder.total) : itemsPrice + delivery;
+
+                      if (currentUserRole !== "admin") {
+                        return (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Your Store's Total</span>
+                            <span className="font-bold text-[#36454F]">{(Number(expandedOrder.vendor_total) || itemsPrice).toLocaleString()} IQD</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Products Price</span>
+                            <span className="font-bold text-[#36454F]">{itemsPrice.toLocaleString()} IQD</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Delivery Price</span>
+                            <span className="font-bold text-[#36454F]">{delivery.toLocaleString()} IQD</span>
+                          </div>
+                          <div className="h-px bg-slate-200 my-1.5" />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 font-bold">Total Price</span>
+                            <span className="font-black text-emerald-600">{total.toLocaleString()} IQD</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -8782,8 +8812,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
               <div>
                 <h4 className="font-bold text-[10px] uppercase tracking-wider text-slate-400 mb-4 px-2">Items Included</h4>
                 <div className="space-y-3">
-                   {(expandedOrder.items || []).map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-slate-200 transition-colors">
+                   {(expandedOrder.items || []).map((item, i) => {
+                    const lineTotal = Number(item.price) * Number(item.quantity);
+                    const comm = Number(item.commission_percentage) || 0;
+                    const itemAdminCommission = Math.round((lineTotal * comm) / 100);
+                    const itemStoreShare = lineTotal - itemAdminCommission;
+                    return (
+                    <div key={i} className="p-4 bg-white border border-slate-100 rounded-2xl hover:border-slate-200 transition-colors">
+                      <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="relative shrink-0">
                           {item.image_url ? (
@@ -8817,7 +8853,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 ) : (
                                   <span className="w-3 h-3 rounded-full inline-block border border-slate-200" style={{ backgroundColor: item.selected_color === 'White' ? '#FFFFFF' : item.selected_color === 'Black' ? '#000000' : item.selected_color }}></span>
                                 )}
-                                <span className="text-slate-700 normal-case font-extrabold">{item.selected_color_name || item.selected_color}</span>
+                                <span className="text-slate-700 normal-case font-extrabold">{getEnglishName(item.selected_color_name) || item.selected_color}</span>
                               </span>
                             )}
                             {item.selected_size && (
@@ -8833,8 +8869,16 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         <p className="text-sm font-bold text-emerald-600">{(item.price * item.quantity).toLocaleString()} IQD</p>
                         <p className="text-[10px] text-slate-400">{item.price.toLocaleString()} IQD each</p>
                       </div>
+                      </div>
+                      {currentUserRole === 'admin' && (
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3 pt-3 border-t border-slate-100">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Store Share: <span className="text-[#36454F] font-extrabold normal-case">{itemStoreShare.toLocaleString()} IQD</span></span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Admin Commission ({comm}%): <span className="text-[#B2AC88] font-extrabold normal-case">{itemAdminCommission.toLocaleString()} IQD</span></span>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

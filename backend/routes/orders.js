@@ -132,9 +132,9 @@ router.get('/admin', async (req, res) => {
     
     for (let order of orders) {
       const [items] = await db.query(`
-        SELECT oi.*, s.name AS store_name, p.image_url, c.name AS selected_color_name 
-        FROM order_items oi 
-        LEFT JOIN stores s ON oi.store_id = s.id 
+        SELECT oi.*, s.name AS store_name, s.commission_percentage, p.image_url, c.name AS selected_color_name
+        FROM order_items oi
+        LEFT JOIN stores s ON oi.store_id = s.id
         LEFT JOIN products p ON oi.product_id = p.id
         LEFT JOIN colors c ON oi.selected_color = c.class
         WHERE oi.order_id = ?
