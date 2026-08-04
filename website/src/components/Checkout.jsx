@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Truck, ShoppingBag, CreditCard, AlertCircle, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Truck, ShoppingBag, CreditCard, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const getLocalized = (val, lang) => {
@@ -82,15 +82,8 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
 
-  const [isMapScriptLoaded, setIsMapScriptLoaded] = useState(false);
+  // Coordinates saved with the order — derived from the selected city center.
   const [mapCoords, setMapCoords] = useState({ lat: 33.3152, lng: 44.3661 });
-
-  const [mapInstance, setMapInstance] = useState(null);
-  const [markerInstance, setMarkerInstance] = useState(null);
-
-  const [mapSearchQuery, setMapSearchQuery] = useState('');
-  const [mapSearchResults, setMapSearchResults] = useState([]);
-  const [isSearchingMap, setIsSearchingMap] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: typeof currentUser === 'string' ? currentUser : currentUser?.name || '',
@@ -189,150 +182,6 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     fetchAddresses();
   }, [currentUserEmail, flatLocationsList]);
 
-  // Dynamic Leaflet asset loading
-  useEffect(() => {
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-    
-    if (!window.L) {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.async = true;
-      script.onload = () => {
-        setIsMapScriptLoaded(true);
-      };
-      document.head.appendChild(script);
-    } else {
-      setIsMapScriptLoaded(true);
-    }
-  }, []);
-
-  // Reverse geocoding utility
-  const reverseGeocode = (lat, lng) => {
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.display_name) {
-          setFormData(prev => ({
-            ...prev,
-            address: data.display_name
-          }));
-        }
-      })
-      .catch(err => console.error('Reverse geocoding error:', err));
-  };
-
-  // Leaflet map initialization
-  useEffect(() => {
-    if (!isMapScriptLoaded || !window.L || !isAddingNewAddress) return;
-    
-    const norm = (v) => (v || '').toString().toLowerCase().trim();
-    const selectedCityObj = flatLocationsList.find(c => {
-       const parsed = typeof c.name === 'string' && c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name };
-       return [parsed.en, parsed.ku, parsed.ar].some(n => norm(n) === norm(formData.province));
-    });
-    const centerLat = selectedCityObj && selectedCityObj.latitude ? parseFloat(selectedCityObj.latitude) : (mapCoords.lat || 33.3152);
-    const centerLng = selectedCityObj && selectedCityObj.longitude ? parseFloat(selectedCityObj.longitude) : (mapCoords.lng || 44.3661);
-
-    const container = document.getElementById('checkout-map');
-    if (!container) return;
-
-    if (container._leaflet_id) {
-      container._leaflet_id = null;
-    }
-
-    const map = window.L.map('checkout-map', { zoomControl: true, scrollWheelZoom: true }).setView([centerLat, centerLng], 13);
-
-    // Clean, Google-Maps-like basemap (CARTO Voyager, retina-aware).
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap contributors © CARTO',
-      subdomains: 'abcd',
-      maxZoom: 20,
-    }).addTo(map);
-    
-    const marker = window.L.marker([centerLat, centerLng], { draggable: true }).addTo(map);
-    
-    setMapInstance(map);
-    setMarkerInstance(marker);
-
-    marker.on('dragend', () => {
-      const position = marker.getLatLng();
-      const coords = { lat: position.lat, lng: position.lng };
-      setMapCoords(coords);
-      reverseGeocode(coords.lat, coords.lng);
-    });
-    
-    map.on('click', (e) => {
-      marker.setLatLng(e.latlng);
-      const coords = { lat: e.latlng.lat, lng: e.latlng.lng };
-      setMapCoords(coords);
-      reverseGeocode(coords.lat, coords.lng);
-    });
-
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-
-    return () => {
-      map.remove();
-      setMapInstance(null);
-      setMarkerInstance(null);
-    };
-  }, [isMapScriptLoaded, isAddingNewAddress, formData.province, flatLocationsList]);
-
-  const runGeocodeSearch = (query) => {
-    setIsSearchingMap(true);
-    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=iq&accept-language=${language}&q=${encodeURIComponent(query)}`;
-    fetch(url, { headers: { Accept: 'application/json' } })
-      .then(res => res.json())
-      .then(data => {
-        setMapSearchResults(Array.isArray(data) ? data : []);
-        setIsSearchingMap(false);
-      })
-      .catch(err => {
-        console.error('Map search error:', err);
-        setMapSearchResults([]);
-        setIsSearchingMap(false);
-      });
-  };
-
-  // Debounce the geocode search: firing on every keystroke tripped Nominatim's
-  // ~1 req/sec rate limit, so results came back empty. Wait for a pause first.
-  useEffect(() => {
-    const q = mapSearchQuery.trim();
-    if (q.length < 3) { setMapSearchResults([]); setIsSearchingMap(false); return; }
-    setIsSearchingMap(true);
-    const timer = setTimeout(() => runGeocodeSearch(q), 450);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapSearchQuery]);
-
-  const handleSelectSearchResult = (result) => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    
-    setMapCoords({ lat, lng });
-    
-    if (mapInstance) {
-      mapInstance.setView([lat, lng], 16);
-    }
-    if (markerInstance) {
-      markerInstance.setLatLng([lat, lng]);
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      address: result.display_name
-    }));
-    
-    setMapSearchResults([]);
-    setMapSearchQuery('');
-  };
 
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
@@ -903,56 +752,6 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                         </p>
                       )}
                     </div>
-
-                    {/* Leaflet Map & Search Box */}
-                    {formData.province && (
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                          {language === 'ar' ? 'ابحث عن موقعك أو حدده على الخريطة' : language === 'ku' ? 'گەڕان بۆ ناونیشانەکەت یان دیاریکردنی لەسەر نەخشەکە' : 'Search or Pin your exact location on the map'}
-                        </label>
-                        
-                        {/* Real-time map location search */}
-                        <div className="relative">
-                          <div className="relative flex items-center">
-                            <Search size={16} className="absolute start-4 text-gray-400" />
-                            <input
-                              type="text"
-                              value={mapSearchQuery}
-                              onChange={(e) => setMapSearchQuery(e.target.value)}
-                              placeholder={language === 'ar' ? 'ابحث عن الشارع، الحي، أو المعالم...' : language === 'ku' ? 'گەڕان بۆ شەقام، گەڕەک یان نیشانەیەک...' : 'Search street, neighborhood, landmarks...'}
-                              className="w-full ps-11 pe-4 py-3 bg-gray-50/50 border border-gray-250 focus:border-[#B2AC88] focus:ring-3 focus:ring-[#B2AC88]/15 rounded-xl focus:outline-none text-xs text-[#36454F] font-semibold transition-all shadow-2xs"
-                            />
-                            {isSearchingMap && (
-                              <div className="absolute end-4 w-4 h-4 border-2 border-[#B2AC88] border-t-transparent rounded-full animate-spin" />
-                            )}
-                          </div>
-
-                          {/* Search Results Dropdown */}
-                          {mapSearchResults.length > 0 && (
-                            <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-lg z-[210] max-h-[200px] overflow-y-auto divide-y divide-gray-50">
-                              {mapSearchResults.map((result) => (
-                                <div
-                                  key={result.place_id}
-                                  onClick={() => handleSelectSearchResult(result)}
-                                  className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-xs font-semibold text-[#36454F] transition-colors"
-                                >
-                                  {result.display_name}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Map div */}
-                        <div 
-                          id="checkout-map" 
-                          className="h-[300px] w-full rounded-2xl border border-gray-200 overflow-hidden shadow-2xs z-10"
-                        />
-                        <p className="text-[9px] text-gray-400 font-bold italic">
-                          * {language === 'ar' ? 'يمكنك سحب العلامة الزرقاء أو النقر على الخريطة لتغيير الموقع' : language === 'ku' ? 'دەتوانیت نیشانە شینەکە ڕابکێشیت یان کلیک لەسەر نەخشەکە بکەیت بۆ گۆڕینی شوێن' : 'You can drag the blue marker or click on the map to shift the location pin.'}
-                        </p>
-                      </div>
-                    )}
 
                     {/* Delivery Address */}
                     <div className="space-y-1.5">
