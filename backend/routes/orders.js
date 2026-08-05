@@ -236,12 +236,35 @@ router.put('/:id/status', async (req, res) => {
     }
 
     // Fetch current order state for transition validation
-    const [currentRows] = await connection.query('SELECT status FROM orders WHERE id = ?', [id]);
+    const [currentRows] = await connection.query('SELECT status, created_at FROM orders WHERE id = ?', [id]);
     if (currentRows.length === 0) {
       await connection.rollback();
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
     const currentStatus = currentRows[0].status;
+
+    // The customer owns the first N minutes after placing an order: until that
+    // window closes nobody in the dashboard may accept or cancel it. Enforced
+    // here too so a stale dashboard tab can't bypass the disabled buttons.
+    if (currentStatus === 'Pending' && ['Accepted', 'Cancelled'].includes(status)) {
+      let limitMinutes = 15;
+      try {
+        const [limitRows] = await connection.query(
+          "SELECT setting_value FROM system_settings WHERE setting_key = 'order_cancellation_limit_minutes'"
+        );
+        if (limitRows.length > 0) limitMinutes = Number(limitRows[0].setting_value) || 0;
+      } catch (e) {}
+      const placedAt = new Date(currentRows[0].created_at).getTime();
+      const remainingMs = placedAt + limitMinutes * 60 * 1000 - Date.now();
+      if (!isNaN(placedAt) && remainingMs > 0) {
+        await connection.rollback();
+        const secs = Math.ceil(remainingMs / 1000);
+        return res.status(409).json({
+          success: false,
+          message: `The customer can still cancel this order. Try again in ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}.`,
+        });
+      }
+    }
 
     // --- STRICT TRANSITION RULES ---
     const allowedTransitions = {

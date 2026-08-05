@@ -528,6 +528,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [settingsSubTab, setSettingsSubTab] = useState("categories"); // 'categories', 'badges', 'colors', 'styles', 'materials', 'seasons', 'sizes', 'promotions', 'designs', 'sport-types'
   const [settingsPage, setSettingsPage] = useState(1);
   const [cancellationLimit, setCancellationLimit] = useState(15);
+  // Ticks every second so the customer's cancellation window can expire live
+  // and unlock the Accept/Cancel actions without needing a page refresh.
+  const [nowTs, setNowTs] = useState(Date.now());
   const [citiesList, setCitiesList] = useState([]);
   const [newCityEn, setNewCityEn] = useState("");
   const [newCityKu, setNewCityKu] = useState("");
@@ -600,6 +603,26 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       return {};
     }
   });
+
+  useEffect(() => {
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // While a Pending order is inside the customer's cancellation window, the
+  // store cannot accept or cancel it — the customer owns that decision first.
+  const getCancellationWindow = (order) => {
+    if (!order || order.status !== "Pending" || !order.created_at) {
+      return { locked: false, remainingMs: 0, label: "" };
+    }
+    const placedAt = new Date(order.created_at).getTime();
+    if (isNaN(placedAt)) return { locked: false, remainingMs: 0, label: "" };
+    const remainingMs = placedAt + (Number(cancellationLimit) || 0) * 60 * 1000 - nowTs;
+    if (remainingMs <= 0) return { locked: false, remainingMs: 0, label: "" };
+    const m = Math.floor(remainingMs / 60000);
+    const s = Math.floor((remainingMs % 60000) / 1000);
+    return { locked: true, remainingMs, label: `${m}:${String(s).padStart(2, "0")}` };
+  };
 
   // The settings sub-tabs that are actually shown (deleted ones are hidden).
   const BASE_SETTINGS_TABS = [
@@ -1701,7 +1724,11 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           fetchVendorStats();
         }
       } else {
-        showToast("Failed to update order status");
+        // Surface the server's reason (e.g. the customer's cancellation window
+        // is still open) instead of a generic failure message.
+        const data = await res.json().catch(() => ({}));
+        showToast(data.message || "Failed to update order status");
+        fetchOrders();
       }
     } catch (err) {
       console.error(err);
@@ -6291,23 +6318,36 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                                 {/* Action column */}
                                 <td className="py-4 px-3 text-center">
                                   <div className="flex items-center justify-center space-x-1.5">
-                                    {/* PENDING → Accept or Cancel */}
-                                    {order.status === "Pending" && (
-                                      <>
-                                        <button
-                                          onClick={() => setOrderToConfirm({ id: order.id, order_number: order.order_number, newStatus: "Accepted" })}
-                                          className="px-2 py-1 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
-                                        >
-                                          Accept
-                                        </button>
-                                        <button
-                                          onClick={() => setOrderToConfirm({ id: order.id, order_number: order.order_number, newStatus: "Cancelled" })}
-                                          className="px-2 py-1 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </>
-                                    )}
+                                    {/* PENDING → Accept or Cancel (locked during the customer's cancellation window) */}
+                                    {order.status === "Pending" && (() => {
+                                      const win = getCancellationWindow(order);
+                                      if (win.locked) {
+                                        return (
+                                          <span
+                                            className="px-2 py-1 bg-slate-50 text-slate-400 border border-slate-200 text-[10px] font-bold uppercase tracking-wider rounded-lg whitespace-nowrap"
+                                            title={`The customer can still cancel this order. Available in ${win.label}.`}
+                                          >
+                                            Customer window: {win.label}
+                                          </span>
+                                        );
+                                      }
+                                      return (
+                                        <>
+                                          <button
+                                            onClick={() => setOrderToConfirm({ id: order.id, order_number: order.order_number, newStatus: "Accepted" })}
+                                            className="px-2 py-1 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                                          >
+                                            Accept
+                                          </button>
+                                          <button
+                                            onClick={() => setOrderToConfirm({ id: order.id, order_number: order.order_number, newStatus: "Cancelled" })}
+                                            className="px-2 py-1 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </>
+                                      );
+                                    })()}
                                     {/* ACCEPTED → Deliver only (admin) */}
                                     {order.status === "Accepted" && currentUserRole === "admin" && (
                                       <button
