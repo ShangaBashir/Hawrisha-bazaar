@@ -34,6 +34,7 @@ import {
   User,
   ChevronDown,
   Search,
+  Wallet,
 } from "lucide-react";
 
 const extractHexColor = (cls) => {
@@ -3479,22 +3480,40 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
   const outOfStockItems = filteredProducts.filter((p) => Number(p.stock) === 0).length;
 
+  // Store payout + admin commission for Paid orders only. When a single store is
+  // selected we recompute from that store's items; otherwise use the API totals.
+  const paidMoneySplit = (() => {
+    let payout = 0;
+    let commission = 0;
+    orders.forEach((order) => {
+      if (order.status !== "Paid") return; // money counts only once Paid
+      const items = (order.items || []).filter((item) =>
+        !storeFilter || storeFilter === "all" || Number(item.store_id) === Number(storeFilter)
+      );
+      items.forEach((item) => {
+        const line = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+        const comm = Number(item.commission_percentage) || 0;
+        const adminCut = Math.round((line * comm) / 100);
+        payout += line - adminCut;
+        commission += adminCut;
+      });
+    });
+    return { payout, commission };
+  })();
+
   const totalSales = (() => {
     if (currentUserRole === "vendor") {
       return vendorStats.totalSales;
     }
     if (storeFilter && storeFilter !== "all") {
-      return orders.reduce((sum, order) => {
-        if (order.status === "Paid") {
-          const storeItems = (order.items || []).filter(item => Number(item.store_id) === Number(storeFilter));
-          const storeOrderTotal = storeItems.reduce((s, item) => s + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
-          return sum + storeOrderTotal;
-        }
-        return sum;
-      }, 0);
+      return paidMoneySplit.payout;
     }
     return adminStats.totalSales;
   })();
+
+  const adminCommissionTotal = (storeFilter && storeFilter !== "all")
+    ? paidMoneySplit.commission
+    : (Number(adminStats.commissionEarnings) || 0);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const safePage = Math.min(dashboardPage, totalPages);
@@ -3909,7 +3928,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
               </div>
 
               {/* Stats Analytics Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-2 gap-4 ${currentUserRole === "admin" ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
                 {/* Stat Card 1 – Total Items */}
                 <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center space-x-4">
                   <div className="w-12 h-12 rounded-xl bg-[#B2AC88]/10 text-[#B2AC88] flex items-center justify-center shrink-0">
@@ -3979,6 +3998,23 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     </h4>
                   </div>
                 </div>
+
+                {/* Stat Card 5 – Admin Commission (Paid orders only) */}
+                {currentUserRole === "admin" && (
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#B2AC88]/10 text-[#B2AC88] flex items-center justify-center shrink-0">
+                      <Wallet size={22} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        Admin Commission
+                      </span>
+                      <h4 className="text-2xl font-bold text-[#B2AC88] mt-0.5">
+                        {adminCommissionTotal.toLocaleString()}
+                      </h4>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Products Table Card */}
