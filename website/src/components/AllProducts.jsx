@@ -521,7 +521,11 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       if (!seen.has(fam)) {
         seen.add(fam);
         families.push({
+          // `name` stays the lowercase family — it is the filter value the
+          // product matching compares against. `label` carries the trilingual
+          // name from the dashboard so the swatch can be shown translated.
           name: fam,
+          label: col.name,
           class: col.class
         });
       }
@@ -1499,7 +1503,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             onClick={() => toggleSection('gender')} 
                             className="flex items-center justify-between cursor-pointer group select-none"
                           >
-                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}</h4>
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{language === 'ar' ? 'النوع' : language === 'ku' ? 'ڕەگەز' : 'Gender'}</h4>
                             <div className="flex items-center space-x-2">
                               {selectedGender && (
                                 <button 
@@ -1680,7 +1684,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     className={`w-3 h-3 rounded-full border border-gray-200/50 ${color.class}`} 
                                     style={getColorStyle(color.class)}
                                   />
-                                  <span className="capitalize">{color.name}</span>
+                                  <span className="capitalize">{color.label ? getLocalized(color.label, language) : color.name}</span>
                                 </label>
                               ))}
                             </div>
@@ -2269,7 +2273,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                     {viewingProduct.gender && (
                       <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
                         <span className="w-36 font-medium text-gray-400 shrink-0">
-                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری رەگەز' : 'Gender'}
+                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'ڕەگەز' : 'Gender'}
                         </span>
                         <span className="font-semibold">
                           {getLocalizedGender(viewingProduct.gender, language)}

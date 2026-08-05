@@ -2917,6 +2917,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
     else if (type === "seasons") setSeasons((prev) => updateLocalArray(prev, "hhawrisha_seasons"));
     else if (type === "sizes") setSizes((prev) => updateLocalArray(prev, "hhawrisha_sizes"));
     else if (type === "promotions") setPromotions((prev) => updateLocalArray(prev, "hhawrisha_promotions"));
+    // Designs and sport types are DB-only (no localStorage mirror), so update
+    // the in-memory list directly for an instant UI refresh.
+    else if (type === "designs") setDesigns((prev) => prev.map((x) => (String(x.id) === String(item.id) ? { ...x, ...body } : x)));
+    else if (type === "sport-types") setSportTypes((prev) => prev.map((x) => (String(x.id) === String(item.id) ? { ...x, ...body } : x)));
 
     try {
       const res = await fetch(`/api/settings/${type}/${item.id}`, {
@@ -5251,6 +5255,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <div key={d.id} className="py-2.5 px-3 hover:bg-slate-100 rounded-xl flex items-center justify-between group transition-colors">
                               <span className="text-sm font-semibold text-slate-700">{displayName}</span>
                               <div className="flex items-center gap-1.5">
+                                <button type="button" onClick={() => handleStartEditSettingItem("designs", d)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Edit Design">
+                                  <Edit2 size={14} />
+                                </button>
                                 <button type="button" onClick={() => handleDeleteDesign(d)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete Design">
                                   <Trash2 size={14} />
                                 </button>
@@ -5308,6 +5315,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                             <div key={sp.id} className="py-2.5 px-3 hover:bg-slate-100 rounded-xl flex items-center justify-between group transition-colors">
                               <span className="text-sm font-semibold text-slate-700">{displayName}</span>
                               <div className="flex items-center gap-1.5">
+                                <button type="button" onClick={() => handleStartEditSettingItem("sport-types", sp)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Edit Sport Type">
+                                  <Edit2 size={14} />
+                                </button>
                                 <button type="button" onClick={() => handleDeleteSportType(sp)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete Sport Type">
                                   <Trash2 size={14} />
                                 </button>

@@ -277,7 +277,10 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
       if (!seen.has(fam)) {
         seen.add(fam);
         families.push({
+          // `name` is the filter value (lowercase family); `label` holds the
+          // trilingual name from the dashboard so we can show it translated.
           name: fam,
+          label: col.name,
           class: col.class
         });
       }
@@ -698,7 +701,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                               className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-100 hover:border-[#B2AC88]/50 hover:bg-[#FAF9F5] text-[11px] font-semibold text-gray-600 hover:text-[#36454F] transition-all cursor-pointer capitalize group"
                             >
                               <span className="w-3.5 h-3.5 rounded-full border border-gray-200 shrink-0" style={getColorStyle(col.class)} />
-                              <span>{col.name}</span>
+                              <span>{col.label ? getLocalized(col.label, language) : col.name}</span>
                             </button>
                           ))}
                         </div>
@@ -714,7 +717,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                       >
                         <span className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-[#B2AC88] shrink-0" />
-                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender'}
+                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'ڕەگەز' : 'Gender'}
                         </span>
                         <ChevronDown size={12} className={`text-gray-300 transition-transform duration-200 ${openGroups.gender ? 'rotate-0' : '-rotate-90'}`} />
                       </button>
@@ -1112,7 +1115,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                           promotionsList
                         )}
                         {renderMobileSubSection(
-                          language === 'ar' ? 'النوع' : language === 'ku' ? 'جۆری' : 'Gender',
+                          language === 'ar' ? 'النوع' : language === 'ku' ? 'ڕەگەز' : 'Gender',
                           'gender',
                           [
                             { id: 'women', name: language === 'ar' ? 'نساء' : language === 'ku' ? 'ژن' : 'Women', value: 'Women' },
