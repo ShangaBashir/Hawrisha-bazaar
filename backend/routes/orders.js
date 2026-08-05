@@ -409,6 +409,28 @@ router.put('/:id/payment-status', async (req, res) => {
   }
 });
 
+// 4.55 GET ALL RECORDED STORE EARNINGS (money booked when an order became Paid)
+// One row per store per paid order, so the dashboard can break the money down
+// by period and by store using the rates recorded at payment time.
+// NOTE: must stay ABOVE '/:id/earnings' or Express matches that route first.
+router.get('/stats/earnings', async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT se.id, se.order_id, se.store_id, se.order_items_total,
+             se.commission_percentage, se.admin_commission, se.store_payout,
+             se.paid_at, s.name AS store_name, o.order_number
+      FROM store_earnings se
+      LEFT JOIN stores s ON s.id = se.store_id
+      LEFT JOIN orders o ON o.id = se.order_id
+      ORDER BY se.paid_at DESC
+    `);
+    res.json({ success: true, earnings: rows });
+  } catch (error) {
+    // Table may not exist yet on a fresh install — treat as "no earnings".
+    res.json({ success: true, earnings: [] });
+  }
+});
+
 // 4.6 GET EARNINGS BREAKDOWN FOR A SPECIFIC ORDER
 router.get('/:id/earnings', async (req, res) => {
   try {

@@ -383,6 +383,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const [vendorOrderTab, setVendorOrderTab] = useState("Pending");
   const [orderToConfirm, setOrderToConfirm] = useState(null);
   const [paymentToConfirm, setPaymentToConfirm] = useState(null);
+  // Recorded store earnings (one row per store per paid order) + the selected
+  // sales period ("all" or "YYYY-MM").
+  const [storeEarnings, setStoreEarnings] = useState([]);
+  const [salesPeriod, setSalesPeriod] = useState("all");
   const [adminStats, setAdminStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -1443,6 +1447,16 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       }
     } catch (err) {
       console.error("Error fetching admin stats", err);
+    }
+    // Money booked at payment time — drives the per-period / per-store split.
+    try {
+      const res = await fetch(`/api/orders/stats/earnings?_t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) setStoreEarnings(data.earnings || []);
+      }
+    } catch (err) {
+      console.error("Error fetching store earnings", err);
     }
   };
 
@@ -3480,40 +3494,49 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
 
   const outOfStockItems = filteredProducts.filter((p) => Number(p.stock) === 0).length;
 
-  // Store payout + admin commission for Paid orders only. When a single store is
-  // selected we recompute from that store's items; otherwise use the API totals.
-  const paidMoneySplit = (() => {
-    let payout = 0;
-    let commission = 0;
-    orders.forEach((order) => {
-      if (order.status !== "Paid") return; // money counts only once Paid
-      const items = (order.items || []).filter((item) =>
-        !storeFilter || storeFilter === "all" || Number(item.store_id) === Number(storeFilter)
-      );
-      items.forEach((item) => {
-        const line = (Number(item.price) || 0) * (Number(item.quantity) || 0);
-        const comm = Number(item.commission_percentage) || 0;
-        const adminCut = Math.round((line * comm) / 100);
-        payout += line - adminCut;
-        commission += adminCut;
-      });
-    });
-    return { payout, commission };
-  })();
+  // Months that actually have booked earnings, newest first, for the selector.
+  const monthKey = (value) => {
+    const d = new Date(value);
+    return isNaN(d) ? null : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const availableSalesMonths = Array.from(
+    new Set(storeEarnings.map((e) => monthKey(e.paid_at)).filter(Boolean))
+  ).sort((a, b) => b.localeCompare(a));
+  const formatMonthLabel = (key) => {
+    const [y, m] = key.split("-");
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+  };
+
+  // Money booked when orders were Paid, filtered by the selected period and
+  // store. Uses the commission rate recorded at payment time.
+  const paidMoneySplit = storeEarnings.reduce(
+    (acc, e) => {
+      if (salesPeriod !== "all" && monthKey(e.paid_at) !== salesPeriod) return acc;
+      if (storeFilter && storeFilter !== "all" && Number(e.store_id) !== Number(storeFilter)) return acc;
+      acc.payout += Number(e.store_payout) || 0;
+      acc.commission += Number(e.admin_commission) || 0;
+      return acc;
+    },
+    { payout: 0, commission: 0 }
+  );
+
+  const isFilteredSales = salesPeriod !== "all" || (storeFilter && storeFilter !== "all");
 
   const totalSales = (() => {
     if (currentUserRole === "vendor") {
       return vendorStats.totalSales;
     }
-    if (storeFilter && storeFilter !== "all") {
-      return paidMoneySplit.payout;
+    // Fall back to the API total when nothing is filtered and no earnings rows
+    // exist yet (e.g. orders paid before earnings were recorded).
+    if (!isFilteredSales && storeEarnings.length === 0) {
+      return Number(adminStats.totalSales) || 0;
     }
-    return adminStats.totalSales;
+    return paidMoneySplit.payout;
   })();
 
-  const adminCommissionTotal = (storeFilter && storeFilter !== "all")
-    ? paidMoneySplit.commission
-    : (Number(adminStats.commissionEarnings) || 0);
+  const adminCommissionTotal = (!isFilteredSales && storeEarnings.length === 0)
+    ? (Number(adminStats.commissionEarnings) || 0)
+    : paidMoneySplit.commission;
   const itemsPerPage = 10;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const safePage = Math.min(dashboardPage, totalPages);
@@ -3927,6 +3950,25 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 </button>
               </div>
 
+              {/* Sales period filter — changes Total Sales & Admin Commission */}
+              {currentUserRole === "admin" && (
+                <div className="flex items-center justify-end gap-2 -mt-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Sales Period
+                  </span>
+                  <select
+                    value={salesPeriod}
+                    onChange={(e) => setSalesPeriod(e.target.value)}
+                    className="border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold text-[#36454F] bg-white shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B2AC88]/20 focus:border-[#B2AC88] transition-all"
+                  >
+                    <option value="all">All Time</option>
+                    {availableSalesMonths.map((m) => (
+                      <option key={m} value={m}>{formatMonthLabel(m)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Stats Analytics Grid */}
               <div className={`grid grid-cols-2 gap-4 ${currentUserRole === "admin" ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
                 {/* Stat Card 1 – Total Items */}
@@ -4002,14 +4044,14 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 {/* Stat Card 5 – Admin Commission (Paid orders only) */}
                 {currentUserRole === "admin" && (
                   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#B2AC88]/10 text-[#B2AC88] flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center shrink-0">
                       <Wallet size={22} />
                     </div>
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                         Admin Commission
                       </span>
-                      <h4 className="text-2xl font-bold text-[#B2AC88] mt-0.5">
+                      <h4 className="text-2xl font-bold text-violet-500 mt-0.5">
                         {adminCommissionTotal.toLocaleString()}
                       </h4>
                     </div>
@@ -8883,10 +8925,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           {item.image_url ? (
                             <img src={getProductImage(item.image_url)}
                               alt={getEnglishName(item.product_name)}
-                              className="w-14 h-14 rounded-xl object-cover border border-slate-100 shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
+                              className="w-24 h-24 rounded-xl object-cover border border-slate-100 shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
                           ) : (
-                            <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-[#B2AC88]">
-                              <Package size={18} />
+                            <div className="w-24 h-24 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-[#B2AC88]">
+                              <Package size={30} />
                             </div>
                           )}
                           <span className="absolute -top-1.5 -right-1.5 bg-[#B2AC88] text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm font-sans">
@@ -8894,38 +8936,38 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           </span>
                         </div>
                         <div>
-                          <p className="text-sm font-extrabold text-[#36454F]">{getEnglishName(item.product_name)}</p>
-                          <div className="flex flex-wrap gap-2 mt-1.5">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
+                          <p className="text-lg font-extrabold text-[#36454F]">{getEnglishName(item.product_name)}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="text-sm font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                               QTY: <span className="text-slate-700 font-extrabold">{item.quantity}</span>
                             </span>
                             {item.store_name && currentUserRole === 'admin' && (
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
+                              <span className="text-sm font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                                 Store: <span className="text-[#B2AC88] font-extrabold">{getEnglishName(item.store_name)}</span>
                               </span>
                             )}
                             {item.selected_color && (
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded flex items-center gap-1.5 border border-slate-100">
+                              <span className="text-sm font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-slate-100">
                                 Color: {item.selected_color.startsWith('bg-[') ? (
-                                  <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={getColorStyle(item.selected_color)}></span>
+                                  <span className="w-4 h-4 rounded-full inline-block border border-slate-300" style={getColorStyle(item.selected_color)}></span>
                                 ) : (
-                                  <span className="w-3 h-3 rounded-full inline-block border border-slate-200" style={{ backgroundColor: item.selected_color === 'White' ? '#FFFFFF' : item.selected_color === 'Black' ? '#000000' : item.selected_color }}></span>
+                                  <span className="w-4 h-4 rounded-full inline-block border border-slate-200" style={{ backgroundColor: item.selected_color === 'White' ? '#FFFFFF' : item.selected_color === 'Black' ? '#000000' : item.selected_color }}></span>
                                 )}
                                 <span className="text-slate-700 normal-case font-extrabold">{getEnglishName(item.selected_color_name) || item.selected_color}</span>
                               </span>
                             )}
                             {item.selected_size && (
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">Size: <span className="text-slate-700 font-extrabold">{item.selected_size}</span></span>
+                              <span className="text-sm font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">Size: <span className="text-slate-700 font-extrabold">{item.selected_size}</span></span>
                             )}
                             {item.selected_style && (
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">Style: <span className="text-slate-700 font-extrabold">{item.selected_style}</span></span>
+                              <span className="text-sm font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">Style: <span className="text-slate-700 font-extrabold">{item.selected_style}</span></span>
                             )}
                           </div>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-emerald-600">{(item.price * item.quantity).toLocaleString()} IQD</p>
-                        <p className="text-[10px] text-slate-400">{item.price.toLocaleString()} IQD each</p>
+                        <p className="text-lg font-bold text-emerald-600">{(item.price * item.quantity).toLocaleString()} IQD</p>
+                        <p className="text-xs text-slate-400">{item.price.toLocaleString()} IQD each</p>
                       </div>
                       </div>
                     </div>
@@ -8938,13 +8980,19 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                   const items = expandedOrder.items || [];
                   let productsPrice = 0;
                   let adminCommission = 0;
+                  const rates = new Set();
                   items.forEach((i) => {
                     const line = (Number(i.price) || 0) * (Number(i.quantity) || 0);
                     const comm = Number(i.commission_percentage) || 0;
                     productsPrice += line;
                     adminCommission += Math.round((line * comm) / 100);
+                    rates.add(comm);
                   });
                   const storeShare = productsPrice - adminCommission;
+                  // One store → show its rate; mixed stores → show the blend.
+                  const rateLabel = rates.size === 1
+                    ? `${[...rates][0]}%`
+                    : (productsPrice > 0 ? `${Math.round((adminCommission / productsPrice) * 100)}%` : "0%");
                   return (
                     <div className="mt-4 bg-slate-50 rounded-2xl p-5 space-y-2">
                       <div className="flex justify-between text-sm">
@@ -8956,7 +9004,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                         <span className="font-bold text-[#36454F]">{storeShare.toLocaleString()} IQD</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Admin Commission</span>
+                        <span className="text-slate-500">Admin Commission ({rateLabel})</span>
                         <span className="font-bold text-[#B2AC88]">{adminCommission.toLocaleString()} IQD</span>
                       </div>
                     </div>
