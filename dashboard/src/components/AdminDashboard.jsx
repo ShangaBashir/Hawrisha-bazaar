@@ -8839,10 +8839,6 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                 <h4 className="font-bold text-[10px] uppercase tracking-wider text-slate-400 mb-4 px-2">Items Included</h4>
                 <div className="space-y-3">
                    {(expandedOrder.items || []).map((item, i) => {
-                    const lineTotal = Number(item.price) * Number(item.quantity);
-                    const comm = Number(item.commission_percentage) || 0;
-                    const itemAdminCommission = Math.round((lineTotal * comm) / 100);
-                    const itemStoreShare = lineTotal - itemAdminCommission;
                     return (
                     <div key={i} className="p-4 bg-white border border-slate-100 rounded-2xl hover:border-slate-200 transition-colors">
                       <div className="flex items-start justify-between gap-4">
@@ -8894,22 +8890,42 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-emerald-600">{(item.price * item.quantity).toLocaleString()} IQD</p>
                         <p className="text-[10px] text-slate-400">{item.price.toLocaleString()} IQD each</p>
-                        {currentUserRole === 'admin' && (
-                          <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
-                            <p className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
-                              Store Share: <span className="text-[#36454F] font-extrabold">{itemStoreShare.toLocaleString()} IQD</span>
-                            </p>
-                            <p className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
-                              Admin Commission ({comm}%): <span className="text-[#B2AC88] font-extrabold">{itemAdminCommission.toLocaleString()} IQD</span>
-                            </p>
-                          </div>
-                        )}
                       </div>
                       </div>
                     </div>
                     );
                   })}
                 </div>
+
+                {/* Money split for the products in this order (excludes delivery) */}
+                {currentUserRole === 'admin' && (() => {
+                  const items = expandedOrder.items || [];
+                  let productsPrice = 0;
+                  let adminCommission = 0;
+                  items.forEach((i) => {
+                    const line = (Number(i.price) || 0) * (Number(i.quantity) || 0);
+                    const comm = Number(i.commission_percentage) || 0;
+                    productsPrice += line;
+                    adminCommission += Math.round((line * comm) / 100);
+                  });
+                  const storeShare = productsPrice - adminCommission;
+                  return (
+                    <div className="mt-4 bg-slate-50 rounded-2xl p-5 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Product Price</span>
+                        <span className="font-bold text-[#36454F]">{productsPrice.toLocaleString()} IQD</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Store Share</span>
+                        <span className="font-bold text-[#36454F]">{storeShare.toLocaleString()} IQD</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Admin Commission</span>
+                        <span className="font-bold text-[#B2AC88]">{adminCommission.toLocaleString()} IQD</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
             </motion.div>
