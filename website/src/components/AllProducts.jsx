@@ -1142,7 +1142,7 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     return filteredProducts.slice(start, end);
   }, [filteredProducts, currentPage]);
 
-  const hasActiveFilters = onlyDiscounted || selectedCategories.length > 0 || maxPriceFilter < maxPriceOfProducts || selectedColors.length > 0 || localSearchTerm !== '' || initialSearchTerm !== '' || selectedStyles.length > 0 || selectedMaterials.length > 0 || selectedSeasons.length > 0 || selectedSizes.length > 0 || !!selectedGender;
+  const hasActiveFilters = onlyDiscounted || selectedCategories.length > 0 || maxPriceFilter < maxPriceOfProducts || selectedColors.length > 0 || localSearchTerm !== '' || initialSearchTerm !== '' || selectedStyles.length > 0 || selectedMaterials.length > 0 || selectedSeasons.length > 0 || selectedSizes.length > 0 || !!selectedGender || selectedBadges.length > 0 || selectedPromotions.length > 0 || selectedDesigns.length > 0 || selectedSportTypes.length > 0;
 
   // Trigger entering product detail state
   const handleCardClick = (product) => {
@@ -1334,76 +1334,107 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                   </div>
 
                   {/* Active Filter Badges */}
-                  {hasActiveFilters && (
+                  {hasActiveFilters && (() => {
+                    // One chip per active filter value. The X sits in a <button>
+                    // because index.css disables pointer events on bare `span svg`,
+                    // which silently swallowed clicks on the old icon-only X.
+                    const chipClass = "flex items-center gap-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full";
+                    const Chip = ({ label, onRemove }) => (
+                      <span className={chipClass}>
+                        <span>{label}</span>
+                        <button
+                          type="button"
+                          onClick={onRemove}
+                          aria-label={`Remove ${label}`}
+                          className="text-gray-400 hover:text-gray-700 cursor-pointer p-0.5 -m-0.5 border-0 bg-transparent leading-none"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    );
+                    const tr = (en, ar, ku) => (language === 'ar' ? ar : language === 'ku' ? ku : en);
+                    const removeFrom = (setter, value) => () => setter(prev => prev.filter(x => x !== value));
+
+                    return (
                     <div className="flex flex-wrap gap-2 items-center pt-1">
                       {selectedCategories.map(cat => (
-                        <span key={cat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}: {cat}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedCategories(prev => prev.filter(x => x !== cat))} />
-                        </span>
+                        <Chip key={`cat-${cat}`}
+                          label={`${tr('Category', 'التصنيف', 'پۆلێن')}: ${getLocalized(cat, language)}`}
+                          onRemove={removeFrom(setSelectedCategories, cat)} />
                       ))}
                       {onlyDiscounted && (
-                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'العروض: تخفيضات' : language === 'ku' ? 'پێشنیارەکان: داشکاندن' : 'Offers: Discount'}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setOnlyDiscounted(false)} />
-                        </span>
+                        <Chip label={tr('Offers: Discount', 'العروض: تخفيضات', 'پێشنیارەکان: داشکاندن')}
+                          onRemove={() => setOnlyDiscounted(false)} />
+                      )}
+                      {selectedGender && (
+                        <Chip label={`${tr('Gender', 'النوع', 'ڕەگەز')}: ${getLocalizedGender(selectedGender, language)}`}
+                          onRemove={() => setSelectedGender('')} />
                       )}
                       {maxPriceFilter < maxPriceOfProducts && (
-                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? `أقل من ${maxPriceFilter.toLocaleString()} د.ع` : language === 'ku' ? `کەمتر لە ${maxPriceFilter.toLocaleString()} دینار` : `Under ${maxPriceFilter.toLocaleString()} IQD`}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setMaxPriceFilter(maxPriceOfProducts)} />
-                        </span>
+                        <Chip label={tr(`Under ${maxPriceFilter.toLocaleString()} IQD`, `أقل من ${maxPriceFilter.toLocaleString()} د.ع`, `کەمتر لە ${maxPriceFilter.toLocaleString()} دینار`)}
+                          onRemove={() => setMaxPriceFilter(maxPriceOfProducts)} />
                       )}
                       {selectedColors.length > 0 && (
-                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'الألوان' : language === 'ku' ? 'ڕەنگەکان' : 'Colors'} ({selectedColors.length})</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedColors([])} />
-                        </span>
+                        <Chip label={`${tr('Colors', 'الألوان', 'ڕەنگەکان')} (${selectedColors.length})`}
+                          onRemove={() => setSelectedColors([])} />
                       )}
                       {localSearchTerm !== '' && (
-                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'البحث' : language === 'ku' ? 'گەڕان' : 'Search'}: "{localSearchTerm}"</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setLocalSearchTerm('')} />
-                        </span>
+                        <Chip label={`${tr('Search', 'البحث', 'گەڕان')}: "${localSearchTerm}"`}
+                          onRemove={() => setLocalSearchTerm('')} />
                       )}
                       {initialSearchTerm !== '' && (
-                        <span className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'البحث العام' : language === 'ku' ? 'گەڕانی گشتی' : 'Global Search'}: "{initialSearchTerm}"</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => onClearGlobalSearch && onClearGlobalSearch()} />
-                        </span>
+                        <Chip label={`${tr('Global Search', 'البحث العام', 'گەڕانی گشتی')}: "${initialSearchTerm}"`}
+                          onRemove={() => onClearGlobalSearch && onClearGlobalSearch()} />
                       )}
                       {selectedStyles.map(st => (
-                        <span key={st} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'الموديل' : language === 'ku' ? 'شێواز' : 'Style'}: {st}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedStyles(prev => prev.filter(x => x !== st))} />
-                        </span>
+                        <Chip key={`st-${st}`}
+                          label={`${tr('Style', 'الموديل', 'شێواز')}: ${getLocalized(st, language)}`}
+                          onRemove={removeFrom(setSelectedStyles, st)} />
                       ))}
                       {selectedMaterials.map(mat => (
-                        <span key={mat} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}: {mat}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedMaterials(prev => prev.filter(x => x !== mat))} />
-                        </span>
+                        <Chip key={`mat-${mat}`}
+                          label={`${tr('Material', 'المادة', 'کەرەستە')}: ${getLocalized(mat, language)}`}
+                          onRemove={removeFrom(setSelectedMaterials, mat)} />
                       ))}
                       {selectedSeasons.map(seas => (
-                        <span key={seas} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'الموسم' : language === 'ku' ? 'وەرز' : 'Season'}: {seas}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSeasons(prev => prev.filter(x => x !== seas))} />
-                        </span>
+                        <Chip key={`seas-${seas}`}
+                          label={`${tr('Season', 'الموسم', 'وەرز')}: ${getLocalized(seas, language)}`}
+                          onRemove={removeFrom(setSelectedSeasons, seas)} />
                       ))}
                       {selectedSizes.map(sz => (
-                        <span key={sz} className="flex items-center space-x-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-full">
-                          <span>{language === 'ar' ? 'المقاس' : language === 'ku' ? 'قەبارە' : 'Size'}: {sz}</span>
-                          <X size={10} className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setSelectedSizes(prev => prev.filter(x => x !== sz))} />
-                        </span>
+                        <Chip key={`sz-${sz}`}
+                          label={`${tr('Size', 'المقاس', 'قەبارە')}: ${getLocalized(sz, language)}`}
+                          onRemove={removeFrom(setSelectedSizes, sz)} />
                       ))}
-                      <button 
+                      {selectedBadges.map(b => (
+                        <Chip key={`bdg-${b}`}
+                          label={`${tr('Label', 'الشارة', 'نیشانە')}: ${getLocalized(b, language)}`}
+                          onRemove={removeFrom(setSelectedBadges, b)} />
+                      ))}
+                      {selectedPromotions.map(p => (
+                        <Chip key={`promo-${p}`}
+                          label={`${tr('Promotion', 'العرض', 'پێشنیار')}: ${getLocalized(p, language)}`}
+                          onRemove={removeFrom(setSelectedPromotions, p)} />
+                      ))}
+                      {selectedDesigns.map(d => (
+                        <Chip key={`dsg-${d}`}
+                          label={`${tr('Design', 'التصميم', 'دیزاین')}: ${getLocalized(d, language)}`}
+                          onRemove={removeFrom(setSelectedDesigns, d)} />
+                      ))}
+                      {selectedSportTypes.map(sp => (
+                        <Chip key={`sp-${sp}`}
+                          label={`${tr('Sport Type', 'نوع الرياضة', 'جۆری وەرزش')}: ${getLocalized(sp, language)}`}
+                          onRemove={removeFrom(setSelectedSportTypes, sp)} />
+                      ))}
+                      <button
                         onClick={handleResetFilters}
                         className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer ml-1.5"
                       >
                         {t('product.clear_all')}
                       </button>
                     </div>
-                  )}
+                    );
+                  })()}
                 </motion.div>
               </div>
 
