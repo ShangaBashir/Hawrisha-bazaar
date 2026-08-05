@@ -600,6 +600,27 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       return {};
     }
   });
+
+  // The settings sub-tabs that are actually shown (deleted ones are hidden).
+  const BASE_SETTINGS_TABS = [
+    "categories", "badges", "colors", "styles", "materials",
+    "seasons", "sizes", "promotions", "designs", "sport-types",
+  ];
+  const visibleSettingsTabIds = [
+    ...BASE_SETTINGS_TABS,
+    ...customSubTabs.map((t) => String(t.id)),
+  ].filter((id) => !deletedTabIds.includes(id));
+
+  // Keep the selected sub-tab valid: the default ("categories") may have been
+  // deleted, which would render its panel with no matching tab in the bar.
+  useEffect(() => {
+    if (visibleSettingsTabIds.length === 0) return;
+    if (!visibleSettingsTabIds.includes(String(settingsSubTab))) {
+      setSettingsSubTab(visibleSettingsTabIds[0]);
+      setSettingsPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deletedTabIds, customSubTabs, settingsSubTab]);
   const [newCustomItemEn, setNewCustomItemEn] = useState("");
   const [newCustomItemKu, setNewCustomItemKu] = useState("");
   const [newCustomItemAr, setNewCustomItemAr] = useState("");
@@ -3394,7 +3415,9 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
       errors.storePhone = 'Phone number must start with +964 and contain exactly 10 digits';
     }
 
-    if (!storeCityEn.trim() || !storeCityKu.trim() || !storeCityAr.trim()) errors.storeCity = 'City is required in 3 languages';
+    // The city is picked from the cities configured in System Settings, which
+    // already carry their own translations — only require that one is selected.
+    if (!storeCityEn.trim()) errors.storeCity = 'Please select a city';
     if (!storeAddress.trim()) errors.storeAddress = 'Address is required';
     if (!storeDescriptionEn.trim() || !storeDescriptionKu.trim() || !storeDescriptionAr.trim()) errors.storeDescription = 'Store description is required in 3 languages';
     
@@ -6650,8 +6673,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       </label>
                       <select
                         value={citiesList.find(c => {
-                          const parsed = c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name, ku: "", ar: "" };
-                          return parsed.en === storeCityEn && parsed.ku === storeCityKu && parsed.ar === storeCityAr;
+                          // Match on the English name — cities added before the
+                          // trilingual fields existed have empty ku/ar values.
+                          const parsed = c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name };
+                          return (parsed.en || "").trim() === storeCityEn.trim();
                         })?.id || ""}
                         onChange={(e) => {
                           const selectedCity = citiesList.find(c => c.id.toString() === e.target.value);
@@ -6901,8 +6926,10 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                       </label>
                       <select
                         value={citiesList.find(c => {
-                          const parsed = c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name, ku: "", ar: "" };
-                          return parsed.en === storeCityEn && parsed.ku === storeCityKu && parsed.ar === storeCityAr;
+                          // Match on the English name — cities added before the
+                          // trilingual fields existed have empty ku/ar values.
+                          const parsed = c.name.startsWith('{') ? JSON.parse(c.name) : { en: c.name };
+                          return (parsed.en || "").trim() === storeCityEn.trim();
                         })?.id || ""}
                         onChange={(e) => {
                           const selectedCity = citiesList.find(c => c.id.toString() === e.target.value);
