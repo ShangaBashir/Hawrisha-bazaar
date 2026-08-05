@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Rabar_022 — Kurdish (Sorani) typeface. Applied whenever the site language
+   is Kurdish; other languages keep the default Inter/Roboto stack. */
+@font-face {
+  font-family: "Rabar";
+  src: url("/fonts/Rabar_022.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-brand-rose: #C08081;
   --color-brand-sage: #B2AC88;
@@ -11,6 +21,23 @@
 @layer base {
   body {
     @apply bg-brand-beige text-brand-charcoal font-sans;
+  }
+
+  /* LanguageContext sets lang="ku" on <html>. Use Rabar for the whole page,
+     overriding the font-sans utility that most elements carry. */
+  html[lang="ku"] body,
+  html[lang="ku"] .font-sans,
+  html[lang="ku"] .font-serif,
+  html[lang="ku"] button,
+  html[lang="ku"] input,
+  html[lang="ku"] select,
+  html[lang="ku"] textarea {
+    font-family: "Rabar", "Inter", "Roboto", sans-serif;
+  }
+
+  /* Kurdish script sits low in the em box; nudge line-height for legibility. */
+  html[lang="ku"] body {
+    line-height: 1.75;
   }
 
   /* Ensure SVG icons from lucide-react always render and don't collapse */
