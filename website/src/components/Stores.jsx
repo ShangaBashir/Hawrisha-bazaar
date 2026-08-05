@@ -148,7 +148,7 @@ function StoreProductCard({ product, likedProducts, onToggleWishlist, onAddToCar
           <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
             {product.stock === 0 && (
               <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-lg shadow-xs">
-                Out of Stock
+                {t('ui.out_of_stock')}
               </div>
             )}
             {product.discount > 0 && (
@@ -261,6 +261,7 @@ function StoreProductCard({ product, likedProducts, onToggleWishlist, onAddToCar
 }
 
 const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => {
+  const { t } = useLanguage();
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   if (totalPages <= 1) return null;
 
@@ -303,7 +304,7 @@ const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => 
                     ? 'w-2.5 h-2.5 bg-[#C08081]'
                     : 'w-2.5 h-2.5 border-[1.5px] border-[#C08081] bg-transparent hover:bg-[#C08081]/20'
                 }`}
-                aria-label={`Page ${page}`}
+                aria-label={t('ui.go_to_page', { page })}
               />
             ));
           })()}
@@ -372,7 +373,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
     fetch('/api/stores')
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to fetch stores.');
+        if (!res.ok) throw new Error(data.message || t('ui.failed_fetch_stores'));
         return data;
       })
       .then((data) => {
@@ -404,7 +405,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
     fetch(`/api/products/vendor?email=${encodeURIComponent(vendor.email)}`)
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to load products.');
+        if (!res.ok) throw new Error(data.error || t('ui.failed_load_products'));
         return data;
       })
       .then((data) => {
@@ -627,7 +628,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                     onClick={() => { setStoreSearchTerm(''); setSelectedCity('All'); }}
                     className="mt-3 text-xs font-extrabold uppercase tracking-widest text-[#B2AC88] hover:text-[#8E8866] transition-colors cursor-pointer"
                   >
-                    Reset Filters
+                    {t('ui.reset_filters')}
                   </button>
                 </div>
               </div>
@@ -702,7 +703,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
 
                           <p className="text-[10px] sm:text-xs font-bold text-[#B2AC88] mt-2 sm:mt-3.5 px-1 flex items-center justify-center gap-1">
                             <ShoppingBag size={10} className="sm:w-3 sm:h-3" />
-                            {vendor.productCount || 0} {vendor.productCount === 1 ? 'Product' : 'Products'}
+                            {t('stores_page.products_count', { count: vendor.productCount || 0 })}
                           </p>
                         </div>
                       </div>
@@ -760,7 +761,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
               
               {/* Description above banner on mobile */}
               <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-                {parseEn(selectedStore.description) || 'Welcome to our verified partner store!'}
+                {parseEn(selectedStore.description) || t('ui.store_default_desc')}
               </p>
 
               {/* Social links above banner on mobile */}
@@ -805,7 +806,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
                   {parseEn(selectedStore.name)}
                 </h1>
                 <p className="text-xs lg:text-sm text-gray-500 font-semibold leading-relaxed">
-                  {parseEn(selectedStore.description) || 'Welcome to our verified partner store!'}
+                  {parseEn(selectedStore.description) || t('ui.store_default_desc')}
                 </p>
               </div>
 
@@ -904,7 +905,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
               </h2>
               <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs uppercase tracking-wider">
                 <ShoppingBag size={12} className="text-slate-600 shrink-0" />
-                <span>{storeProducts.length} {storeProducts.length === 1 ? 'Product' : 'Products'}</span>
+                <span>{t('stores_page.products_count', { count: storeProducts.length })}</span>
               </div>
             </div>
 
@@ -916,7 +917,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
               <div className="flex items-center gap-1.5">
                 <ShoppingBag size={10} className="text-slate-600 shrink-0" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                  {storeProducts.length} {storeProducts.length === 1 ? 'Product' : 'Products'}
+                  {t('stores_page.products_count', { count: storeProducts.length })}
                 </span>
               </div>
             </div>
@@ -925,7 +926,7 @@ export default function Stores({ cart, likedProducts, onAddToCart, onRemoveFromC
             {isLoadingProducts ? (
               <div className="h-[300px] flex flex-col items-center justify-center space-y-3">
                 <Loader2 className="w-7 h-7 text-[#B2AC88] animate-spin" />
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Loading products...</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t('ui.loading_products')}</p>
               </div>
             ) : storeProducts.length === 0 ? (
               <div className="h-[300px] flex flex-col items-center justify-center text-center space-y-4 py-8 bg-white rounded-3xl border border-gray-100 shadow-xs">

@@ -648,7 +648,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                         }
                         const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
                         if (sizeOptions.length > 0 && !modalSelectedSize) {
-                          setModalValidationError('Please select a Size first.');
+                          setModalValidationError(t('ui.select_size_first'));
                           return;
                         }
                         const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
@@ -656,7 +656,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           ? sizeColorMap[modalSelectedSize]
                           : (optionsModalProduct.colors || []);
                         if (availColorClasses.length > 0 && modalColorIndex === null) {
-                          setModalValidationError('Please select a Color first.');
+                          setModalValidationError(t('ui.select_color_first'));
                           return;
                         }
 
@@ -674,13 +674,17 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           selectedColorName: optionsModalProduct.colorNames && modalColorIndex !== null ? optionsModalProduct.colorNames[modalColorIndex] : null
                         }, modalQuantity);
 
-                        const colorLabel = optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : 'selected color';
-                        showToast(`Added ${modalQuantity}x ${getLocalized(optionsModalProduct.name, language)} (${colorLabel}) to cart!`);
+                        const colorLabel = optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : t('ui.selected_color');
+                        showToast(t('ui.toast_added_qty', {
+                          qty: modalQuantity,
+                          name: getLocalized(optionsModalProduct.name, language),
+                          color: getLocalized(colorLabel, language),
+                        }));
                         setOptionsModalProduct(null);
                       }}
                       className="w-full py-4 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-[0.98] border-0"
                     >
-                      Add to Cart
+                      {t('ui.add_to_cart')}
                     </button>
                   </div>
                 </div>
