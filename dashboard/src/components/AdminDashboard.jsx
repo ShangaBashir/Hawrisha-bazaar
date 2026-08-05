@@ -1638,9 +1638,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           }));
           const order = orders.find(o => Number(o.id) === Number(orderId));
           if (order) {
-            const amount = currentUserRole === "admin" 
-              ? (Number(order.total) || 0) 
-              : ((order.items || []).reduce((s, i) => s + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0));
+            // Total Sales tracks the stores' payout only (no delivery fee, no
+            // admin commission) and only once an order is Paid.
+            const amount = (order.items || []).reduce((s, i) => {
+              const line = (Number(i.price) || 0) * (Number(i.quantity) || 0);
+              const comm = Number(i.commission_percentage) || 0;
+              return s + (line - Math.round((line * comm) / 100));
+            }, 0);
             if (currentUserRole === "admin") {
               setAdminStats(prev => ({
                 ...prev,
@@ -1691,9 +1695,13 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           }));
           const order = orders.find(o => Number(o.id) === Number(orderId));
           if (order) {
-            const amount = currentUserRole === "admin" 
-              ? (Number(order.total) || 0) 
-              : ((order.items || []).reduce((s, i) => s + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0));
+            // Total Sales tracks the stores' payout only (no delivery fee, no
+            // admin commission) and only once an order is Paid.
+            const amount = (order.items || []).reduce((s, i) => {
+              const line = (Number(i.price) || 0) * (Number(i.quantity) || 0);
+              const comm = Number(i.commission_percentage) || 0;
+              return s + (line - Math.round((line * comm) / 100));
+            }, 0);
             if (currentUserRole === "admin") {
               setAdminStats(prev => ({
                 ...prev,

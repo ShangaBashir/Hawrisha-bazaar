@@ -494,21 +494,22 @@ router.get('/stats/admin', async (req, res) => {
     try {
       const [payoutRows] = await db.query(
         month && /^\d{4}-\d{2}$/.test(month)
-          ? `SELECT SUM(se.vendor_payout) AS payout_total FROM store_earnings se JOIN orders o ON o.id = se.order_id WHERE DATE_FORMAT(se.paid_at, '%Y-%m') = ?`
-          : `SELECT SUM(vendor_payout) AS payout_total FROM store_earnings`,
+          ? `SELECT SUM(se.store_payout) AS payout_total FROM store_earnings se JOIN orders o ON o.id = se.order_id WHERE DATE_FORMAT(se.paid_at, '%Y-%m') = ?`
+          : `SELECT SUM(store_payout) AS payout_total FROM store_earnings`,
         month && /^\d{4}-\d{2}$/.test(month) ? [month] : []
       );
       totalSales = Number(payoutRows[0]?.payout_total) || 0;
     } catch (e) {}
 
-    // Fallback if store_earnings is empty
+    // Fallback if store_earnings is empty. Store money counts ONLY for orders
+    // that reached the Paid status — never Pending/Accepted/Delivered/etc.
     if (totalSales === 0) {
       const [payoutFallback] = await db.query(
         `SELECT SUM(oi.price * oi.quantity * (1 - (COALESCE(NULLIF(s.commission_percentage, 0), 10) / 100))) AS payout_total
          FROM order_items oi
          JOIN orders o ON oi.order_id = o.id
          LEFT JOIN stores s ON s.id = oi.store_id
-         WHERE o.status != 'Cancelled'${monthFilterO}`,
+         WHERE o.status = 'Paid'${monthFilterO}`,
         monthParams
       );
       totalSales = Math.round(Number(payoutFallback[0]?.payout_total) || 0);
