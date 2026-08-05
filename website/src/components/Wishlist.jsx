@@ -286,7 +286,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                         <div className="absolute top-2.5 left-2.5 z-10 flex flex-col items-start gap-1">
                           {product.stock === 0 && (
                             <div className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 bg-gray-800 text-white rounded-lg shadow-xs">
-                              Out of Stock
+                              {t('ui.out_of_stock')}
                             </div>
                           )}
                           {product.discount > 0 && (
@@ -479,7 +479,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                 <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-visible md:overflow-y-auto rounded-b-3xl md:rounded-b-none md:rounded-r-3xl shrink-0">
                   <div className="space-y-5">
                     <div>
-                      <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">Choose Options</span>
+                      <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">{t('ui.choose_options')}</span>
                       <h3 className="text-xl md:text-2xl font-serif font-bold text-[#36454F] leading-tight mb-1">
                         {getLocalized(optionsModalProduct.name, language)}
                       </h3>
@@ -521,7 +521,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           {sizeOptions.length > 0 && (
                             <div className="space-y-2">
                               <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
-                                <span className="text-gray-400">Select Size</span>
+                                <span className="text-gray-400">{t('ui.select_size')}</span>
                                 {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
                               </div>
                               <div className="flex flex-wrap gap-2">
@@ -558,10 +558,10 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           {availableColorClasses.length > 0 && (
                             <div className="space-y-2">
                               <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
-                                <span className="text-gray-400">Select Color</span>
+                                <span className="text-gray-400">{t('ui.select_color')}</span>
                                 {modalColorIndex !== null && (
                                   <span className="text-[#36454F] font-semibold">
-                                    {optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : `Option ${modalColorIndex + 1}`}
+                                    {optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : `${t('ui.option')} ${modalColorIndex + 1}`}
                                   </span>
                                 )}
                               </div>
@@ -605,7 +605,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
 
                     {/* Quantity Picker */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Quantity</label>
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{t('ui.quantity')}</label>
                       <div className="flex items-center space-x-3.5 border border-[#E9ECEF] rounded-xl px-4 py-2 w-32 bg-gray-50/20">
                         <button
                           type="button"
@@ -643,7 +643,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                         // Validation
                         const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean);
                         if (styleOptions.length > 1 && !modalSelectedStyle) {
-                          setModalValidationError('Please select a Style / Length first.');
+                          setModalValidationError(t('ui.select_style_first'));
                           return;
                         }
                         const sizeOptions = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');

@@ -411,7 +411,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to place order.');
+          throw new Error(data.message || t('ui.failed_place_order'));
         }
         return data;
       })
@@ -423,7 +423,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
       })
       .catch((err) => {
         console.error('Order submission error:', err);
-        setErrors((prev) => ({ ...prev, submit: err.message || 'An error occurred. Please try again.' }));
+        setErrors((prev) => ({ ...prev, submit: err.message || t('ui.generic_error') }));
         setIsSubmitting(false);
       });
   };

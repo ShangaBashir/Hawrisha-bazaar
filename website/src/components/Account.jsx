@@ -195,12 +195,12 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                 ? 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم الخلفي.'
                 : language === 'ku'
                 ? 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. تکایە دڵنیابەوە لە داگیرساندنی سێرڤەر.'
-                : 'Cannot connect to backend server. Make sure the backend server is running.'
+                : t('ui.cannot_connect')
             );
           }
         }
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to load profile.');
+          throw new Error(data.message || t('ui.failed_load_profile'));
         }
         return data;
       })
@@ -216,7 +216,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
       })
       .catch((err) => {
         console.error('Error fetching profile:', err);
-        setError(err.message || 'An error occurred while loading profile.');
+        setError(err.message || t('ui.error_loading_profile'));
         setIsLoading(false);
       });
 
@@ -277,7 +277,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to update profile.');
+        throw new Error(data.message || t('ui.failed_update_profile'));
       }
       
       setProfile({ ...profile, ...data.profile });
@@ -293,7 +293,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
       }, 1500);
       
     } catch (err) {
-      setEditError(err.message || 'An error occurred while saving.');
+      setEditError(err.message || t('ui.error_saving'));
       setShowConfirm(false);
     } finally {
       setIsSaving(false);
@@ -442,7 +442,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                   </button>
                 </div>
                 <p className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase mt-0.5">
-                  HAWRISHA MEMBER
+                  {t('ui.hawrisha_member')}
                 </p>
               </div>
             </div>
@@ -520,7 +520,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                 onClick={() => window.open('http://localhost:5174', '_blank')}
                 className="w-full py-3 bg-[#B2AC88] hover:bg-[#36454F] text-white text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer hover:shadow-md active:scale-98"
               >
-                Admin Dashboard
+                {t('admin_dashboard.title')}
               </button>
             )}
 
@@ -815,7 +815,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                           setOrdersPage(prev => Math.max(0, prev - 1));
                         }}
                         className="p-1.5 border border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                        aria-label="Previous Page"
+                        aria-label={t('ui.prev_page')}
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -835,7 +835,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                                   ? 'bg-[#B2AC88] scale-110 shadow-xs' 
                                   : 'border border-[#B2AC88] bg-transparent hover:bg-[#B2AC88]/15'
                               }`}
-                              aria-label={`Go to page ${i + 1}`}
+                              aria-label={t('ui.go_to_page', { page: i + 1 })}
                             />
                           );
                         })}
@@ -849,7 +849,7 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                           setOrdersPage(prev => Math.min(totalPages - 1, prev + 1));
                         }}
                         className="p-1.5 border border-[#B2AC88] text-[#B2AC88] hover:bg-[#B2AC88]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                        aria-label="Next Page"
+                        aria-label={t('ui.next_page')}
                       >
                         <ChevronRight size={16} />
                       </button>

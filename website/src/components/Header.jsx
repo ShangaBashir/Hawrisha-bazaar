@@ -594,7 +594,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                     setIsMobileSearchOpen(false);
                   }}
                   className="text-slate-400 hover:text-[#36454F] transition-colors ms-2 shrink-0 cursor-pointer"
-                  title="Close search"
+                  title={t('ui.close_search')}
                 >
                   <X size={16} strokeWidth={2.5} />
                 </button>
@@ -652,7 +652,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                   {/* Header Banner */}
                   <div className="bg-gradient-to-r from-[#36454F] to-[#4a5f6e] px-8 py-4 flex items-center justify-between">
                     <div>
-                      <h2 className="text-white font-bold text-sm uppercase tracking-widest">Shop Socks</h2>
+                      <h2 className="text-white font-bold text-sm uppercase tracking-widest">{t('ui.shop_socks')}</h2>
                       <p className="text-[#B2AC88]/80 text-xs mt-0.5">
                         {language === 'ar' ? 'استكشف حسب الفئة' : language === 'ku' ? 'بگەڕێ بەپێی پۆل' : 'Browse by filter'}
                       </p>

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExploreStores, onContactClick }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   return (
     <section className="w-full bg-[#F5F5DC] py-12 md:py-16 px-4 sm:px-6 lg:px-8 overflow-hidden border-t border-[#e5e4d7]">
@@ -223,8 +223,8 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               {/* Right mockup screen column (Contact info box) */}
               <div className="order-1 md:order-2 bg-[#36454F] rounded-2xl aspect-[3/4] p-6 flex flex-col justify-between text-white relative shadow-2xl overflow-hidden group">
                 <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                  <span>Hawrisha Support</span>
-                  <span>Connect</span>
+                  <span>{t('ui.support')}</span>
+                  <span>{t('ui.connect')}</span>
                 </div>
                 
                 <div className="my-auto flex flex-col gap-6 text-left">
@@ -236,7 +236,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
                       </svg>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Email Us</span>
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('ui.email_us')}</span>
                       <span className="text-xs font-bold text-white break-all">hawrishaa@gmail.com</span>
                     </div>
                   </a>
@@ -250,14 +250,14 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
                       </svg>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Instagram</span>
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('ui.instagram')}</span>
                       <span className="text-xs font-bold text-white">@hawrisha_bazaar</span>
                     </div>
                   </a>
                 </div>
 
                 <div className="text-[10px] text-gray-400 text-center uppercase tracking-widest font-semibold">
-                  Always Active
+                  {t('ui.always_active')}
                 </div>
               </div>
             </motion.div>

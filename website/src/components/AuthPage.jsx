@@ -226,7 +226,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
     } else if (authStep === 'verify') {
       const code = otp.join('');
       if (code.length < 6) {
-        setServerError('Please enter the 6-digit code.');
+        setServerError(t('ui.enter_6_digit'));
         return;
       }
     } else if (authStep === 'reset') {
@@ -323,7 +323,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
           }
         }
         if (!res.ok) {
-          throw new Error(data.message || 'Something went wrong.');
+          throw new Error(data.message || t('ui.something_went_wrong'));
         }
         return data;
       })
@@ -411,21 +411,21 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             {authStep === 'signup' 
               ? t('login.sign_up') 
               : authStep === 'forgot'
-              ? 'Forgot Password'
+              ? t('ui.forgot_password')
               : authStep === 'verify'
-              ? 'Verify Code'
+              ? t('ui.verify_code')
               : authStep === 'reset'
-              ? 'Reset Password'
+              ? t('ui.reset_password')
               : t('login.sign_in')}
           </h2>
           {authStep !== 'signup' && authStep !== 'login' && (
             <p className="text-xs text-gray-450 mt-2 font-medium">
               {authStep === 'forgot'
-                ? 'Enter your email to receive a secure verification code.'
+                ? t('ui.forgot_password_sub')
                 : authStep === 'verify'
-                ? 'We sent a 6-digit code to your email.'
+                ? t('ui.verify_code_sub')
                 : authStep === 'reset'
-                ? 'Enter your new password below.'
+                ? t('ui.reset_password_sub')
                 : null}
             </p>
           )}
@@ -472,7 +472,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             <>
               {role === 'vendor' && (
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Store Name</label>
+                  <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('login.store_name')}</label>
                   <div className="relative">
                     <Store className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
                     <input
@@ -482,7 +482,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
                       className={`w-full ps-11 pe-4 py-3.5 bg-gray-50 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
                         errors.storeName ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#36454F] focus:bg-white'
                       }`}
-                      placeholder="My Awesome Store"
+                      placeholder={t('ui.store_name_ph')}
                     />
                   </div>
                   {errors.storeName && <p className="text-[11px] text-red-500 font-bold mt-1 px-1">{errors.storeName}</p>}
@@ -607,7 +607,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
               </div>
               <div className="flex flex-col items-center justify-center space-y-3">
                 <p className="text-xs text-gray-500 font-medium">
-                  Didn't receive the code?
+                  {t('ui.didnt_receive')}
                 </p>
                 {canResend ? (
                   <button
@@ -615,11 +615,11 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
                     onClick={handleResendCode}
                     className="text-xs font-bold text-[#36454F] hover:text-[#B2AC88] uppercase tracking-wider transition-colors bg-transparent border-none cursor-pointer"
                   >
-                    Resend Code
+                    {t('ui.resend_code')}
                   </button>
                 ) : (
                   <p className="text-xs font-bold text-gray-400 tracking-wider">
-                    Resend in <span className="text-[#36454F]">{otpTimer}s</span>
+                    {t('ui.resend_in', { seconds: otpTimer })}
                   </p>
                 )}
               </div>
@@ -630,7 +630,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
           {(authStep === 'login' || authStep === 'signup' || authStep === 'reset') && (
             <div className="space-y-1.5">
               <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-                {authStep === 'reset' ? 'New Password' : t('login.password')}
+                {authStep === 'reset' ? t('ui.new_password') : t('login.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
@@ -674,7 +674,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
           {authStep === 'reset' && (
             <div className="space-y-1.5">
               <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-                Confirm New Password
+                {t('ui.confirm_new_password')}
               </label>
               <div className="relative">
                 <Lock className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-350" size={16} />
@@ -714,11 +714,11 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
             ) : authStep === 'forgot' ? (
-              'Send Verification Code'
+              t('ui.send_verification_code')
             ) : authStep === 'verify' ? (
-              'Verify Code'
+              t('ui.verify_code')
             ) : authStep === 'reset' ? (
-              'Reset Password'
+              t('ui.reset_password')
             ) : authStep === 'signup' ? (
               t('login.btn_signup')
             ) : (
@@ -734,7 +734,7 @@ export default function AuthPage({ onLoginSuccess, onCancel }) {
               onClick={() => setAuthStep('login')}
               className="text-xs font-bold text-gray-400 hover:text-[#B2AC88] transition-colors border-0 bg-transparent cursor-pointer uppercase tracking-wider"
             >
-              Back to Login
+              {t('ui.back_to_login')}
             </button>
           ) : (
             <p className="text-xs text-gray-450 font-medium select-none">

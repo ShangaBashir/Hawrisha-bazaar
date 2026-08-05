@@ -372,7 +372,7 @@ function App() {
     if (!product.selectedColor || !product.selectedSize) {
       setSelectedProductForDetail(product);
       handleViewChange('all_products', true);
-      showToast('Please select your preferred Color and Size first.');
+      showToast(t('ui.select_color_size_first'));
       return;
     }
 
@@ -696,7 +696,7 @@ function App() {
               <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
                   <ShoppingBag size={20} className="text-[#36454F]" />
-                  <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">Your Cart</h3>
+                  <h3 className="text-lg font-bold text-[#36454F] uppercase tracking-wider">{t('ui.your_cart')}</h3>
                   <span className="bg-[#B2AC88]/10 text-[#B2AC88] text-xs font-bold px-2 py-0.5 rounded-full">
                     {cartCount}
                   </span>
@@ -717,9 +717,9 @@ function App() {
                       <ShoppingBag className="text-gray-300" size={24} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#36454F] uppercase tracking-wider">Your cart is empty</h4>
+                      <h4 className="text-sm font-bold text-[#36454F] uppercase tracking-wider">{t('ui.cart_empty')}</h4>
                       <p className="text-xs text-gray-400 mt-1 max-w-[200px] mx-auto leading-relaxed">
-                        Add some of our premium character socks to get started!
+                        {t('ui.cart_empty_hint')}
                       </p>
                     </div>
                     <button
@@ -729,7 +729,7 @@ function App() {
                       }}
                       className="px-6 py-2.5 bg-[#B2AC88] hover:bg-[#36454F] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
                     >
-                      Shop Products
+                      {t('ui.shop_products')}
                     </button>
                   </div>
                 ) : (
@@ -855,13 +855,13 @@ function App() {
                   {/* Summary Rows */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-semibold text-gray-500">
-                      <span>Subtotal</span>
+                      <span>{t('ui.subtotal')}</span>
                       <span>
                         {cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString()} IQD
                       </span>
                     </div>
                     <div className="flex justify-between text-xs font-semibold text-gray-500">
-                      <span>Delivery</span>
+                      <span>{t('ui.delivery')}</span>
                       {(() => {
                         const parsePromo = (val) => {
                           if (!val) return [];
@@ -870,14 +870,14 @@ function App() {
                         };
                         const hasFreeDelivery = cart.some(item => parsePromo(item.promotion).some(p => p && p.toLowerCase().includes('free delivery')));
                         return hasFreeDelivery ? (
-                          <span className="text-green-600 font-bold">FREE</span>
+                          <span className="text-green-600 font-bold">{t('ui.free')}</span>
                         ) : (
                           <span>4,000 IQD</span>
                         );
                       })()}
                     </div>
                     <div className="flex justify-between text-sm font-bold text-[#36454F] pt-1">
-                      <span>Total</span>
+                      <span>{t('ui.total')}</span>
                       <span>
                         {(() => {
                           const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -903,7 +903,7 @@ function App() {
                       }}
                       className="py-3.5 bg-white border border-[#E9ECEF] hover:bg-gray-200 text-[#36454F] text-xs font-bold uppercase tracking-wider rounded-full shadow-sm transition-all cursor-pointer select-none text-center hover:scale-102 active:scale-98 font-bold"
                     >
-                      View Cart
+                      {t('ui.view_cart')}
                     </button>
                     <button 
                       onClick={() => {
@@ -912,7 +912,7 @@ function App() {
                       }}
                       className="py-3.5 bg-[#36454F] hover:bg-[#C08081] text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-md transition-all cursor-pointer select-none text-center hover:scale-102 active:scale-98"
                     >
-                      Checkout
+                      {t('ui.checkout')}
                     </button>
                   </div>
                 </div>

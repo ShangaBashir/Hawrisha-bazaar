@@ -325,7 +325,7 @@ function ProductCard({
         <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
           {product.stock === 0 && (
             <div className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 bg-gray-800 text-white rounded-lg shadow-xs">
-              Out of Stock
+              {t('ui.out_of_stock')}
             </div>
           )}
           {product.discount > 0 && (
@@ -460,7 +460,7 @@ function ProductCard({
         >
           <ShoppingBag size={14} className="shrink-0" />
           <span>
-            {isInCart ? 'Added to Cart' : 'Add to cart'}
+            {isInCart ? t('ui.added_to_cart') : t('ui.add_to_cart')}
           </span>
         </button>
       </div>
@@ -972,14 +972,14 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
       ? Math.round(product.price * (1 - product.discount / 100))
       : product.price;
     onAddToCart({ ...product, price: finalPrice }, 1);
-    showToast(`Added ${getLocalized(product.name, language)} to your cart!`);
+    showToast(t('ui.toast_added_cart', { name: getLocalized(product.name, language) }));
   };
 
   const handleRemoveFromCartClick = (product, e) => {
     e.stopPropagation();
     if (onRemoveFromCart) {
       onRemoveFromCart(product.id);
-      showToast(`Removed ${getLocalized(product.name, language)} from your cart!`);
+      showToast(t('ui.toast_removed_cart', { name: getLocalized(product.name, language) }));
     }
   };
 
@@ -988,9 +988,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     const isLiked = likedProducts.includes(product.id);
     onToggleWishlist(product.id);
     if (isLiked) {
-      showToast(`Removed ${getLocalized(product.name, language)} from your wishlist!`);
+      showToast(t('ui.toast_removed_wishlist', { name: getLocalized(product.name, language) }));
     } else {
-      showToast(`Added ${getLocalized(product.name, language)} to your wishlist!`);
+      showToast(t('ui.toast_added_wishlist', { name: getLocalized(product.name, language) }));
     }
   };
 
@@ -1166,14 +1166,14 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     // Validate style selection when multiple styles exist
     const styleOptions = parseJsonArray(viewingProduct.style_length).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale');
     if (styleOptions.length > 1 && !detailSelectedStyle) {
-      setDetailValidationError('Please select a Style / Length first.');
+      setDetailValidationError(t('ui.select_style_first'));
       return;
     }
     // Validate size selection when sizes exist
     const parsedSizes = parseJsonArray(viewingProduct.size_collection).filter(s => s && s !== 'One Size');
 const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
     if (sizeOptions.length > 0 && !detailSelectedSize) {
-      setDetailValidationError('Please select a Size first.');
+      setDetailValidationError(t('ui.select_size_first'));
       return;
     }
     // Validate color selection
@@ -1182,7 +1182,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
       ? sizeColorMap[detailSelectedSize] 
       : (viewingProduct.colors && viewingProduct.colors.length > 0 ? viewingProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
     if (availableColorClasses.length > 0 && !detailSelectedColor) {
-      setDetailValidationError('Please select a Color first.');
+      setDetailValidationError(t('ui.select_color_first'));
       return;
     }
     setDetailValidationError('');
@@ -1218,8 +1218,8 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
       selectedColor: detailSelectedColor,
       selectedColorName: selectedColorName
     }, detailQuantity);
-    const colorLabel = selectedColorName || detailSelectedColor || 'selected color';
-    showToast(`Added ${detailQuantity}x ${getLocalized(viewingProduct.name, language)} (${colorLabel}) to cart!`);
+    const colorLabel = selectedColorName || detailSelectedColor || t('ui.selected_color');
+    showToast(t('ui.toast_added_qty', { qty: detailQuantity, name: getLocalized(viewingProduct.name, language), color: colorLabel }));
     // Open cart panel immediately
     if (onOpenCart) onOpenCart();
   };
@@ -1345,7 +1345,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         <button
                           type="button"
                           onClick={onRemove}
-                          aria-label={`Remove ${label}`}
+                          aria-label={t('ui.remove_filter', { label })}
                           className="text-gray-400 hover:text-gray-700 cursor-pointer p-0.5 -m-0.5 border-0 bg-transparent leading-none"
                         >
                           <X size={12} />
@@ -1457,7 +1457,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             onClick={() => toggleSection('offers')} 
                             className="flex items-center justify-between cursor-pointer group select-none"
                           >
-                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Offers</h4>
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.offers')}</h4>
                             <div className="flex items-center space-x-2">
                               {onlyDiscounted && (
                                 <button 
@@ -1467,7 +1467,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   }}
                                   className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                 >
-                                  Clear
+                                  {t('ui.clear')}
                                 </button>
                               )}
                               <ChevronDown 
@@ -1487,7 +1487,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   onChange={(e) => setOnlyDiscounted(e.target.checked)}
                                   className="w-4 h-4 rounded border-gray-300 text-[#B2AC88] focus:ring-[#B2AC88]" 
                                 />
-                                <span>Discount</span>
+                                <span>{t('ui.discount')}</span>
                               </label>
                             </div>
                           )}
@@ -1509,7 +1509,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   }}
                                   className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                 >
-                                  Clear
+                                  {t('ui.clear')}
                                 </button>
                               )}
                               <ChevronDown 
@@ -1543,7 +1543,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             onClick={() => toggleSection('promotions')} 
                             className="flex items-center justify-between cursor-pointer group select-none"
                           >
-                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Promotions</h4>
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.promotions')}</h4>
                             <div className="flex items-center space-x-2">
                               {selectedPromotions.length > 0 && (
                                 <button 
@@ -1553,7 +1553,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   }}
                                   className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                 >
-                                  Clear
+                                  {t('ui.clear')}
                                 </button>
                               )}
                               <ChevronDown 
@@ -1593,7 +1593,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             onClick={() => toggleSection('price')} 
                             className="flex items-center justify-between cursor-pointer group select-none"
                           >
-                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Price</h4>
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.price')}</h4>
                             <div className="flex items-center space-x-2">
                               {maxPriceFilter < maxPriceOfProducts && (
                                 <button 
@@ -1603,7 +1603,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   }}
                                   className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                 >
-                                  Clear
+                                  {t('ui.clear')}
                                 </button>
                               )}
                               <ChevronDown 
@@ -1639,7 +1639,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             onClick={() => toggleSection('color')} 
                             className="flex items-center justify-between cursor-pointer group select-none"
                           >
-                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Color</h4>
+                            <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.color')}</h4>
                             <div className="flex items-center space-x-2">
                               {selectedColors.length > 0 && (
                                 <button 
@@ -1649,7 +1649,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                   }}
                                   className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                 >
-                                  Clear
+                                  {t('ui.clear')}
                                 </button>
                               )}
                               <ChevronDown 
@@ -1694,7 +1694,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               onClick={() => toggleSection('size')} 
                               className="flex items-center justify-between cursor-pointer group select-none"
                             >
-                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Size Collection</h4>
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.size_collection')}</h4>
                               <div className="flex items-center space-x-2">
                                 {selectedSizes.length > 0 && (
                                   <button 
@@ -1704,7 +1704,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown 
@@ -1746,7 +1746,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               onClick={() => toggleSection('style')} 
                               className="flex items-center justify-between cursor-pointer group select-none"
                             >
-                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Style / Length</h4>
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.style_length')}</h4>
                               <div className="flex items-center space-x-2">
                                 {selectedStyles.length > 0 && (
                                   <button 
@@ -1756,7 +1756,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown 
@@ -1798,7 +1798,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               onClick={() => toggleSection('material')} 
                               className="flex items-center justify-between cursor-pointer group select-none"
                             >
-                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Material</h4>
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.material')}</h4>
                               <div className="flex items-center space-x-2">
                                 {selectedMaterials.length > 0 && (
                                   <button 
@@ -1808,7 +1808,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown 
@@ -1850,7 +1850,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               onClick={() => toggleSection('season')} 
                               className="flex items-center justify-between cursor-pointer group select-none"
                             >
-                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">Seasonal Type</h4>
+                              <h4 className="text-[11px] font-bold text-[#36454F] uppercase tracking-widest">{t('ui.seasonal_type')}</h4>
                               <div className="flex items-center space-x-2">
                                 {selectedSeasons.length > 0 && (
                                   <button 
@@ -1860,7 +1860,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown 
@@ -1911,7 +1911,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     onClick={(e) => { e.stopPropagation(); setSelectedDesigns([]); }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown
@@ -1960,7 +1960,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     onClick={(e) => { e.stopPropagation(); setSelectedSportTypes([]); }}
                                     className="text-[10px] font-bold uppercase tracking-wider text-[#B2AC88] hover:text-[#36454F] cursor-pointer"
                                   >
-                                    Clear
+                                    {t('ui.clear')}
                                   </button>
                                 )}
                                 <ChevronDown
@@ -2003,7 +2003,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                   {loading ? (
                     <div className="py-24 text-center">
                       <div className="w-8 h-8 border-4 border-[#B2AC88] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                      <p className="text-sm text-gray-500 font-semibold">Loading product catalog...</p>
+                      <p className="text-sm text-gray-500 font-semibold">{t('ui.loading_catalog')}</p>
                     </div>
                   ) : (
                     <>
@@ -2046,7 +2046,13 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           className="flex flex-col items-center justify-center space-y-4 mt-12"
                         >
                           <div className="text-xs text-gray-500 font-medium font-sans select-none">
-                            Showing {currentPage * 16 + 1} to {Math.min(filteredProducts.length, (currentPage + 1) * 16)} of {filteredProducts.length} items — Page {currentPage + 1} of {pageCount}
+                            {t('ui.showing_items', {
+                              from: currentPage * 16 + 1,
+                              to: Math.min(filteredProducts.length, (currentPage + 1) * 16),
+                              total: filteredProducts.length,
+                              page: currentPage + 1,
+                              pages: pageCount
+                            })}
                           </div>
                           
                           <div className="flex items-center justify-center space-x-4">
@@ -2059,7 +2065,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                 window.scrollTo(0, 0);
                               }}
                               className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                              aria-label="Previous Page"
+                              aria-label={t('ui.prev_page')}
                             >
                               <ChevronLeft size={16} />
                             </button>
@@ -2086,7 +2092,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                           ? 'bg-[#C08081] scale-110 shadow-xs' 
                                           : 'border border-[#C08081] bg-transparent hover:bg-[#C08081]/15'
                                       }`}
-                                      aria-label={`Go to page ${i + 1}`}
+                                      aria-label={t('ui.go_to_page', { page: i + 1 })}
                                     />
                                   );
                                 });
@@ -2102,7 +2108,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                 window.scrollTo(0, 0);
                               }}
                               className="p-1.5 border border-[#C08081] text-[#C08081] hover:bg-[#C08081]/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-full transition-all cursor-pointer flex items-center justify-center"
-                              aria-label="Next Page"
+                              aria-label={t('ui.next_page')}
                             >
                               <ChevronRight size={16} />
                             </button>
@@ -2120,15 +2126,15 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-xs border border-gray-100 mb-4">
                              <Search className="text-gray-400" size={24} />
                           </div>
-                          <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider">No products found</h3>
+                          <h3 className="text-md font-bold text-[#36454F] uppercase tracking-wider">{t('ui.no_products_found')}</h3>
                           <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
-                            We couldn't find any socks matching your search criteria. Try modifying your filters or clear all values.
+                            {t('product.empty_search')}
                           </p>
                           <button 
                             onClick={handleResetFilters}
                             className="mt-6 px-6 py-2.5 bg-[#B2AC88] hover:bg-[#36454F] text-white text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer shadow-sm active:scale-95"
                           >
-                            Clear All Filters
+                            {t('product.clear_all')}
                           </button>
                         </motion.div>
                       )}
@@ -2163,7 +2169,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                 <span>
                   {initialViewingProduct
                     ? (previousView === 'wishlist' ? 'Back to Wishlist' : previousView === 'cart' ? 'Back to Your Cart' : previousView === 'story' ? 'Back to Our Story' : previousView === 'contact' ? 'Back to Contact' : 'Back to Home')
-                    : 'Back to Catalog'}
+                    : t('ui.back_to_catalog')}
                 </span>
               </button>
 
@@ -2276,7 +2282,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         {language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}
                       </span>
                       <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.category).map(cat => getLocalized(cat, language)).filter(Boolean).join(', ') || 'General'}
+                        {parseJsonArray(viewingProduct.category).map(cat => getLocalized(cat, language)).filter(Boolean).join(', ') || t('ui.general')}
                       </span>
                     </div>
                     {/* Style / Length */}
@@ -2285,7 +2291,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         {language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Style / Length'}
                       </span>
                       <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.style_length).map(st => getLocalized(st, language)).join(', ') || 'Standard'}
+                        {parseJsonArray(viewingProduct.style_length).map(st => getLocalized(st, language)).join(', ') || t('ui.standard')}
                       </span>
                     </div>
                     {/* Material */}
@@ -2294,7 +2300,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         {language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}
                       </span>
                       <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.material).map(mat => getLocalized(mat, language)).join(', ') || 'Cotton blend'}
+                        {parseJsonArray(viewingProduct.material).map(mat => getLocalized(mat, language)).join(', ') || t('ui.cotton_blend')}
                       </span>
                     </div>
                     {/* Seasonal Type */}
@@ -2303,7 +2309,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         {language === 'ar' ? 'النوع الموسمي' : language === 'ku' ? 'جۆری وەرزی' : 'Seasonal Type'}
                       </span>
                       <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.seasonal_type).map(seas => getLocalized(seas, language)).join(', ') || 'All Season'}
+                        {parseJsonArray(viewingProduct.seasonal_type).map(seas => getLocalized(seas, language)).join(', ') || t('ui.all_season')}
                       </span>
                     </div>
                     {parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').length > 0 && (
@@ -2357,7 +2363,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             {sizeOptions.length > 0 && (
                               <div>
                                 <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
-                                  <span className="text-gray-400">Select Size</span>
+                                  <span className="text-gray-400">{t('ui.select_size')}</span>
                                   {detailSelectedSize && <span className="text-[#36454F] font-semibold">{detailSelectedSize}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -2391,7 +2397,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             {availableColorClasses.length > 0 && (
                               <div>
                                 <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
-                                  <span className="text-gray-400">Select Color</span>
+                                  <span className="text-gray-400">{t('ui.select_color')}</span>
                                   {detailSelectedColor && (
                                     <span className="text-[#36454F] font-semibold">
                                       {(() => {
@@ -2451,7 +2457,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           {sizeOptions.length > 0 && (
                             <div>
                               <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
-                                <span className="text-gray-400">Select Size</span>
+                                <span className="text-gray-400">{t('ui.select_size')}</span>
                                 {detailSelectedSize && <span className="text-[#36454F] font-semibold">{detailSelectedSize}</span>}
                               </div>
                               <div className="flex flex-wrap gap-2">
@@ -2488,7 +2494,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           {availableColorClasses.length > 0 && (
                             <div>
                               <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
-                                <span className="text-gray-400">Select Color</span>
+                                <span className="text-gray-400">{t('ui.select_color')}</span>
                                 {detailSelectedColor && (
                                   <span className="text-[#36454F] font-semibold">
                                     {viewingProduct.colorNames
@@ -2566,12 +2572,12 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         return currentStock === 0 ? (
                           <div className="bg-red-50 border border-red-200/40 text-red-600 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans animate-fade-in">
                             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                            <span>Out of Stock — Temporarily Unavailable</span>
+                            <span>{t('ui.out_of_stock_unavailable')}</span>
                           </div>
                         ) : currentStock <= 6 ? (
                           <div className="bg-amber-50 border border-amber-200/40 text-amber-700 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2.5 font-sans animate-fade-in">
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
-                            <span>Only {currentStock} pairs left in stock! Order soon.</span>
+                            <span>{t('ui.low_stock', { count: currentStock })}</span>
                           </div>
                         ) : null;
                       })()}
@@ -2608,11 +2614,11 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         {/* Add to Cart CTA Button */}
                         {(() => {
                           let buttonBgClass = '';
-                          let buttonText = 'Add to Cart';
+                          let buttonText = t('ui.add_to_cart');
 
                           if (viewingProduct.stock === 0) {
                             buttonBgClass = 'bg-gray-200 border border-gray-300 text-gray-400 cursor-not-allowed shadow-none hover:bg-gray-200';
-                            buttonText = 'Out of Stock';
+                            buttonText = t('ui.out_of_stock');
                           } else {
                             buttonBgClass = 'bg-[#36454F] hover:bg-[#B2AC88]';
                           }
@@ -2682,7 +2688,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                 return (
                   <div className="mt-12 pt-10 border-t border-gray-100">
                     {/* Header */}
-                    <h3 className="text-center text-lg font-extrabold uppercase tracking-[0.2em] text-[#36454F] mb-8">You Might Also Like</h3>
+                    <h3 className="text-center text-lg font-extrabold uppercase tracking-[0.2em] text-[#36454F] mb-8">{t('ui.you_might_also_like')}</h3>
 
                     {/* Carousel row: left arrow + grid + right arrow */}
                     <div className="flex items-center gap-1 sm:gap-3">
@@ -2867,7 +2873,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                   <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-visible md:overflow-y-auto rounded-b-3xl md:rounded-b-none md:rounded-r-3xl shrink-0">
                     <div className="space-y-5">
                       <div>
-                        <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">Choose Options</span>
+                        <span className="text-[10px] font-bold text-[#B2AC88] tracking-widest uppercase mb-1 block">{t('ui.choose_options')}</span>
                         <h3 className="text-xl md:text-2xl font-serif font-bold text-[#36454F] leading-tight mb-1">
                           {getLocalized(optionsModalProduct.name, language)}
                         </h3>
@@ -2910,7 +2916,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             {sizeOptions.length > 0 && (
                               <div className="space-y-2">
                                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
-                                  <span className="text-gray-400">Select Size</span>
+                                  <span className="text-gray-400">{t('ui.select_size')}</span>
                                   {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -2949,10 +2955,10 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             {availableColorClasses.length > 0 && (
                               <div className="space-y-2">
                                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
-                                  <span className="text-gray-400">Select Color</span>
+                                  <span className="text-gray-400">{t('ui.select_color')}</span>
                                   {modalColorIndex !== null && (
                                     <span className="text-[#36454F] font-semibold">
-                                      {optionsModalProduct.colorNames ? getLocalized(optionsModalProduct.colorNames[modalColorIndex], language) : `Option ${modalColorIndex + 1}`}
+                                      {optionsModalProduct.colorNames ? getLocalized(optionsModalProduct.colorNames[modalColorIndex], language) : `${t('ui.option')} ${modalColorIndex + 1}`}
                                     </span>
                                   )}
                                 </div>
@@ -2991,7 +2997,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
 
                       {/* Quantity Picker */}
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Quantity</label>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{t('ui.quantity')}</label>
                         <div className="flex items-center space-x-3.5 border border-[#E9ECEF] rounded-xl px-4 py-2 w-32 bg-gray-50/20">
                           <button
                             type="button"
@@ -3029,13 +3035,13 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           // Validation
                           const styleOptions = parseJsonArray(optionsModalProduct.style_length).filter(Boolean).filter(b => String(b).toLowerCase() !== 'sale');
                           if (styleOptions.length > 1 && !modalSelectedStyle) {
-                            setModalValidationError('Please select a Style / Length first.');
+                            setModalValidationError(t('ui.select_style_first'));
                             return;
                           }
                           const parsedSizes = parseJsonArray(optionsModalProduct.size_collection).filter(s => s && s !== 'One Size');
 const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-45', 'Free Size'];
                           if (sizeOptions.length > 0 && !modalSelectedSize) {
-                            setModalValidationError('Please select a Size first.');
+                            setModalValidationError(t('ui.select_size_first'));
                             return;
                           }
                           const sizeColorMap = (() => { try { return JSON.parse(optionsModalProduct.size_colors || '{}'); } catch(e) { return {}; } })();
@@ -3043,7 +3049,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             ? sizeColorMap[modalSelectedSize]
                             : (optionsModalProduct.colors && optionsModalProduct.colors.length > 0 ? optionsModalProduct.colors : ['bg-[#C08081]', 'bg-[#B2AC88]', 'bg-[#F5F5DC]', 'bg-[#36454F]']);
                           if (availColorClasses.length > 0 && modalColorIndex === null) {
-                            setModalValidationError('Please select a Color first.');
+                            setModalValidationError(t('ui.select_color_first'));
                             return;
                           }
 
@@ -3062,15 +3068,15 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             selectedColorName: modalColorName
                           }, modalQuantity);
 
-                          const colorLabel = modalColorName || 'selected color';
-                          showToast(`Added ${modalQuantity}x ${getLocalized(optionsModalProduct.name, language)} (${colorLabel}) to cart!`);
+                          const colorLabel = modalColorName || t('ui.selected_color');
+                          showToast(t('ui.toast_added_qty', { qty: modalQuantity, name: getLocalized(optionsModalProduct.name, language), color: colorLabel }));
                           setOptionsModalProduct(null);
                           
                           if (onOpenCart) onOpenCart();
                         }}
                         className="w-full py-4 bg-[#36454F] hover:bg-[#B2AC88] text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-[0.98] border-0"
                       >
-                        Add to Cart
+                        {t('ui.add_to_cart')}
                       </button>
                     </div>
                   </div>

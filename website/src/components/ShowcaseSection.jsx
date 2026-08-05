@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function ShowcaseSection({ onViewAll }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
 
   useEffect(() => {
@@ -82,20 +82,20 @@ export default function ShowcaseSection({ onViewAll }) {
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#36454F] leading-tight mb-4 md:mb-6 tracking-tight">
             <motion.div variants={textLineVariants} className="block">
-              Discover, Sell,
+              {t('ui.showcase_l1')}
             </motion.div>
             <motion.div variants={textLineVariants} className="block text-[#C08081]">
-              & wear socks that
+              {t('ui.showcase_l2')}
             </motion.div>
             <motion.div variants={textLineVariants} className="block">
-              define your style.
+              {t('ui.showcase_l3')}
             </motion.div>
           </h2>
           <motion.p
             variants={textLineVariants}
             className="text-gray-600 text-sm md:text-base max-w-md mb-6 md:mb-8 leading-relaxed"
           >
-            Hawrisha brings together top sock brands and customers in one modern marketplace.
+            {t('ui.showcase_sub')}
           </motion.p>
           <motion.div variants={textLineVariants} className="flex flex-wrap items-center gap-4">
             <button
