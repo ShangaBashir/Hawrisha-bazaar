@@ -3531,14 +3531,32 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
   const filteredOrders = baseOrders.filter((o) => {
     if (!searchQuery || !searchQuery.trim()) return true;
     const term = searchQuery.trim().toLowerCase();
-    const orderNumMatch = String(o.order_number || o.id || '').toLowerCase().includes(term);
+
+    // Order ID (accepts "#HW-123", "HW-123" or the raw id)
+    const orderNumMatch = String(o.order_number || o.id || '').toLowerCase().includes(term.replace(/^#/, ''));
+
+    // Date — match the displayed local format plus ISO (yyyy-mm-dd) variants
+    let dateMatch = false;
+    if (o.created_at) {
+      const d = new Date(o.created_at);
+      if (!isNaN(d)) {
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        dateMatch = [d.toLocaleDateString(), iso, d.toDateString()]
+          .some((s) => s.toLowerCase().includes(term));
+      }
+    }
+
     const customerMatch = matchesSearch(o.customer_name || o.full_name, searchQuery);
     const phoneMatch = String(o.customer_phone || o.phone || '').toLowerCase().includes(term);
-    const cityMatch = matchesSearch(o.city, searchQuery);
+    // Orders store the city in `province`
+    const cityMatch = matchesSearch(o.province || o.city, searchQuery);
+    // Store names live on the order's items (trilingual JSON)
+    const storeMatch = Array.isArray(o.items) && o.items.some((item) => matchesSearch(item.store_name, searchQuery));
     const statusMatch = String(o.status || '').toLowerCase().includes(term);
     const paymentMatch = String(o.payment_status || '').toLowerCase().includes(term);
     const itemsMatch = Array.isArray(o.items) && o.items.some((item) => matchesSearch(item.name || item.product_name, searchQuery));
-    return orderNumMatch || customerMatch || phoneMatch || cityMatch || statusMatch || paymentMatch || itemsMatch;
+
+    return orderNumMatch || dateMatch || customerMatch || phoneMatch || cityMatch || storeMatch || statusMatch || paymentMatch || itemsMatch;
   });
 
   const displayedOrders = filteredOrders.sort((a, b) => {
@@ -8819,7 +8837,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     const itemStoreShare = lineTotal - itemAdminCommission;
                     return (
                     <div key={i} className="p-4 bg-white border border-slate-100 rounded-2xl hover:border-slate-200 transition-colors">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="relative shrink-0">
                           {item.image_url ? (
@@ -8865,17 +8883,21 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-emerald-600">{(item.price * item.quantity).toLocaleString()} IQD</p>
                         <p className="text-[10px] text-slate-400">{item.price.toLocaleString()} IQD each</p>
+                        {currentUserRole === 'admin' && (
+                          <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
+                            <p className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                              Store Share: <span className="text-[#36454F] font-extrabold">{itemStoreShare.toLocaleString()} IQD</span>
+                            </p>
+                            <p className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                              Admin Commission ({comm}%): <span className="text-[#B2AC88] font-extrabold">{itemAdminCommission.toLocaleString()} IQD</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                       </div>
-                      {currentUserRole === 'admin' && (
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3 pt-3 border-t border-slate-100">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Store Share: <span className="text-[#36454F] font-extrabold normal-case">{itemStoreShare.toLocaleString()} IQD</span></span>
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Admin Commission ({comm}%): <span className="text-[#B2AC88] font-extrabold normal-case">{itemAdminCommission.toLocaleString()} IQD</span></span>
-                        </div>
-                      )}
                     </div>
                     );
                   })}
