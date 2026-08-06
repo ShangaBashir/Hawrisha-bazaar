@@ -387,7 +387,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
             <div ref={langDropdownRef} className="hidden lg:block relative">
               <button 
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                className="flex items-center space-x-1 cursor-pointer text-[13px] font-semibold hover:text-[#B2AC88] transition-colors select-none bg-transparent border-0"
+                className={`flex items-center space-x-1 cursor-pointer text-[13px] hover:text-[#B2AC88] transition-colors select-none bg-transparent border-0 ${language === 'ku' ? 'font-bold' : 'font-semibold'}`}
               >
                 <span>{language === 'en' ? 'English' : language === 'ar' ? 'العربية' : 'کوردی'}</span>
                 <ChevronDown size={14} className={`transition-transform duration-300 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
@@ -409,7 +409,9 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                             setLanguage(lang.code);
                             setIsLangDropdownOpen(false);
                           }}
-                          className={`w-full text-start px-4 py-2 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer border-0 ${
+                          className={`w-full text-start px-4 py-2 text-xs hover:bg-gray-50 transition-colors cursor-pointer border-0 ${
+                            lang.code === 'ku' ? 'font-bold' : 'font-semibold'
+                          } ${
                             language === lang.code ? 'text-[#B2AC88]' : 'text-brand-charcoal'
                           }`}
                         >
@@ -619,7 +621,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
 
       {/* Navigation (Desktop only) */}
       <nav className="hidden lg:block w-full px-6 sm:px-10 lg:px-12 pb-3.5 relative">
-        <ul className="flex justify-center gap-8 text-xs font-semibold select-none uppercase tracking-wider">
+        <ul className={`flex justify-center gap-8 text-xs select-none uppercase tracking-wider ${language === 'ku' ? 'font-bold' : 'font-semibold'}`}>
           <li className="relative py-1">
             <button 
               onClick={() => onViewChange('home')}

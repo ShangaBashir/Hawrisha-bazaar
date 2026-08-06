@@ -5,7 +5,10 @@
 @font-face {
   font-family: "Rabar";
   src: url("/fonts/Rabar_022.ttf") format("truetype");
-  font-weight: 100 900;
+  /* Rabar_022 is a static 400-weight face (no fvar table). Declaring a range
+     here would tell the browser it covers every weight and suppress synthetic
+     bolding, leaving font-bold looking identical to regular. */
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }

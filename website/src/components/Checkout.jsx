@@ -95,6 +95,9 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     notes: ''
   });
 
+  // The account's phone number, reused whenever a new address form is opened.
+  const [profilePhone, setProfilePhone] = useState('+964');
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -128,11 +131,15 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
         .then(res => res.json())
         .then(data => {
           if (data.success && data.profile) {
+            const formattedPhone = formatIraqiPhone(data.profile.phone || '+964');
+            // Remembered so "Add New Address" can re-apply it — the phone is
+            // read-only and belongs to the account, like the first/last name.
+            setProfilePhone(formattedPhone);
             setFormData(prev => ({
               ...prev,
               firstName: prev.firstName || data.profile.firstName || '',
               lastName: prev.lastName || data.profile.lastName || '',
-              phone: formatIraqiPhone(data.profile.phone || '+964')
+              phone: formattedPhone
             }));
           }
         })
@@ -204,7 +211,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
     setFormData({
       firstName: typeof currentUser === 'string' ? currentUser : currentUser?.name || '',
       lastName: typeof currentUserLastName === 'string' ? currentUserLastName : '',
-      phone: '+964',
+      phone: profilePhone,
       secondaryPhone: '',
       province: '',
       address: '',
