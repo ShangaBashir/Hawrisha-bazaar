@@ -2234,65 +2234,87 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                     </p>
                   )}
 
-                  {/* Specifications Table */}
+                  {/* Specifications Table — mirrors the attribute fields on the
+                      dashboard's Add New Product form, so every category an
+                      admin can set on a product is visible to the shopper. */}
                   <div className="border border-gray-200 rounded-2xl overflow-hidden mb-6 text-sm text-[#36454F]">
-                    {/* Gender */}
-                    {viewingProduct.gender && (
-                      <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-                        <span className="w-36 font-medium text-gray-400 shrink-0">
-                          {language === 'ar' ? 'النوع' : language === 'ku' ? 'ڕەگەز' : 'Gender'}
-                        </span>
-                        <span className="font-semibold">
-                          {getLocalizedGender(viewingProduct.gender, language)}
-                        </span>
-                      </div>
-                    )}
-                    {/* Category */}
-                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-                      <span className="w-36 font-medium text-gray-400 shrink-0">
-                        {language === 'ar' ? 'التصنيف' : language === 'ku' ? 'پۆلێن' : 'Category'}
-                      </span>
-                      <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.category).map(cat => getLocalized(cat, language)).filter(Boolean).join(', ') || t('ui.general')}
-                      </span>
-                    </div>
-                    {/* Style / Length */}
-                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-                      <span className="w-36 font-medium text-gray-400 shrink-0">
-                        {language === 'ar' ? 'الموديل / الطول' : language === 'ku' ? 'شێواز / درێژی' : 'Style / Length'}
-                      </span>
-                      <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.style_length).map(st => getLocalized(st, language)).join(', ') || t('ui.standard')}
-                      </span>
-                    </div>
-                    {/* Material */}
-                    <div className="flex items-center px-5 py-3.5 border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-                      <span className="w-36 font-medium text-gray-400 shrink-0">
-                        {language === 'ar' ? 'المادة' : language === 'ku' ? 'کەرەستە' : 'Material'}
-                      </span>
-                      <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.material).map(mat => getLocalized(mat, language)).join(', ') || t('ui.cotton_blend')}
-                      </span>
-                    </div>
-                    {/* Seasonal Type */}
-                    <div className={`flex items-center px-5 py-3.5 hover:bg-gray-50/60 transition-colors ${parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').length > 0 ? 'border-b border-gray-100' : ''}`}>
-                      <span className="w-36 font-medium text-gray-400 shrink-0">
-                        {language === 'ar' ? 'النوع الموسمي' : language === 'ku' ? 'جۆری وەرزی' : 'Seasonal Type'}
-                      </span>
-                      <span className="font-semibold">
-                        {parseJsonArray(viewingProduct.seasonal_type).map(seas => getLocalized(seas, language)).join(', ') || t('ui.all_season')}
-                      </span>
-                    </div>
-                    {parseJsonArray(viewingProduct.promotion).filter(p => p !== 'None' && p !== '').length > 0 && (
-                      <div className="flex items-center px-5 py-3.5 bg-[#B2AC88]/8 hover:bg-[#B2AC88]/12 transition-colors">
-                        <span className="w-36 text-[11px] font-bold uppercase tracking-wider text-[#B2AC88] shrink-0">
-                          {language === 'ar' ? 'العرض النشط' : language === 'ku' ? 'داشکاندنی چالاک' : 'Active Promo'}
-                        </span>
-                        <span className="font-bold text-[#36454F]">
-                          {parseJsonArray(viewingProduct.promotion).map(promo => getLocalized(promo, language)).filter(p => p !== 'None' && p !== '').join(', ')}
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      const label = (en, ku, ar) => (language === 'ar' ? ar : language === 'ku' ? ku : en);
+                      const listOf = (field) =>
+                        parseJsonArray(field).map(v => getLocalized(v, language)).filter(Boolean);
+
+                      const rows = [];
+                      if (viewingProduct.gender) {
+                        rows.push({
+                          key: 'gender',
+                          name: label('Gender', 'ڕەگەز', 'النوع'),
+                          value: getLocalizedGender(viewingProduct.gender, language),
+                        });
+                      }
+                      rows.push({
+                        key: 'category',
+                        name: label('Category', 'پۆلێن', 'التصنيف'),
+                        value: listOf(viewingProduct.category).join(', ') || t('ui.general'),
+                      });
+                      rows.push({
+                        key: 'style',
+                        name: label('Style / Length', 'شێواز / درێژی', 'الموديل / الطول'),
+                        value: listOf(viewingProduct.style_length).join(', ') || t('ui.standard'),
+                      });
+                      rows.push({
+                        key: 'material',
+                        name: label('Material', 'کەرەستە', 'المادة'),
+                        value: listOf(viewingProduct.material).join(', ') || t('ui.cotton_blend'),
+                      });
+                      rows.push({
+                        key: 'season',
+                        name: label('Seasonal Type', 'جۆری وەرزی', 'النوع الموسمي'),
+                        value: listOf(viewingProduct.seasonal_type).join(', ') || t('ui.all_season'),
+                      });
+
+                      // Design and Sport Type are optional on the dashboard form,
+                      // so only surface them when the product actually has them.
+                      const designs = listOf(viewingProduct.design);
+                      if (designs.length > 0) {
+                        rows.push({
+                          key: 'design',
+                          name: label('Design', 'دیزاین', 'التصميم'),
+                          value: designs.join(', '),
+                        });
+                      }
+                      const sportTypes = listOf(viewingProduct.sport_type);
+                      if (sportTypes.length > 0) {
+                        rows.push({
+                          key: 'sport_type',
+                          name: label('Sport Type', 'جۆری وەرزش', 'نوع الرياضة'),
+                          value: sportTypes.join(', '),
+                        });
+                      }
+
+                      const promos = listOf(viewingProduct.promotion).filter(p => p !== 'None' && p !== '');
+                      if (promos.length > 0) {
+                        rows.push({
+                          key: 'promotion',
+                          highlight: true,
+                          name: label('Active Promo', 'داشکاندنی چالاک', 'العرض النشط'),
+                          value: promos.join(', '),
+                        });
+                      }
+
+                      return rows.map((row, idx) => (
+                        <div
+                          key={row.key}
+                          className={`flex items-center px-5 py-3.5 transition-colors ${idx < rows.length - 1 ? 'border-b border-gray-100' : ''} ${row.highlight ? 'bg-[#B2AC88]/8 hover:bg-[#B2AC88]/12' : 'hover:bg-gray-50/60'}`}
+                        >
+                          <span className={`w-36 shrink-0 ${row.highlight ? 'text-[11px] font-bold uppercase tracking-wider text-[#B2AC88]' : 'font-medium text-gray-400'}`}>
+                            {row.name}
+                          </span>
+                          <span className={row.highlight ? 'font-bold text-[#36454F]' : 'font-semibold'}>
+                            {row.value}
+                          </span>
+                        </div>
+                      ));
+                    })()}
                   </div>
 
 
