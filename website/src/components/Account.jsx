@@ -698,17 +698,17 @@ export default function Account({ email, onBackToHome, onLogoutClick, onViewChan
                                             {item.selected_color.startsWith('bg-[') ? (
                                               <span className="flex items-center gap-1.5">
                                                 <span className="w-3.5 h-3.5 rounded-full border border-gray-300 shadow-sm" style={getColorStyle(item.selected_color)} />
-                                                <span className="text-gray-700">{item.selected_color_name || item.selected_color}</span>
+                                                <span className="text-gray-700">{getLocalized(item.selected_color_name, language) || item.selected_color}</span>
                                               </span>
                                             ) : (
-                                              <span className="text-gray-700">{item.selected_color_name || item.selected_color}</span>
+                                              <span className="text-gray-700">{getLocalized(item.selected_color_name, language) || item.selected_color}</span>
                                             )}
                                           </span>
                                         )}
                                         {item.selected_size && (
                                           <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-md border border-gray-100/80 text-xs font-black">
                                             <span className="text-gray-400 font-semibold">{language === 'ar' ? 'المقاس' : language === 'ku' ? 'قەبارە' : 'Size'}:</span>
-                                            <span className="text-gray-700">{item.selected_size}</span>
+                                            <span className="text-gray-700">{getLocalized(item.selected_size, language)}</span>
                                           </span>
                                         )}
                                       </div>

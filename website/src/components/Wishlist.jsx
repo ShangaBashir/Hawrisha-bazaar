@@ -522,7 +522,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                             <div className="space-y-2">
                               <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
                                 <span className="text-gray-400">{t('ui.select_size')}</span>
-                                {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
+                                {modalSelectedSize && <span className="text-[#36454F] font-semibold">{getLocalized(modalSelectedSize, language)}</span>}
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {sizeOptions.map((size) => {
@@ -547,7 +547,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                                       }`}
                                       disabled={!isAvailable}
                                     >
-                                      {size}
+                                      {getLocalized(size, language)}
                                     </button>
                                   );
                                 })}
@@ -561,7 +561,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                                 <span className="text-gray-400">{t('ui.select_color')}</span>
                                 {modalColorIndex !== null && (
                                   <span className="text-[#36454F] font-semibold">
-                                    {optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : `${t('ui.option')} ${modalColorIndex + 1}`}
+                                    {optionsModalProduct.colorNames ? getLocalized(optionsModalProduct.colorNames[modalColorIndex], language) : `${t('ui.option')} ${modalColorIndex + 1}`}
                                   </span>
                                 )}
                               </div>
@@ -674,7 +674,7 @@ export default function Wishlist({ cart = [], wishlist, onAddToCart, onRemoveFro
                           selectedColorName: optionsModalProduct.colorNames && modalColorIndex !== null ? optionsModalProduct.colorNames[modalColorIndex] : null
                         }, modalQuantity);
 
-                        const colorLabel = optionsModalProduct.colorNames ? optionsModalProduct.colorNames[modalColorIndex] : t('ui.selected_color');
+                        const colorLabel = optionsModalProduct.colorNames ? getLocalized(optionsModalProduct.colorNames[modalColorIndex], language) : t('ui.selected_color');
                         showToast(t('ui.toast_added_qty', {
                           qty: modalQuantity,
                           name: getLocalized(optionsModalProduct.name, language),

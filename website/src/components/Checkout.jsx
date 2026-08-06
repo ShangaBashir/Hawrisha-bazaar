@@ -429,9 +429,10 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
   };
 
   const getColorName = (item) => {
-    if (item.selectedColorName) return item.selectedColorName;
+    // Colour names are stored as trilingual JSON, so localize before display.
+    if (item.selectedColorName) return getLocalized(item.selectedColorName, language);
     const found = colorsList.find(c => c.class === item.selectedColor || c.id === item.selectedColor);
-    if (found) return found.name;
+    if (found) return getLocalized(found.name, language);
     if (item.selectedColor && item.selectedColor.startsWith('bg-[#') && item.selectedColor.endsWith(']')) {
       return item.selectedColor.slice(5, -1).toUpperCase();
     }
@@ -883,13 +884,13 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                                 {item.selectedStyle && (
                                   <div className="bg-gray-50 border border-gray-100 rounded px-2.5 py-0.5 text-xs font-black text-[#36454F] w-fit">
                                     <span className="text-gray-400 font-normal">{language === 'ar' ? 'النوع: ' : language === 'ku' ? 'جۆر: ' : 'Style: '}</span>
-                                    {item.selectedStyle}
+                                    {getLocalized(item.selectedStyle, language)}
                                   </div>
                                 )}
                                 {item.selectedSize && (
                                   <div className="bg-gray-50 border border-gray-100 rounded px-2.5 py-0.5 text-xs font-black text-[#36454F] w-fit">
                                     <span className="text-gray-400 font-normal">{language === 'ar' ? 'المقاس: ' : language === 'ku' ? 'قەبارە: ' : 'Size: '}</span>
-                                    {item.selectedSize}
+                                    {getLocalized(item.selectedSize, language)}
                                   </div>
                                 )}
                               </div>

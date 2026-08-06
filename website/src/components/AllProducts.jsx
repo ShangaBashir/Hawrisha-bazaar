@@ -1222,7 +1222,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
       selectedColor: detailSelectedColor,
       selectedColorName: selectedColorName
     }, detailQuantity);
-    const colorLabel = selectedColorName || detailSelectedColor || t('ui.selected_color');
+    const colorLabel = getLocalized(selectedColorName, language) || detailSelectedColor || t('ui.selected_color');
     showToast(t('ui.toast_added_qty', { qty: detailQuantity, name: getLocalized(viewingProduct.name, language), color: colorLabel }));
     // Open cart panel immediately
     if (onOpenCart) onOpenCart();
@@ -2368,7 +2368,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               <div>
                                 <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
                                   <span className="text-gray-400">{t('ui.select_size')}</span>
-                                  {detailSelectedSize && <span className="text-[#36454F] font-semibold">{detailSelectedSize}</span>}
+                                  {detailSelectedSize && <span className="text-[#36454F] font-semibold">{getLocalized(detailSelectedSize, language)}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {sizeOptions.map((size) => {
@@ -2389,7 +2389,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                         }`}
                                         disabled={!isAvailable}
                                       >
-                                        {size}
+                                        {getLocalized(size, language)}
                                       </button>
                                     );
                                   })}
@@ -2462,7 +2462,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             <div>
                               <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2.5 font-sans">
                                 <span className="text-gray-400">{t('ui.select_size')}</span>
-                                {detailSelectedSize && <span className="text-[#36454F] font-semibold">{detailSelectedSize}</span>}
+                                {detailSelectedSize && <span className="text-[#36454F] font-semibold">{getLocalized(detailSelectedSize, language)}</span>}
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {sizeOptions.map((size) => {
@@ -2486,7 +2486,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                       }`}
                                       disabled={!isAvailable}
                                     >
-                                      {size}
+                                      {getLocalized(size, language)}
                                     </button>
                                   );
                                 })}
@@ -2501,9 +2501,12 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                 <span className="text-gray-400">{t('ui.select_color')}</span>
                                 {detailSelectedColor && (
                                   <span className="text-[#36454F] font-semibold">
-                                    {viewingProduct.colorNames
-                                      ? viewingProduct.colorNames[viewingProduct.colors ? viewingProduct.colors.indexOf(detailSelectedColor) : -1]
-                                      : detailSelectedColor}
+                                    {getLocalized(
+                                      viewingProduct.colorNames
+                                        ? viewingProduct.colorNames[viewingProduct.colors ? viewingProduct.colors.indexOf(detailSelectedColor) : -1]
+                                        : detailSelectedColor,
+                                      language
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -2921,7 +2924,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                               <div className="space-y-2">
                                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
                                   <span className="text-gray-400">{t('ui.select_size')}</span>
-                                  {modalSelectedSize && <span className="text-[#36454F] font-semibold">{modalSelectedSize}</span>}
+                                  {modalSelectedSize && <span className="text-[#36454F] font-semibold">{getLocalized(modalSelectedSize, language)}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {sizeOptions.map((size) => {
@@ -2947,7 +2950,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                         }`}
                                         disabled={!isAvailable}
                                       >
-                                        {size}
+                                        {getLocalized(size, language)}
                                       </button>
                                     );
                                   })}
@@ -3072,7 +3075,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             selectedColorName: modalColorName
                           }, modalQuantity);
 
-                          const colorLabel = modalColorName || t('ui.selected_color');
+                          const colorLabel = getLocalized(modalColorName, language) || t('ui.selected_color');
                           showToast(t('ui.toast_added_qty', { qty: modalQuantity, name: getLocalized(optionsModalProduct.name, language), color: colorLabel }));
                           setOptionsModalProduct(null);
                           

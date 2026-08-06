@@ -794,20 +794,20 @@ function App() {
                                       style={getAppCartColorStyle(item.selectedColor)}
                                     />
                                     <span className="text-[9px] font-bold text-[#36454F]">
-                                      {item.selectedColorName || item.selectedColor?.replace('bg-[', '').replace(']', '') || ''}
+                                      {getLocalized(item.selectedColorName, language) || item.selectedColor?.replace('bg-[', '').replace(']', '') || ''}
                                     </span>
                                   </div>
                                 )}
                                 {item.selectedStyle && (
                                   <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 text-[9px] font-bold text-[#36454F] w-fit">
                                     <span className="text-gray-400 font-normal">{language === 'ar' ? 'النوع: ' : language === 'ku' ? 'جۆر: ' : 'Style: '}</span>
-                                    {item.selectedStyle}
+                                    {getLocalized(item.selectedStyle, language)}
                                   </div>
                                 )}
                                 {item.selectedSize && (
                                   <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 text-[9px] font-bold text-[#36454F] w-fit">
                                     <span className="text-gray-400 font-normal">{language === 'ar' ? 'المقاس: ' : language === 'ku' ? 'قەبارە: ' : 'Size: '}</span>
-                                    {item.selectedSize}
+                                    {getLocalized(item.selectedSize, language)}
                                   </div>
                                 )}
                               </div>
