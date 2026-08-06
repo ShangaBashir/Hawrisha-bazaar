@@ -1,5 +1,5 @@
 import { useLanguage } from '../context/LanguageContext.jsx';
-import { Mail, MapPin } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 const HawrishaH = ({ size = 32, className = "" }) => (
   <svg
@@ -11,6 +11,19 @@ const HawrishaH = ({ size = 32, className = "" }) => (
     className={className}
   >
     <path d="M 4 2 h 5 v 20 H 3 a 2 2 0 0 1 -2 -2 a 2 2 0 0 1 2 -2 h 1 V 2 Z M 15 2 h 5 v 20 H 14 a 2 2 0 0 1 -2 -2 a 2 2 0 0 1 2 -2 h 1 V 2 Z M 9 10 h 6 v 3 H 9 Z" />
+  </svg>
+);
+
+const TikTokIcon = ({ size = 17, className = "" }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 0 1 0-5.18c.27 0 .53.04.77.12v-3.2a5.76 5.76 0 0 0-.77-.05A5.72 5.72 0 0 0 4.14 15.3a5.72 5.72 0 0 0 9.4 4.4 5.72 5.72 0 0 0 2-4.35V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z" />
   </svg>
 );
 
@@ -165,18 +178,19 @@ export default function Footer({ onViewChange, onFilterSelect }) {
                 </a>
               </div>
 
-              {/* Location */}
+              {/* TikTok */}
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-white/10 text-[#B2AC88] flex items-center justify-center shrink-0">
-                  <MapPin size={15} />
+                  <TikTokIcon size={15} />
                 </div>
-                <span>
-                  {language === 'ar'
-                    ? 'جميع أنحاء العراق'
-                    : language === 'ku'
-                    ? 'سەرانسەری عێراق'
-                    : 'All Iraq'}
-                </span>
+                <a
+                  href="https://www.tiktok.com/@hawrisha.bazaar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#C08081] transition-colors"
+                >
+                  @hawrisha.bazaar
+                </a>
               </div>
 
             </div>

@@ -11,6 +11,21 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
+function TikTokIcon({ size = 20, className = '' }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 0 1 0-5.18c.27 0 .53.04.77.12v-3.2a5.76 5.76 0 0 0-.77-.05A5.72 5.72 0 0 0 4.14 15.3a5.72 5.72 0 0 0 9.4 4.4 5.72 5.72 0 0 0 2-4.35V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z" />
+    </svg>
+  );
+}
+
 function InstagramIcon({ size = 20, className = '' }) {
   return (
     <svg
@@ -256,6 +271,21 @@ export default function Contact() {
                 </h4>
                 <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
                   <a href="https://www.instagram.com/hawrisha_bazaar" target="_blank" rel="noopener noreferrer">@hawrisha_bazaar</a>
+                </p>
+              </div>
+            </div>
+
+            {/* TikTok Card */}
+            <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-[24px] p-6 flex items-start space-x-4 rtl:space-x-reverse shadow-2xs hover:border-[#C08081]/30 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-[#C08081]/10 flex items-center justify-center text-[#C08081] shrink-0">
+                <TikTokIcon size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#36454F] uppercase tracking-wider mb-1.5">
+                  {language === 'ar' ? 'تيك توك' : language === 'ku' ? 'تیک تۆک' : 'TikTok'}
+                </h4>
+                <p className="text-xs text-gray-500 font-semibold hover:text-[#C08081] transition-colors leading-relaxed">
+                  <a href="https://www.tiktok.com/@hawrisha.bazaar" target="_blank" rel="noopener noreferrer">@hawrisha.bazaar</a>
                 </p>
               </div>
             </div>

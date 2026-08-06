@@ -254,6 +254,19 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
                       <span className="text-xs font-bold text-white">@hawrisha_bazaar</span>
                     </div>
                   </a>
+
+                  {/* TikTok row */}
+                  <a href="https://www.tiktok.com/@hawrisha.bazaar" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3.5 hover:text-[#B2AC88] transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#B2AC88]">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 0 1 0-5.18c.27 0 .53.04.77.12v-3.2a5.76 5.76 0 0 0-.77-.05A5.72 5.72 0 0 0 4.14 15.3a5.72 5.72 0 0 0 9.4 4.4 5.72 5.72 0 0 0 2-4.35V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('ui.tiktok')}</span>
+                      <span className="text-xs font-bold text-white break-all">@hawrisha.bazaar</span>
+                    </div>
+                  </a>
                 </div>
 
                 <div className="text-[10px] text-gray-400 text-center uppercase tracking-widest font-semibold">
