@@ -268,6 +268,16 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
     if (isCategoriesDropdownOpen) setSettingsVersion(v => v + 1);
   }, [isCategoriesDropdownOpen]);
 
+  // Match the All Products filter: shortest cut (No-Show) first, the rest
+  // keep the alphabetical order the API returns.
+  const orderedStyles = useMemo(() => {
+    const rank = (st) => {
+      const en = (getLocalized(st.name, 'en') || '').toLowerCase().replace(/[^a-z]/g, '');
+      return en === 'noshow' ? 0 : 1;
+    };
+    return [...stylesList].sort((a, b) => rank(a) - rank(b));
+  }, [stylesList]);
+
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) return [];
     const families = [];
@@ -826,7 +836,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                       </button>
                       {openGroups.styles && (
                         <div className="flex flex-col space-y-1.5">
-                          {stylesList.map(st => (
+                          {orderedStyles.map(st => (
                             <button
                               key={st.id || st.name}
                               type="button"
@@ -1092,7 +1102,7 @@ export default function Header({ currentView, onViewChange, cartCount, wishlistC
                         {renderMobileSubSection(
                           language === 'ar' ? 'الموديلات' : language === 'ku' ? 'شێوازەکان' : 'Styles',
                           'styles',
-                          stylesList
+                          orderedStyles
                         )}
                         {renderMobileSubSection(
                           language === 'ar' ? 'المواد' : language === 'ku' ? 'کەرەستەکان' : 'Materials',

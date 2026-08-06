@@ -510,6 +510,16 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   // sync with add/edit/delete done in the admin dashboard (no reload needed).
   const [settingsVersion, setSettingsVersion] = useState(0);
 
+  // The API returns styles alphabetically, which puts No-Show last. Show the
+  // shortest cut first; everything else keeps the alphabetical order.
+  const orderedStyles = useMemo(() => {
+    const rank = (st) => {
+      const en = (getLocalized(st.name, 'en') || '').toLowerCase().replace(/[^a-z]/g, '');
+      return en === 'noshow' ? 0 : 1;
+    };
+    return [...stylesList].sort((a, b) => rank(a) - rank(b));
+  }, [stylesList]);
+
   const uniqueColorFilters = useMemo(() => {
     if (colorsList.length === 0) {
       return colorFilters;
@@ -1773,7 +1783,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                             </div>
                             {!collapsedSections.style && (
                               <div className="flex flex-col space-y-2 max-h-48 overflow-y-auto pr-1">
-                                {stylesList.map((st) => (
+                                {orderedStyles.map((st) => (
                                   <label key={st.id} className="flex items-center space-x-2.5 text-xs font-semibold text-[#36454F] py-0.5 cursor-pointer select-none">
                                     <input 
                                       type="checkbox" 
