@@ -2,77 +2,95 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
+// Shipped sock photography, used when the catalogue has no images yet.
+const FALLBACK_SOCKS = [
+  '/categories/cat1.jpg',
+  '/bestsellers/bs1.jpg',
+  '/carousel/slide1.jpg',
+  '/categories/cat3.jpg',
+  '/bestsellers/bs2.jpg',
+  '/carousel/slide2.webp',
+  '/categories/cat2.jpg',
+  '/carousel/slide3.jpg',
+];
+
+const parseImageList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [val];
+  } catch {
+    return [val];
+  }
+};
+
+const resolveImage = (img) => {
+  if (!img || typeof img !== 'string') return null;
+  if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/')) return img;
+  return `/uploads/${img}`;
+};
+
+// Repeat the source images until there are enough tiles for the marquee to
+// loop without a visible gap, regardless of how small the catalogue is.
+const padTiles = (tiles) => {
+  if (tiles.length === 0) return [];
+  const out = [];
+  while (out.length < 24) out.push(...tiles);
+  return out;
+};
+
 export default function StoreMarquee() {
   const { language } = useLanguage();
-  const [stores, setStores] = useState([]);
+  const [socks, setSocks] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     let active = true;
-    fetch('/api/stores')
-      .then(res => res.json())
+    const fallback = FALLBACK_SOCKS.map(image => ({ image, name: 'Socks' }));
+
+    fetch('/api/products')
+      .then(res => {
+        if (!res.ok) throw new Error('products request failed');
+        return res.json();
+      })
       .then(data => {
-        if (active && data.success && data.vendors) {
-          // Filter to only stores that have logos, or just use them all and handle fallbacks
-          let vendorList = data.vendors;
-          if (vendorList.length === 0) {
-            // Fallback mock stores for demonstration if none exist
-            vendorList = [
-              { store_name: 'Hawrisha Original', logo: '/categories/cat1.jpg' },
-              { store_name: 'Style Studio', logo: '/bestsellers/bs1.jpg' },
-              { store_name: 'Urban Comfort', logo: '/carousel/slide1.jpg' },
-              { store_name: 'Premium Socks', logo: '/categories/cat3.jpg' },
-              { store_name: 'Socks Haven', logo: '/bestsellers/bs2.jpg' },
-              { store_name: 'Footwear Co.', logo: '/carousel/slide2.webp' },
-              { store_name: 'Creative Threads', logo: '/categories/cat2.jpg' },
-              { store_name: 'Artisan Socks', logo: '/carousel/slide3.jpg' },
-            ];
-          }
-          // Duplicate array to ensure enough items for a seamless marquee
-          const duplicated = [...vendorList, ...vendorList, ...vendorList, ...vendorList];
-          setStores(duplicated);
-        }
+        if (!active) return;
+        const products = Array.isArray(data) ? data : [];
+        const tiles = [];
+        products.forEach(p => {
+          [p.image_url, ...parseImageList(p.extra_images)]
+            .map(resolveImage)
+            .filter(Boolean)
+            .forEach(image => tiles.push({ image, name: p.name }));
+        });
+        setSocks(padTiles(tiles.length > 0 ? tiles : fallback));
       })
       .catch(err => {
-        console.error('Error fetching stores for marquee:', err);
-        if (active) {
-          const fallback = [
-            { store_name: 'Hawrisha Original', logo: '/categories/cat1.jpg' },
-            { store_name: 'Style Studio', logo: '/bestsellers/bs1.jpg' },
-            { store_name: 'Urban Comfort', logo: '/carousel/slide1.jpg' },
-            { store_name: 'Premium Socks', logo: '/categories/cat3.jpg' },
-            { store_name: 'Socks Haven', logo: '/bestsellers/bs2.jpg' },
-          ];
-          setStores([...fallback, ...fallback, ...fallback, ...fallback, ...fallback]);
-        }
+        console.error('Error fetching products for marquee:', err);
+        if (active) setSocks(padTiles(fallback));
       });
     return () => { active = false; };
   }, []);
 
-  const getLogoUrl = (logoPath) => {
-    if (!logoPath) return null;
-    if (logoPath.startsWith('http') || logoPath.startsWith('data:') || logoPath.startsWith('/')) {
-      return logoPath;
+  // Product names are stored as {"en":..,"ku":..,"ar":..} JSON; fall back to
+  // the raw value for plain-string names.
+  const getSockName = (val) => {
+    if (!val) return 'Socks';
+    let obj = val;
+    if (typeof val === 'string') {
+      if (!val.trim().startsWith('{')) return val;
+      try { obj = JSON.parse(val); } catch { return val; }
     }
-    return `/uploads/${logoPath}`;
+    if (!obj || typeof obj !== 'object') return String(val);
+    const l = (language || 'en').toLowerCase();
+    return obj[l] || obj[l.toUpperCase()] || obj.en || obj.EN || Object.values(obj)[0] || 'Socks';
   };
 
-  const getStoreName = (store) => {
-    const rawName = store.name || store.store_name || '';
-    if (!rawName) return 'S';
-    try {
-      if (rawName.startsWith('{')) {
-        const parsed = JSON.parse(rawName);
-        return parsed.en || parsed.ku || parsed.ar || rawName;
-      }
-    } catch (e) {}
-    return rawName;
-  };
-
-  // Split stores into two arrays for the two scrolling rows (top and bottom)
-  const half = Math.ceil(stores.length / 2);
-  const row1 = stores.slice(0, half);
-  const row2 = stores.slice(half);
+  // Split into two arrays for the two scrolling rows (top and bottom)
+  const half = Math.ceil(socks.length / 2);
+  const row1 = socks.slice(0, half);
+  const row2 = socks.slice(half);
 
   return (
     <section className="w-full bg-[#F5F5DC] py-24 overflow-hidden relative border-t border-[#e5e4d7]">
@@ -108,23 +126,14 @@ export default function StoreMarquee() {
           style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
         >
           <div className="flex gap-6 md:gap-10 px-3 md:px-5 cursor-pointer">
-            {row1.map((store, idx) => {
-              const displayName = getStoreName(store);
-              return (
-                <div 
-                  key={`row1-${idx}`} 
-                  className="w-20 h-20 md:w-28 md:h-28 flex-shrink-0 bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 hover:-translate-y-2 transition-all duration-300"
-                >
-                  {store.logo ? (
-                    <img src={getLogoUrl(store.logo)} alt={displayName} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
-                  ) : (
-                    <div className="w-full h-full bg-[#36454F] flex items-center justify-center text-white font-bold text-xl uppercase pointer-events-none">
-                      {displayName.substring(0, 1)}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {row1.map((sock, idx) => (
+              <div
+                key={`row1-${idx}`}
+                className="w-20 h-20 md:w-28 md:h-28 shrink-0 bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 hover:-translate-y-2 transition-all duration-300"
+              >
+                <img src={sock.image} alt={getSockName(sock.name)} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
+              </div>
+            ))}
           </div>
         </div>
 
@@ -155,23 +164,14 @@ export default function StoreMarquee() {
           style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
         >
           <div className="flex gap-6 md:gap-10 px-3 md:px-5 cursor-pointer">
-            {row2.map((store, idx) => {
-              const displayName = getStoreName(store);
-              return (
-                <div 
-                  key={`row2-${idx}`} 
-                  className="w-20 h-20 md:w-28 md:h-28 flex-shrink-0 bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 hover:-translate-y-2 transition-all duration-300"
-                >
-                  {store.logo ? (
-                    <img src={getLogoUrl(store.logo)} alt={displayName} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
-                  ) : (
-                    <div className="w-full h-full bg-[#C08081] flex items-center justify-center text-white font-bold text-xl uppercase pointer-events-none">
-                      {displayName.substring(0, 1)}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {row2.map((sock, idx) => (
+              <div
+                key={`row2-${idx}`}
+                className="w-20 h-20 md:w-28 md:h-28 shrink-0 bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 hover:-translate-y-2 transition-all duration-300"
+              >
+                <img src={sock.image} alt={getSockName(sock.name)} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
+              </div>
+            ))}
           </div>
         </div>
 

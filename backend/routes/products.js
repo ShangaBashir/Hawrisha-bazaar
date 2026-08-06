@@ -120,9 +120,9 @@ router.post('/', uploadFields, async (req, res) => {
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
       styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
-      vendorEmail, storeId, gender, colorVariants
+      vendorEmail, storeId, gender, colorVariants, design, sportType
     } = req.body;
-    
+
     console.log("POST /api/products - req.body:", { name, price, category, vendorEmail, storeId });
     
     if (!price || Number(price) < 250) {
@@ -186,12 +186,13 @@ router.post('/', uploadFields, async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO products (
         name, price, category, color_family, badge, description, image_url,
-        style_length, stock, promotion, material, seasonal_type, size_collection, size_colors, discount, vendor_id, store_id, extra_images, gender, admin_share, store_share, color_variants
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+        style_length, stock, promotion, material, seasonal_type, size_collection, size_colors, discount, vendor_id, store_id, extra_images, gender, admin_share, store_share, color_variants, design, sport_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
       [
         name, price, category, colorFamily, badge, desc, imageUrl,
-        styleLength || null, Number(stock) || 0, promotion || null, material || null, 
-        seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0, dbVendorId, dbStoreId, gender || null, adminShare, storeShare, JSON.stringify(parsedVariants)
+        styleLength || null, Number(stock) || 0, promotion || null, material || null,
+        seasonalType || null, sizeCollection || null, sizeColors || null, Number(discount) || 0, dbVendorId, dbStoreId, gender || null, adminShare, storeShare, JSON.stringify(parsedVariants),
+        design || null, sportType || null
       ]
     );
 
@@ -228,9 +229,9 @@ router.put('/:id', uploadFields, async (req, res) => {
     const { 
       name, price, category, colorFamily, badge, desc, colors, colorNames,
       styleLength, stock, promotion, material, seasonalType, sizeCollection, sizeColors, discount,
-      vendorEmail, storeId, gender, colorVariants
+      vendorEmail, storeId, gender, colorVariants, design, sportType
     } = req.body;
-    
+
     console.log("PUT /api/products/:id - req.body:", { id, name, price, category, vendorEmail, storeId });
     
     if (!price || Number(price) < 250) {
@@ -321,6 +322,16 @@ router.put('/:id', uploadFields, async (req, res) => {
     if (dbVendorId !== undefined) {
       updateQuery += ', vendor_id = ?';
       queryParams.push(dbVendorId);
+    }
+    // Only overwrite design / sport type when the caller actually sends them,
+    // so an edit from a form that omits these fields preserves the stored value.
+    if (design !== undefined) {
+      updateQuery += ', design = ?';
+      queryParams.push(design || null);
+    }
+    if (sportType !== undefined) {
+      updateQuery += ', sport_type = ?';
+      queryParams.push(sportType || null);
     }
 
     updateQuery += ' WHERE id = ?';

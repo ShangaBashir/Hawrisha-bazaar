@@ -928,50 +928,9 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     setIsDetailRemovedBlue(false);
   }, [viewingProduct]);
 
-  // Update Detail modal Active Image when color selection changes
-  useEffect(() => {
-    if (viewingProduct) {
-      const variants = (() => {
-        try {
-          if (typeof viewingProduct.color_variants === 'string') {
-            return JSON.parse(viewingProduct.color_variants);
-          }
-          return viewingProduct.color_variants || [];
-        } catch(e) {
-          return [];
-        }
-      })();
-      if (variants.length > 0 && detailSelectedColor) {
-        const selectedVariant = variants.find(v => v.color && v.color.class === detailSelectedColor);
-        if (selectedVariant && selectedVariant.image) {
-          setDetailActiveImage(selectedVariant.image);
-        }
-      }
-    }
-  }, [detailSelectedColor, viewingProduct]);
-
-  // Update Options Modal Active Image when color selection changes
-  useEffect(() => {
-    if (optionsModalProduct) {
-      const variants = (() => {
-        try {
-          if (typeof optionsModalProduct.color_variants === 'string') {
-            return JSON.parse(optionsModalProduct.color_variants);
-          }
-          return optionsModalProduct.color_variants || [];
-        } catch(e) {
-          return [];
-        }
-      })();
-      const selectedColor = optionsModalProduct.colors && modalColorIndex !== null ? optionsModalProduct.colors[modalColorIndex] : null;
-      if (variants.length > 0 && selectedColor) {
-        const selectedVariant = variants.find(v => v.color && v.color.class === selectedColor);
-        if (selectedVariant && selectedVariant.image) {
-          setModalActiveImage(selectedVariant.image);
-        }
-      }
-    }
-  }, [modalColorIndex, optionsModalProduct]);
+  // NOTE: picking a colour deliberately does NOT swap the product photo.
+  // The gallery stays on whatever image the shopper chose so the picture
+  // never jumps out from under them mid-selection.
 
   // Handle Toast notification for cart additions
   const showToast = (message) => {
@@ -2209,18 +2168,9 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
 
                     {detailActiveImage ? (
                       <div className="w-full h-full relative">
-                        <img src={getProductImage(detailActiveImage)} 
-                          alt={getLocalized(viewingProduct.name, language)} 
+                        <img src={getProductImage(detailActiveImage)}
+                          alt={getLocalized(viewingProduct.name, language)}
                           className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
-                        {detailSelectedColor && (
-                          <div 
-                            className="absolute inset-0 pointer-events-none z-2 opacity-50"
-                            style={{
-                              ...getColorStyle(detailSelectedColor),
-                              mixBlendMode: 'color'
-                            }}
-                          />
-                        )}
                       </div>
                     ) : (
                       <span className="text-[#36454F]/20 font-serif text-3xl font-bold tracking-widest uppercase rotate-[-20deg]">
@@ -2423,7 +2373,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                                     <span className="text-[#36454F] font-semibold">
                                       {(() => {
                                         const match = variants.find(v => v.color && v.color.class === detailSelectedColor);
-                                        return match ? match.color.name : detailSelectedColor;
+                                        return match ? getLocalized(match.color.name, language) : detailSelectedColor;
                                       })()}
                                     </span>
                                   )}
@@ -2870,18 +2820,9 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                     <div className="w-full aspect-[3/4] bg-white rounded-2xl relative shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden mb-4">
                       {modalActiveImage ? (
                         <div className="w-full h-full relative">
-                          <img src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`} 
-                            alt={getLocalized(optionsModalProduct.name, language)} 
+                          <img src={modalActiveImage.startsWith('/') || modalActiveImage.startsWith('data:') ? modalActiveImage : `/uploads/${modalActiveImage}`}
+                            alt={getLocalized(optionsModalProduct.name, language)}
                             className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = '/categories/cat1.jpg'; }} />
-                          {selectedColorClass && (
-                            <div 
-                              className="absolute inset-0 pointer-events-none z-2 opacity-50"
-                              style={{
-                                ...getColorStyle(selectedColorClass),
-                                mixBlendMode: 'color'
-                              }}
-                            />
-                          )}
                         </div>
                       ) : (
                         <span className="text-[#36454F]/20 font-serif text-2xl font-bold uppercase rotate-[-20deg]">
