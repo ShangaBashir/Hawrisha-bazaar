@@ -186,7 +186,7 @@ export default function Footer({ onViewChange, onFilterSelect }) {
 
         {/* Bottom Copyright Divider */}
         <div className="border-t border-white/10 mt-12 pt-6 text-center text-xs font-semibold opacity-40">
-          <p>&copy; {new Date().getFullYear()} HAWRISHA BAZAAR. {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'ku' ? 'هەموو مافەکان پارێزراون.' : 'All rights reserved.'}</p>
+          <p>&copy; {new Date().getFullYear()} {language === 'ku' ? 'هەورێشە بازاڕ.' : 'HAWRISHA BAZAAR.'} {language === 'ar' ? 'جميع الحقوق محفوظة.' : language === 'ku' ? 'هەموو مافەکان پارێزراون.' : 'All rights reserved.'}</p>
         </div>
       </div>
     </footer>

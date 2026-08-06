@@ -171,7 +171,7 @@ export default function Cart({ cart, onUpdateQuantity, onRemoveItem, onExplore, 
                               }}
                               className="hover:underline hover:text-[#B2AC88] cursor-pointer transition-colors"
                             >
-                              {getLocalized(item.vendor_name, language) || 'HAWRISHA'}
+                              {getLocalized(item.vendor_name, language) || t('vendor_dashboard.platform_store')}
                             </span>
                           </p>
                           {/* Promotion Badge */}

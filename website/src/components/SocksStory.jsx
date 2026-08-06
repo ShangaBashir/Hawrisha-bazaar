@@ -93,8 +93,8 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
 
                 {/* Center Boutique Badge */}
                 <div className="absolute w-20 h-20 rounded-full border-4 border-white shadow-xl bg-[#36454F] text-[#F5F5DC] flex flex-col items-center justify-center font-black text-[10px] tracking-wider leading-none z-20 transition-transform duration-500 group-hover:rotate-6">
-                  <span>HAWRISHA</span>
-                  <span className="text-[6px] font-bold tracking-widest text-[#B2AC88] mt-0.5">BAZAAR</span>
+                  <span>{language === 'ku' ? 'هەورێشە' : 'HAWRISHA'}</span>
+                  <span className="text-[6px] font-bold tracking-widest text-[#B2AC88] mt-0.5">{language === 'ku' ? 'بازاڕ' : 'BAZAAR'}</span>
                 </div>
                 
                 {/* Bubble Tag */}

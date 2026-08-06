@@ -777,7 +777,7 @@ function App() {
                           <div>
                             <h4 className="text-xs font-bold text-[#36454F] truncate">{getLocalized(item.name, language)}</h4>
                             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
-                              {getLocalized(item.vendor_name, language) || 'HAWRISHA'}
+                              {getLocalized(item.vendor_name, language) || t('vendor_dashboard.platform_store')}
                             </p>
                             {/* Promotion Badge */}
                             {(() => {

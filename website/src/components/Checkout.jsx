@@ -853,7 +853,7 @@ export default function Checkout({ cart, onClearCart, onBackToHome, onViewAccoun
                           <div>
                             <h4 className="text-sm font-extrabold text-[#36454F] truncate">{getLocalized(item.name, language)}</h4>
                             <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">
-                              {language === 'ar' ? 'المتجر: ' : language === 'ku' ? 'فرۆشگا: ' : 'Store: '} {getLocalized(item.vendor_name, language) || 'HAWRISHA'}
+                              {language === 'ar' ? 'المتجر: ' : language === 'ku' ? 'فرۆشگا: ' : 'Store: '} {getLocalized(item.vendor_name, language) || t('vendor_dashboard.platform_store')}
                             </p>
                             {/* Promotion Badge */}
                             {(() => {

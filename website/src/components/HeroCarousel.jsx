@@ -126,7 +126,7 @@ export default function HeroCarousel({ onShopNow }) {
         {language === 'ar' 
           ? 'اكتشف مجموعة الجوارب الفريدة من Hawrisha. نحن نقدم لك الجودة والراحة مع كل خطوة.' 
           : language === 'ku' 
-          ? 'کۆمەڵە گۆرەوییە تایبەتەکانی هاوریێشا بدۆزەرەوە. ئێمە کوالێتی و ئاسوودەییتان پێشکەش دەکەین لەگەڵ هەموو هەنگاوێکدا.' 
+          ? 'کۆمەڵە گۆرەوییە تایبەتەکانی هەورێشە بدۆزەرەوە. ئێمە کوالێتی و ئاسوودەییتان پێشکەش دەکەین لەگەڵ هەموو هەنگاوێکدا.'
           : 'Hawrisha offers premium comfort and style. Discover our unique collection that resonates with your everyday journey.'}
       </motion.p>
 
