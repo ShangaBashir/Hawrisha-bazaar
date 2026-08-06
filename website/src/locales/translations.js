@@ -824,7 +824,7 @@ export const translations = {
       sort_newest: "نوێترین بەرهەمەکان",
       only_discounted: "تەنها بەرهەمە داشکێنراوەکان",
       price_range: "مەودای نرخ",
-      clear_all: "پاککردنەوەی هەموو فلتەرەکان",
+      clear_all: "لابردنی هەموو فلتەرەکان",
       showing_products: "پیشاندانی {count} بەرهەم"
     },
     cart_page: {
@@ -1016,7 +1016,7 @@ export const translations = {
       material: "جۆری مادە",
       seasonal_type: "وەرزەکان",
       clear: "پاککردنەوە",
-      clear_all_filters: "سڕینەوەی هەموو فلتەرەکان",
+      clear_all_filters: "لابردنی هەموو فلتەرەکان",
       reset_filters: "ڕێکخستنەوەی فلتەرەکان",
       out_of_stock: "نەماوە",
       out_of_stock_unavailable: "نەماوە — بۆ ماوەیەک بەردەست نییە",

@@ -101,6 +101,8 @@ function App() {
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   const [globalProducts, setGlobalProducts] = useState([]);
 
+  const [cartColorsList, setCartColorsList] = useState([]);
+
   useEffect(() => {
     fetch('/api/products')
       .then(res => res.json())
@@ -108,7 +110,32 @@ function App() {
         if (Array.isArray(data)) setGlobalProducts(data);
       })
       .catch(err => console.error('Error fetching global products:', err));
+
+    // Used to show a readable colour name in the cart drawer for items that
+    // were added without one (otherwise we'd fall back to the raw hex code).
+    fetch('/api/settings/colors')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setCartColorsList(data);
+      })
+      .catch(err => console.error('Error fetching colors:', err));
   }, []);
+
+  // Resolve a cart item's colour to a localized name, falling back to the
+  // settings list (matched on css class or hex) before showing the raw value.
+  const getCartColorName = (item) => {
+    const named = getLocalized(item.selectedColorName, language);
+    if (named) return named;
+    const raw = item.selectedColor || '';
+    const hex = raw.startsWith('bg-[') ? raw.slice(4, -1) : raw;
+    const found = cartColorsList.find(c => {
+      const cls = c.class || '';
+      const cHex = cls.startsWith('bg-[') ? cls.slice(4, -1) : cls;
+      return cls === raw || c.id === raw || cHex.toLowerCase() === hex.toLowerCase();
+    });
+    if (found) return getLocalized(found.name, language);
+    return hex;
+  };
 
   // Handle deep link query parameters from Dashboard or direct URLs
   useEffect(() => {
@@ -794,7 +821,7 @@ function App() {
                                       style={getAppCartColorStyle(item.selectedColor)}
                                     />
                                     <span className="text-[9px] font-bold text-[#36454F]">
-                                      {getLocalized(item.selectedColorName, language) || item.selectedColor?.replace('bg-[', '').replace(']', '') || ''}
+                                      {getCartColorName(item)}
                                     </span>
                                   </div>
                                 )}

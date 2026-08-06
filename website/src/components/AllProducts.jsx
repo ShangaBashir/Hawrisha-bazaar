@@ -862,6 +862,13 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
     return Math.max(...products.map(p => Number(p.price) || 0), 250);
   }, [products]);
 
+  // Start the slider at the cheapest product actually on sale, not a fixed 250.
+  const minPriceOfProducts = useMemo(() => {
+    const prices = products.map(p => Number(p.price) || 0).filter(p => p > 0);
+    if (prices.length === 0) return 0;
+    return Math.min(...prices);
+  }, [products]);
+
   useEffect(() => {
     if (products.length > 0 && !hasSetDefaultPrice) {
       setMaxPriceFilter(maxPriceOfProducts);
@@ -1630,17 +1637,17 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                           </div>
                           {!collapsedSections.price && (
                             <div className="space-y-2">
-                              <input 
-                                type="range" 
-                                min="250" 
-                                max={maxPriceOfProducts} 
+                              <input
+                                type="range"
+                                min={minPriceOfProducts}
+                                max={maxPriceOfProducts}
                                 step="250"
                                 value={maxPriceFilter}
                                 onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
                                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#B2AC88] m-0 p-0"
                               />
                               <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                                <span>250 IQD</span>
+                                <span>{minPriceOfProducts.toLocaleString()} IQD</span>
                                 <span className="text-[#36454F] font-bold bg-[#B2AC88]/10 px-2 py-0.5 rounded-md">{maxPriceFilter.toLocaleString()} IQD</span>
                               </div>
                             </div>
