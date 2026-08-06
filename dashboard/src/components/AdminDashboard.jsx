@@ -6467,7 +6467,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
                     >
                       {stores.map((s) => (
                         <option key={s.id} value={s.id}>
-                          {s.name}
+                          {getEnglishName(s.name)}
                         </option>
                       ))}
                     </select>

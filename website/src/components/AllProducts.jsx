@@ -577,14 +577,6 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
 
   const [detailActiveImage, setDetailActiveImage] = useState(null);
 
-  useEffect(() => {
-    if (viewingProduct) {
-      setDetailActiveImage(viewingProduct.image || viewingProduct.image_url);
-    } else {
-      setDetailActiveImage(null);
-    }
-  }, [viewingProduct]);
-  
   // Fetch products from database
   useEffect(() => {
     let active = true;
@@ -885,6 +877,64 @@ export default function AllProducts({ onAddToCart, onRemoveFromCart, onBackToHom
   const [isDetailRemovedBlue, setIsDetailRemovedBlue] = useState(false);
   const [detailSelectedStyle, setDetailSelectedStyle] = useState(null);
   const [detailSelectedSize, setDetailSelectedSize] = useState(null);
+
+  // Every colour variant carries its own photo, sizes and per-size stock from
+  // the dashboard, so picking a colour swaps the gallery to that variant's
+  // picture. Falls back to the product's main image when a variant has none.
+  useEffect(() => {
+    if (!viewingProduct) {
+      setDetailActiveImage(null);
+      return;
+    }
+    const mainImage = viewingProduct.image || viewingProduct.image_url;
+    if (!detailSelectedColor) {
+      setDetailActiveImage(mainImage);
+      return;
+    }
+    const variants = (() => {
+      try {
+        return typeof viewingProduct.color_variants === 'string'
+          ? JSON.parse(viewingProduct.color_variants)
+          : (viewingProduct.color_variants || []);
+      } catch (e) {
+        return [];
+      }
+    })();
+    const match = variants.find(v => v.color && v.color.class === detailSelectedColor);
+    setDetailActiveImage((match && match.image) || mainImage);
+  }, [viewingProduct, detailSelectedColor]);
+
+  // Stock is held per colour per size in the dashboard, so the amount a shopper
+  // can order depends on which combination is selected. Before both are chosen
+  // we fall back to the product total so the stepper still works.
+  const detailAvailableStock = useMemo(() => {
+    if (!viewingProduct) return 0;
+    const variants = (() => {
+      try {
+        return typeof viewingProduct.color_variants === 'string'
+          ? JSON.parse(viewingProduct.color_variants)
+          : (viewingProduct.color_variants || []);
+      } catch (e) {
+        return [];
+      }
+    })();
+    if (variants.length === 0) return Number(viewingProduct.stock) || 0;
+    if (detailSelectedColor && detailSelectedSize) {
+      const match = variants.find(v => v.color && v.color.class === detailSelectedColor);
+      return match && match.stock ? (parseInt(match.stock[detailSelectedSize]) || 0) : 0;
+    }
+    return variants.reduce(
+      (sum, v) => sum + Object.values(v.stock || {}).reduce((s, val) => s + (parseInt(val) || 0), 0),
+      0
+    );
+  }, [viewingProduct, detailSelectedColor, detailSelectedSize]);
+
+  // Switching to a colour/size with less stock must not leave a larger quantity
+  // stranded in the stepper.
+  useEffect(() => {
+    setDetailQuantity(prev => Math.min(Math.max(1, prev), Math.max(1, detailAvailableStock)));
+  }, [detailAvailableStock]);
+
   const [relatedPage, setRelatedPage] = useState(0);
   const [hoveredRelatedId, setHoveredRelatedId] = useState(null);
   const [detailValidationError, setDetailValidationError] = useState('');
@@ -2541,28 +2591,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                     {/* Stock Alert - only shown when out of stock or low stock */}
                     <div>
                       {(() => {
-                        const variants = (() => {
-                          try {
-                            if (typeof viewingProduct.color_variants === 'string') {
-                              return JSON.parse(viewingProduct.color_variants);
-                            }
-                            return viewingProduct.color_variants || [];
-                          } catch(e) {
-                            return [];
-                          }
-                        })();
-                        const hasVariants = variants.length > 0;
-                        
-                        let currentStock = viewingProduct.stock;
-                        if (hasVariants) {
-                          if (detailSelectedColor && detailSelectedSize) {
-                            const match = variants.find(v => v.color && v.color.class === detailSelectedColor);
-                            currentStock = match && match.stock ? (parseInt(match.stock[detailSelectedSize]) || 0) : 0;
-                          } else {
-                            currentStock = variants.reduce((sum, v) => sum + Object.values(v.stock || {}).reduce((s, val) => s + (parseInt(val) || 0), 0), 0);
-                          }
-                        }
-
+                        const currentStock = detailAvailableStock;
                         if (currentStock === undefined) return null;
                         
                         return currentStock === 0 ? (
@@ -2598,7 +2627,7 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         <button
                           type="button"
                           disabled={viewingProduct.stock === 0 || detailQuantity >= (viewingProduct.stock || 10)}
-                          onClick={() => setDetailQuantity(prev => Math.min(viewingProduct.stock || 10, prev + 1))}
+                          onClick={() => setDetailQuantity(prev => Math.min(detailAvailableStock || 1, prev + 1))}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Plus size={14} />
