@@ -2302,11 +2302,6 @@ const sizeOptions = parsedSizes.length > 0 ? parsedSizes : ['EU 36-40', 'EU 41-4
                         });
                       }
                       rows.push({
-                        key: 'category',
-                        name: label('Category', 'پۆلێن', 'التصنيف'),
-                        value: listOf(viewingProduct.category).join(', ') || t('ui.general'),
-                      });
-                      rows.push({
                         key: 'style',
                         name: label('Style / Length', 'شێواز / درێژی', 'الموديل / الطول'),
                         value: listOf(viewingProduct.style_length).join(', ') || t('ui.standard'),
