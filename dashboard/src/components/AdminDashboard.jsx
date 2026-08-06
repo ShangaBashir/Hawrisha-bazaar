@@ -3760,7 +3760,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
           {/* Logo Header */}
           <div className="border-b border-[#B2AC88]/15 pb-4">
             <h2 className="text-2xl font-serif italic font-bold text-[#B2AC88] tracking-widest uppercase">
-              {currentUserRole === "admin" ? "HAWRISHA" : currentUserStoreName || "HAWRISHA"}
+              {currentUserRole === "admin" ? "HAWRISHA" : getEnglishName(currentUserStoreName) || "HAWRISHA"}
             </h2>
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#B2AC88]/60 mt-1 block">
               {currentUserRole === "admin" ? "Control Center" : "Vendor Dashboard"}
@@ -3925,7 +3925,7 @@ export default function AdminDashboard({ currentUserEmail, currentUserRole, curr
             </button>
             <div>
               <h2 className="text-md font-serif italic font-bold text-[#B2AC88] truncate max-w-[120px]">
-                {currentUserRole === "admin" ? "HAWRISHA" : currentUserStoreName || "HAWRISHA"}
+                {currentUserRole === "admin" ? "HAWRISHA" : getEnglishName(currentUserStoreName) || "HAWRISHA"}
               </h2>
             </div>
           </div>

@@ -17,7 +17,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
             transition={{ duration: 0.5 }}
             className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-500 mb-2"
           >
-            {language === 'ar' ? 'قصة جواربك' : language === 'ku' ? 'چیرۆکی گۆرەویەکەت' : 'Your Socks'} <span className="text-[#C08081]">{language === 'ar' ? 'سرد القصص' : language === 'ku' ? 'گێڕانەوە' : 'Storytelling'}</span>
+            {language === 'ar' ? 'قصة جواربك' : language === 'ku' ? 'چیرۆکی گۆرەویەکەت' : 'Your Socks'} <span className="text-[#C08081]">{language === 'ar' ? 'سرد القصص' : language === 'ku' ? 'بگێڕەوە' : 'Storytelling'}</span>
           </motion.p>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
@@ -106,7 +106,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               {/* Bottom text & explore button */}
               <div className="mt-4 text-left">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
-                  {language === 'ar' ? 'اكتشف المتاجر المحلية' : language === 'ku' ? 'متاکانی هاوڕێشا بدۆزەرەوە' : 'Discover Local Boutiques'}
+                  {language === 'ar' ? 'اكتشف المتاجر المحلية' : language === 'ku' ? 'فرۆشگاکانی هەورێشە بدۆزەرەوە' : 'Discover Local Boutiques'}
                 </h3>
                 <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-6">
                   {language === 'ar' 
@@ -119,7 +119,7 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
                   onClick={onExploreStores}
                   className="px-6 py-2.5 bg-[#36454F] hover:bg-[#B2AC88] text-white hover:scale-105 active:scale-95 rounded-full text-xs font-bold transition-all cursor-pointer border-0 shadow-md flex items-center gap-1"
                 >
-                  {language === 'ar' ? 'زيارة المتاجر' : language === 'ku' ? 'سەردانی متاکان' : 'Explore Stores'} &rarr;
+                  {language === 'ar' ? 'زيارة المتاجر' : language === 'ku' ? 'سەردانی فرۆشگاکان' : 'Explore Stores'} &rarr;
                 </button>
               </div>
             </motion.div>
@@ -138,8 +138,8 @@ export default function SocksStory({ isLoggedIn, onReadStory, onJoinUs, onExplor
               <div className="text-left px-2 pb-2">
                 <h3 className="text-xl font-bold text-[#36454F] mb-2">
                   {isLoggedIn 
-                    ? (language === 'ar' ? 'انضممت إلى مجتمع هاوريشا' : language === 'ku' ? 'بوویت بە بەشێک لە کۆمەڵگەی هاوڕێشا' : 'Joined the Hawrisha Community')
-                    : (language === 'ar' ? 'انضم إلى مجتمع هاوريشا' : language === 'ku' ? 'ببە بە بەشێک لە کۆمەڵگەی هاوڕێشا' : 'Join the Hawrisha Community')}
+                    ? (language === 'ar' ? 'انضممت إلى مجتمع هاوريشا' : language === 'ku' ? 'بوویت بە بەشێک لە کۆمەڵگەی هەورێشە' : 'Joined the Hawrisha Community')
+                    : (language === 'ar' ? 'انضم إلى مجتمع هاوريشا' : language === 'ku' ? 'ببە بە بەشێک لە کۆمەڵگەی هەورێشە' : 'Join the Hawrisha Community')}
                 </h3>
                 <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-4">
                   {language === 'ar' 
